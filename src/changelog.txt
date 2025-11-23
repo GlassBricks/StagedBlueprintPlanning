@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.10.5
-Date: ????
+Date: 2025-11-23
   Bugfixes:
     - Fixed NEW crash when attempting to take a empty blueprint.
     - Exported blueprint books will now have the first blueprint selected by default.
