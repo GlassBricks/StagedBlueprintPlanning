@@ -5,7 +5,7 @@
 
 import * as util from "util"
 
-const type = _G.type
+const { next, type, pairs } = _G
 
 export function shallowCopy<T>(obj: T): T {
   if (type(obj) != "table") return obj

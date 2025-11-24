@@ -16,7 +16,7 @@ import { getProjectPlayerData } from "../../project/player-project-data"
 import { UserProject } from "../../project/ProjectDef"
 import { UndoHandler, _simulateUndo } from "../../project/undo"
 import { UserActions } from "../../project/user-actions"
-import { createUserProject, _deleteAllProjects } from "../../project/UserProject"
+import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import * as _createBpWithStageInfo from "../../ui/create-blueprint-with-stage-info"
 import { fStub } from "../f-mock"
 import { moduleMock } from "../module-mock"
@@ -802,12 +802,11 @@ describe("blueprint paste", () => {
     cursor.set_blueprint_entities([bpEntity])
   }
   before_each(setBlueprint)
-  function assertCorrect(entity: LuaEntity, position: Position = pos, bpValue = bpEntity, exactMatch = true): void {
+  function assertCorrect(entity: LuaEntity, position: Position = pos): void {
     expect(entity).toBeAny()
     expect(entity.position).toEqual(position)
 
-    const expectedValue = exactMatch ? bpValue : expect.tableContaining(bpValue)
-    expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(entity, 1, expect._, 1, expectedValue)
+    expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(entity, 1, expect._, 1, nil)
   }
 
   test("create entity", () => {
@@ -862,8 +861,8 @@ describe("blueprint paste", () => {
     })[0]
     expect(inserter2).toBeAny()
 
-    assertCorrect(inserter1, nil, bpEntity1, false)
-    assertCorrect(inserter2, pos.plus(Pos(1, 0)), bpEntity2, false)
+    assertCorrect(inserter1, nil)
+    assertCorrect(inserter2, pos.plus(Pos(1, 0)))
     if (alreadyPresent) {
       expect(project.actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(inserter1, 1, 1)
       expect(project.actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(inserter2, 1, 1)
@@ -903,8 +902,8 @@ describe("blueprint paste", () => {
     const pole2 = surface.find_entity("small-electric-pole", pos.plus(Pos(1, 0)))!
     expect(pole2).toBeAny()
 
-    assertCorrect(pole1, nil, entity1)
-    assertCorrect(pole2, pos.plus(Pos(1, 0)), entity2)
+    assertCorrect(pole1, nil)
+    assertCorrect(pole2, pos.plus(Pos(1, 0)))
     if (alreadyPresent) {
       expect(project.actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(pole1, 1, 1)
       expect(project.actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(pole2, 1, 1)
@@ -934,7 +933,7 @@ describe("blueprint paste", () => {
     player.build_from_cursor({ position: Pos(0.5, 0.5) })
 
     expect(project.actions.onEntityCreated).not.toHaveBeenCalled()
-    expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(tank, 1, nil, player.index, entity)
+    expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(tank, 1, nil, player.index, nil)
   })
 
   function fakeFlippedPaste(pos: Position) {
@@ -985,37 +984,7 @@ describe("blueprint paste", () => {
     fakeFlippedPaste(Pos(0.5, 0.5))
 
     expect(project.actions.onEntityCreated).not.toHaveBeenCalled()
-    expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(tank, 1, nil, player.index, entity)
-  })
-
-  test("splitter has flipped priorities when flipped", () => {
-    const entity: BlueprintEntity = {
-      entity_number: 1,
-      name: "splitter",
-      position: Pos(0, 0.5),
-      input_priority: "right",
-      output_priority: "left",
-    }
-    player.cursor_stack!.set_blueprint_entities([entity])
-
-    const splitter = surface.create_entity({
-      name: "splitter",
-      position: Pos(0, 0.5),
-      force: "player",
-    })
-    expect(splitter).toBeAny()
-
-    player.build_from_cursor({
-      position: Pos(0, 0.5),
-      mirror: true,
-    })
-
-    expect(project.actions.onEntityCreated).not.toHaveBeenCalled()
-    expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(splitter, 1, nil, player.index, {
-      ...entity,
-      input_priority: "left",
-      output_priority: "right",
-    })
+    expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(tank, 1, nil, player.index, nil)
   })
 
   test("doesn't break when creating ghost entity", () => {
@@ -1270,7 +1239,7 @@ test("splitter has correct values when not flipped", () => {
   player.build_from_cursor({ position: Pos(0, 0.5) })
 
   expect(project.actions.onEntityCreated).not.toHaveBeenCalled()
-  expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(splitter, 1, nil, player.index, entity)
+  expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(splitter, 1, nil, player.index, nil)
 })
 
 // tiles

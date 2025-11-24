@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { BlueprintEntity, LuaEntity, nil, PlayerIndex } from "factorio:runtime"
+import { BlueprintInsertPlan, LuaEntity, nil, PlayerIndex } from "factorio:runtime"
 import { Colors, L_Game, Settings } from "../constants"
 import { LuaEntityInfo } from "../entity/Entity"
 import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
@@ -34,7 +34,8 @@ export interface UserActions {
     stage: StageNumber,
     previousDirection: defines.direction | nil,
     byPlayer: PlayerIndex | nil,
-    knownBpValue?: BlueprintEntity,
+    stagedInfo?: StageInfoExport,
+    items?: BlueprintInsertPlan[],
   ): ProjectEntity | nil
 
   onEntityRotated(
@@ -264,7 +265,8 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     entity: LuaEntity,
     stage: StageNumber,
     byPlayer: PlayerIndex | nil,
-    knownBpValue?: BlueprintEntity,
+    stagedInfo?: StageInfoExport,
+    items?: BlueprintInsertPlan[],
   ): UndoAction | nil {
     if (!allowOverlapDifferentDirection.has(entity.type) && entity.supports_direction) {
       const existingDifferentDirection = content.findCompatibleEntity(entity.name, entity.position, nil, stage)
@@ -275,9 +277,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
       }
     }
 
-    addNewEntity(entity, stage, knownBpValue)
-
-    // possibly more undo actions in the future
+    addNewEntity(entity, stage, stagedInfo, items)
   }
 
   function getCompatibleAtCurrentStageOrAdd(
@@ -285,12 +285,13 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     stage: StageNumber,
     previousDirection: defines.direction | nil,
     byPlayer: PlayerIndex | nil,
-    knownBpValue?: BlueprintEntity,
+    stagedInfo?: StageInfoExport,
+    items?: BlueprintInsertPlan[],
   ): ProjectEntity | nil {
     const compatible = content.findCompatibleWithLuaEntity(worldEntity, previousDirection, stage)
 
     if (!compatible) {
-      tryAddNewEntity(worldEntity, stage, byPlayer, knownBpValue)
+      tryAddNewEntity(worldEntity, stage, byPlayer, stagedInfo, items)
       return nil
     }
     if (stage < compatible.firstStage) {
@@ -341,25 +342,25 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     stage: StageNumber,
     previousDirection: defines.direction | nil,
     byPlayer: PlayerIndex | nil,
-    knownBpValue: BlueprintEntity,
     stagedInfo: StageInfoExport,
+    items?: BlueprintInsertPlan[],
   ): ProjectEntity | nil {
     const compatible = content.findCompatibleWithLuaEntity(entity, previousDirection, stage)
     if (!compatible) {
-      tryAddNewEntity(entity, stage, byPlayer, knownBpValue)
+      tryAddNewEntity(entity, stage, byPlayer, stagedInfo, items)
       return nil
     }
     if (compatible.isSettingsRemnant) {
       // just delete it
       forceDeleteEntity(compatible)
-      tryAddNewEntity(entity, stage, byPlayer, knownBpValue)
+      tryAddNewEntity(entity, stage, byPlayer, stagedInfo, items)
       return nil
     }
 
     // this line is important, in case we just pasted over a preview
     compatible.replaceWorldEntity(stage, entity)
 
-    const result = setValueFromStagedInfo(compatible, knownBpValue, stagedInfo)
+    const result = setValueFromStagedInfo(compatible, stagedInfo, items, entity)
     notifyIfMoveError(result, compatible, byPlayer)
     return compatible
   }
@@ -376,17 +377,24 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     stage: StageNumber,
     previousDirection: defines.direction | nil,
     byPlayer: PlayerIndex | nil,
-    knownBpValue?: BlueprintEntity,
+    stagedInfo?: StageInfoExport,
+    items?: BlueprintInsertPlan[],
   ): ProjectEntity | nil {
-    const stagedInfo = knownBpValue?.tags?.bp100 as StageInfoExport | nil
     if (stagedInfo) {
-      return handlePasteValue(entity, stage, previousDirection, byPlayer, knownBpValue!, stagedInfo)
+      return handlePasteValue(entity, stage, previousDirection, byPlayer, stagedInfo, items)
     }
 
-    const projectEntity = getCompatibleAtCurrentStageOrAdd(entity, stage, previousDirection, byPlayer, knownBpValue)
+    const projectEntity = getCompatibleAtCurrentStageOrAdd(
+      entity,
+      stage,
+      previousDirection,
+      byPlayer,
+      stagedInfo,
+      items,
+    )
     if (!projectEntity) return
 
-    const result = tryUpdateEntityFromWorld(projectEntity, stage, knownBpValue)
+    const result = tryUpdateEntityFromWorld(projectEntity, stage, items)
     notifyIfUpdateError(result, projectEntity, byPlayer)
     return projectEntity
   }

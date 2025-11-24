@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import {
-  BlueprintEntity,
   BlueprintEntityWrite,
   CarBlueprintEntity,
   LuaEntity,
@@ -58,25 +57,6 @@ test("can save an entity", () => {
   const [saved] = saveEntity(entity)
   expect(saved).toEqual({ name: "inserter", override_stack_size: 2 })
   expect(entity.direction).toBe(defines.direction.east)
-})
-
-test("saving an entity with knownValue", () => {
-  const entity = surface.create_entity({
-    name: "inserter",
-    position: { x: 12.5, y: 12.5 },
-    force: "player",
-    direction: defines.direction.east,
-  })!
-  const knownValue: BlueprintEntity = {
-    entity_number: 1,
-    direction: 0,
-    tags: { foo: "bar" },
-    position: { x: 0, y: 0 },
-    name: "inserter",
-    override_stack_size: 2,
-  }
-  const [saved] = saveEntity(entity, knownValue)
-  expect(saved).toEqual({ name: "inserter", override_stack_size: 2 })
 })
 
 test("saving an entity with higher quality", () => {

@@ -24,7 +24,7 @@ import {
   UndergroundBeltBlueprintEntity,
   UndergroundBeltSurfaceCreateEntity,
 } from "factorio:runtime"
-import { deepCompare, Events, getName, getQuality, Mutable, mutableShallowCopy } from "../lib"
+import { deepCompare, Events, getName, getQuality, Mutable } from "../lib"
 import { BBox, Pos, Position } from "../lib/geometry"
 import { getStageAtSurface } from "../project/project-refs"
 
@@ -35,7 +35,6 @@ import {
   getNonModuleRequests,
   partitionInventoryFromRequests,
   partitionModulesAndRemoveGridRequests,
-  removeGridRequests,
 } from "./item-requests"
 import { NameAndQuality, ProjectEntity, UndergroundBeltProjectEntity } from "./ProjectEntity"
 import {
@@ -453,30 +452,23 @@ export type NullableEntityResult = LuaMultiReturn<
   [entity?: Mutable<Entity>, unstagedEntityProps?: Mutable<UnstagedEntityProps>]
 >
 
-export function copyKnownValue(value: BlueprintEntity): EntityResult {
-  return removeExtraProperties(mutableShallowCopy(value))
-}
-
 /**
  * Position and direction are ignored.
  */
-export function saveEntity(entity: LuaEntity, knownValue?: BlueprintEntity): NullableEntityResult {
-  if (knownValue) return copyKnownValue(knownValue)
+export function saveEntity(entity: LuaEntity, items?: BlueprintInsertPlan[]): NullableEntityResult {
   const bpEntity = blueprintEntity(entity)
   if (!bpEntity) return $multi()
-  if (bpEntity.items) {
-    bpEntity.items = removeGridRequests(bpEntity.items)
-  }
+
   if (entity.type == "space-platform-hub") {
     assume<SpacePlatformHubBlueprintEntity>(bpEntity)
     fixPlatformRequests(bpEntity)
   }
 
-  const itemRequests = getNonModuleRequests(entity)
+  const itemRequests = items ?? getNonModuleRequests(entity)
   const unstagedProps = itemRequests && {
     items: itemRequests,
   }
-  const [result] = removeExtraProperties(mutableShallowCopy(bpEntity))
+  const [result] = removeExtraProperties(bpEntity)
   // ignore non-module requests gotten via blueprint; use item request proxy for those instead
   return $multi(result, unstagedProps)
 }

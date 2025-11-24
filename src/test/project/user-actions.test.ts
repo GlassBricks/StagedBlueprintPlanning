@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { BlueprintEntity, LocalisedString, LuaEntity, PlayerIndex, SurfaceCreateEntity } from "factorio:runtime"
+import { LocalisedString, LuaEntity, PlayerIndex, SurfaceCreateEntity } from "factorio:runtime"
 import expect from "tstl-expect"
 import { L_Game, Prototypes, Settings } from "../../constants"
 import { newProjectEntity, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
@@ -50,7 +50,7 @@ before_each(() => {
     entity.setLastStageUnchecked(stage)
     return StageMoveResult.Updated
   })
-  projectUpdates.setValueFromStagedInfo.invokes((entity, stage, stagedInfo) => {
+  projectUpdates.setValueFromStagedInfo.invokes((entity, stagedInfo) => {
     entity.setFirstStageUnchecked(stagedInfo.firstStage)
     return StageMoveResult.Updated
   })
@@ -312,9 +312,8 @@ const resultMessages: Array<[EntityUpdateResult, string | false]> = [
 describe("onEntityPossiblyUpdated()", () => {
   test("if not in project, adds entity", () => {
     const luaEntity = createWorldEntity(2)
-    const knownValue: any = { foo: "bar" }
-    userActions.onEntityPossiblyUpdated(luaEntity, 2, nil, playerIndex, knownValue)
-    expect(projectUpdates.addNewEntity).toHaveBeenCalledWith(luaEntity, 2, knownValue)
+    userActions.onEntityPossiblyUpdated(luaEntity, 2, nil, playerIndex)
+    expect(projectUpdates.addNewEntity).toHaveBeenCalledWith(luaEntity, 2)
   })
 
   test("if is in project at higher stage, defaults to overbuild behavior", () => {
@@ -326,11 +325,10 @@ describe("onEntityPossiblyUpdated()", () => {
 
   test.each(resultMessages)('calls tryUpdateEntityFromWorld and notifies, with result "%s"', (result, message) => {
     const { luaEntity, entity } = addEntity(2)
-    const knownValue: any = { foo: "bar" }
     projectUpdates.tryUpdateEntityFromWorld.returns(result)
-    userActions.onEntityPossiblyUpdated(luaEntity, 2, nil, playerIndex, knownValue)
+    userActions.onEntityPossiblyUpdated(luaEntity, 2, nil, playerIndex)
 
-    expect(projectUpdates.tryUpdateEntityFromWorld).toHaveBeenCalledWith(entity, 2, knownValue)
+    expect(projectUpdates.tryUpdateEntityFromWorld).toHaveBeenCalledWith(entity, 2)
     if (message) assertNotified(entity, [message], true)
   })
 
@@ -357,24 +355,15 @@ describe("onEntityPossiblyUpdated()", () => {
     expect(projectUpdates.tryUpdateEntityFromWorld).toHaveBeenCalledWith(entity, 2)
   })
 
-  test("calls setValueFromStagedInfo if known value has stagedInfo", () => {
+  test("calls setValueFromStagedInfo if stagedInfo supplied", () => {
     const { luaEntity, entity } = addEntity(2)
     const stagedInfo: StageInfoExport<any> = {
       firstStage: 1,
       lastStage: nil,
       firstValue: { foo: "bar" },
     }
-    const knownValue = {
-      entity_number: 1,
-      name: "fast-inserter",
-      position: pos,
-      direction: defines.direction.north,
-      tags: {
-        bp100: stagedInfo,
-      },
-    } as BlueprintEntity
-    userActions.onEntityPossiblyUpdated(luaEntity, 2, nil, playerIndex, knownValue)
-    expect(projectUpdates.setValueFromStagedInfo).toHaveBeenCalledWith(entity, knownValue, stagedInfo)
+    userActions.onEntityPossiblyUpdated(luaEntity, 2, nil, playerIndex, stagedInfo)
+    expect(projectUpdates.setValueFromStagedInfo).toHaveBeenCalledWith(entity, stagedInfo, nil, luaEntity)
   })
 })
 

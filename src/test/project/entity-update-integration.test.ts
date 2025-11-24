@@ -4,26 +4,26 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import {
-  BlueprintEntity,
-  BlueprintInsertPlan,
-  CarBlueprintEntity,
-  InserterBlueprintEntity,
-  LuaEntity,
-  LuaPlayer,
-  LuaSurface,
-  MapPositionArray,
-  PlayerIndex,
-  SurfaceCreateEntity,
-  UndergroundBeltBlueprintEntity,
+    BlueprintEntity,
+    BlueprintInsertPlan,
+    CarBlueprintEntity,
+    InserterBlueprintEntity,
+    LuaEntity,
+    LuaPlayer,
+    LuaSurface,
+    MapPositionArray,
+    PlayerIndex,
+    SurfaceCreateEntity,
+    UndergroundBeltBlueprintEntity,
 } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { LuaEntityInfo, UndergroundBeltEntity } from "../../entity/Entity"
 import {
-  MovableProjectEntity,
-  ProjectEntity,
-  StageNumber,
-  UndergroundBeltProjectEntity,
+    MovableProjectEntity,
+    ProjectEntity,
+    StageNumber,
+    UndergroundBeltProjectEntity,
 } from "../../entity/ProjectEntity"
 import { isPreviewEntity } from "../../entity/prototype-info"
 import { canBeAnyDirection, checkUndergroundPairFlippable, saveEntity, updateEntity } from "../../entity/save-load"
@@ -1298,24 +1298,6 @@ describe("circuit connections", () => {
   })
 })
 describe("blueprinting", () => {
-  test("can build a entity using known value", () => {
-    const luaEntity = createEntity(1, { name: "transport-belt", position: pos, direction: defines.direction.east })
-    const entity = project.updates.addNewEntity(luaEntity, 1, {
-      entity_number: 1,
-      name: "transport-belt",
-      position: pos,
-      direction: defines.direction.east,
-      override_stack_size: 1,
-    })!
-    expect(entity).toMatchTable({
-      firstStage: 1,
-      firstValue: {
-        name: "transport-belt",
-        override_stack_size: 1,
-      },
-    })
-  })
-
   test.each([true, false])("can maybe upgrade entity via blueprint, with super force build %s", (superForce) => {
     const bpEntity: BlueprintEntity = {
       entity_number: 1,
@@ -1806,6 +1788,14 @@ test("mirroring an entity, via blueprint paste", () => {
     name: "chemical-plant",
     recipe: "light-oil-cracking",
   })
+  const worldEntity = chemPlant.getWorldEntity(1)!
+  worldEntity.mirroring = true
+  Events.raiseFakeEventNamed("on_player_flipped_entity", {
+    entity: worldEntity,
+    player_index: player.index,
+    horizontal: true,
+  })
+
   const stack = player.cursor_stack!
   stack.clear()
   stack.set_stack("blueprint")
@@ -1815,7 +1805,7 @@ test("mirroring an entity, via blueprint paste", () => {
       entity_number: 1,
       position: [0, 0],
       name: "chemical-plant",
-      recipe: "sulfuric-acid",
+      recipe: "heavy-oil-cracking",
     },
   ])
 
@@ -1824,10 +1814,6 @@ test("mirroring an entity, via blueprint paste", () => {
   player.build_from_cursor({ position: chemPlant.position, mirror: false })
   expect(chemPlant.getWorldEntity(1)?.mirroring).toBe(false)
   expect(chemPlant.getWorldEntity(2)?.mirroring).toBe(false)
-
-  player.build_from_cursor({ position: chemPlant.position, mirror: true })
-  expect(chemPlant.getWorldEntity(1)?.mirroring).toBe(true)
-  expect(chemPlant.getWorldEntity(2)?.mirroring).toBe(true)
 })
 
 test("paste a rotated assembler", () => {
@@ -1942,6 +1928,7 @@ describe("item-requests", () => {
     const chest = surfaces[0].find_entity("iron-chest", pos)!
     expect(chest).not.toBeNil()
     expect(chest.item_request_proxy?.insert_plan).toEqual([insertPlan])
+
     const projectChest = project.content.findCompatibleWithLuaEntity(chest, nil, 1)!
     expect(projectChest).not.toBeNil()
     expect(projectChest.getUnstagedValue(1)).toEqual({ items: [insertPlan] })

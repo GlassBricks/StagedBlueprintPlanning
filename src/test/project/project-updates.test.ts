@@ -6,7 +6,6 @@
 import {
   AssemblingMachineBlueprintEntity,
   BlueprintEntity,
-  BlueprintInsertPlan,
   InserterBlueprintEntity,
   LoaderBlueprintEntity,
   LuaEntity,
@@ -15,7 +14,7 @@ import {
   UndergroundBeltSurfaceCreateEntity,
 } from "factorio:runtime"
 import expect, { mock } from "tstl-expect"
-import { InserterEntity, UndergroundBeltEntity } from "../../entity/Entity"
+import { Entity, InserterEntity, UndergroundBeltEntity } from "../../entity/Entity"
 import {
   addWireConnection,
   MovableProjectEntity,
@@ -30,7 +29,6 @@ import { Pos } from "../../lib/geometry"
 import { EntityUpdateResult, ProjectUpdates, StageMoveResult } from "../../project/project-updates"
 import { Project } from "../../project/ProjectDef"
 import { WorldUpdates } from "../../project/world-updates"
-import { BpStagedInfoTags } from "../../ui/create-blueprint-with-stage-info"
 import { createRollingStock, createRollingStocks } from "../entity/createRollingStock"
 import { fMock } from "../f-mock"
 import { moduleMock } from "../module-mock"
@@ -39,20 +37,6 @@ import _wireHandler = require("../../entity/wires")
 import direction = defines.direction
 
 const pos = Pos(10.5, 10.5)
-
-const NON_MODULE_REQUEST: BlueprintInsertPlan = {
-  id: {
-    name: "iron-plate",
-  },
-  items: {
-    in_inventory: [
-      {
-        inventory: defines.inventory.crafter_input,
-        stack: 2,
-      },
-    ],
-  },
-} as unknown as BlueprintInsertPlan
 
 let project: Project
 const surfaces: LuaSurface[] = setupTestSurfaces(6)
@@ -213,129 +197,49 @@ describe("addNewEntity()", () => {
     expectedWuCalls++
   })
 
-  describe("with known value", () => {
-    test("with same name", () => {
-      const luaEntity = createEntity(2)
-      const entity = projectUpdates.addNewEntity(luaEntity, 2, {
-        entity_number: 1,
-        direction: 0,
-        position: { x: 0, y: 0 },
-        name: "fast-inserter",
-      })!
-      expect(entity).toBeAny()
-      expect(entity.firstValue).toEqual({
-        name: "fast-inserter",
-      })
-      expect(entity.position).toEqual(pos)
-      expect(entity.direction).toBe(0)
+  test.each([false, true])("with stored stage info, having diffs %s", (withDiffs) => {
+    const luaEntity = createEntity(2)
+    const entityUpgraded = projectUpdates.addNewEntity<InserterEntity>(luaEntity, 2, {
+      firstStage: 1,
+      lastStage: 5,
+      firstValue: withDiffs
+        ? {
+            name: "inserter",
+          }
+        : nil,
+      stageDiffs: withDiffs
+        ? {
+            "2": {
+              name: "fast-inserter",
+              override_stack_size: 2,
+            } as Entity,
+          }
+        : nil,
+      unstagedValue: withDiffs ? { 3: { _forTest: "foo" } } : nil,
+    })!
 
-      const found = project.content.findCompatibleWithLuaEntity(luaEntity, nil, 2) as ProjectEntity<BlueprintEntity>
-      expect(found).toBe(entity)
-
-      expect(entity.getWorldEntity(2)).toBe(luaEntity)
-
-      assertOneEntity()
-      assertNewUpdated(entity)
-      expect(worldUpdates.updateAllHighlights).toHaveBeenCalledTimes(1)
-      expectedWuCalls++
+    expect(entityUpgraded).toBeAny()
+    expect(entityUpgraded.firstValue).toMatchTable({
+      name: withDiffs ? "inserter" : "fast-inserter",
     })
-
-    test("with different name", () => {
-      const luaEntity = createEntity(2)
-      const entityUpgraded = projectUpdates.addNewEntity(luaEntity, 2, {
-        entity_number: 1,
-        direction: 0,
-        position: { x: 0, y: 0 },
-        name: "fast-inserter",
-      })!
-      expect(entityUpgraded).toBeAny()
-      expect(entityUpgraded.firstValue).toEqual({
-        name: "fast-inserter",
+    expect(entityUpgraded.firstStage).toBe(1)
+    expect(entityUpgraded.lastStage).toBe(5)
+    assertNewUpdated(entityUpgraded)
+    if (withDiffs) {
+      expect(entityUpgraded.stageDiffs).toEqual({
+        2: {
+          name: "fast-inserter",
+          override_stack_size: 2,
+        },
       })
-      expect(entityUpgraded.position).toEqual(pos)
-
-      const found = project.content.findCompatibleWithLuaEntity(luaEntity, nil, 2) as ProjectEntity<BlueprintEntity>
-      expect(found).toBe(entityUpgraded)
-
-      assertOneEntity()
-      assertNewUpdated(entityUpgraded)
-      expect(worldUpdates.updateAllHighlights).toHaveBeenCalledTimes(1)
-      expectedWuCalls++
-    })
-
-    test("with knownValue containing non-module requests", () => {
-      const luaEntity = createEntity(2)
-      const entity = projectUpdates.addNewEntity(luaEntity, 2, {
-        entity_number: 1,
-        direction: 0,
-        position: { x: 0, y: 0 },
-        name: "fast-inserter",
-        items: [NON_MODULE_REQUEST],
-      })!
-      expect(entity).toBeAny()
-      expect(entity.firstValue).toEqual({
-        name: "fast-inserter",
+      expect(entityUpgraded.getPropertyAllStages("unstagedValue")).toEqual({
+        3: {
+          _forTest: "foo",
+        },
       })
-      expect(entity.getUnstagedValue(2)).toEqual({
-        items: [NON_MODULE_REQUEST],
-      })
-
-      assertOneEntity()
-      assertNewUpdated(entity)
-      expect(worldUpdates.updateAllHighlights).toHaveBeenCalledTimes(1)
-      expectedWuCalls++
-    })
-
-    test.each([false, true])("with stored stage info, having diffs %s", (withDiffs) => {
-      const luaEntity = createEntity(2)
-      const entityUpgraded = projectUpdates.addNewEntity<InserterEntity>(luaEntity, 2, {
-        entity_number: 1,
-        direction: 0,
-        position: { x: 0, y: 0 },
-        name: "fast-inserter",
-        tags: {
-          bp100: {
-            firstStage: 1,
-            lastStage: 5,
-            firstValue: withDiffs
-              ? {
-                  name: "inserter",
-                }
-              : nil,
-            stageDiffs: withDiffs
-              ? {
-                  "2": {
-                    name: "fast-inserter",
-                    override_stack_size: 2,
-                  },
-                }
-              : nil,
-            unstagedValue: withDiffs ? { 3: { _forTest: "foo" } } : nil,
-          },
-        } satisfies BpStagedInfoTags<InserterEntity>,
-      })!
-
-      expect(entityUpgraded).toBeAny()
-      expect(entityUpgraded.firstValue).toEqual({ name: withDiffs ? "inserter" : "fast-inserter" })
-      expect(entityUpgraded.firstStage).toBe(1)
-      expect(entityUpgraded.lastStage).toBe(5)
-      assertNewUpdated(entityUpgraded)
-      if (withDiffs) {
-        expect(entityUpgraded.stageDiffs).toEqual({
-          2: {
-            name: "fast-inserter",
-            override_stack_size: 2,
-          },
-        })
-        expect(entityUpgraded.getPropertyAllStages("unstagedValue")).toEqual({
-          3: {
-            _forTest: "foo",
-          },
-        })
-      }
-      expect(worldUpdates.updateAllHighlights).toHaveBeenCalledTimes(1)
-      expectedWuCalls++
-    })
+    }
+    expect(worldUpdates.updateAllHighlights).toHaveBeenCalledTimes(1)
+    expectedWuCalls++
   })
 })
 
@@ -483,39 +387,6 @@ describe("tryUpdateEntityFromWorld()", () => {
     expect(ret).toBe("updated")
 
     expect(entity.firstValue.override_stack_size).toBe(3)
-
-    assertOneEntity()
-    assertUpdateCalled(entity, 2)
-  })
-  test('with change in first stage and known value returns "updated" and updates all entities', () => {
-    const { entity } = addEntity<InserterBlueprintEntity>(2)
-    const knownValue = {
-      name: "fast-inserter",
-      override_stack_size: 3,
-    }
-    const ret = projectUpdates.tryUpdateEntityFromWorld(entity, 2, knownValue as BlueprintEntity)
-    expect(ret).toBe("updated")
-
-    expect(entity.firstValue.override_stack_size).toBe(3)
-
-    assertOneEntity()
-    assertUpdateCalled(entity, 2)
-  })
-
-  test('with change and knownValue containing non-module requests returns "updated"', () => {
-    const { entity } = addEntity<InserterBlueprintEntity>(2)
-    const knownValue = {
-      name: "fast-inserter",
-      override_stack_size: 3,
-      items: [NON_MODULE_REQUEST],
-    }
-    const ret = projectUpdates.tryUpdateEntityFromWorld(entity, 2, knownValue as BlueprintEntity)
-    expect(ret).toBe("updated")
-
-    expect(entity.firstValue.override_stack_size).toBe(3)
-    expect(entity.getUnstagedValue(2)).toEqual({
-      items: [NON_MODULE_REQUEST],
-    })
 
     assertOneEntity()
     assertUpdateCalled(entity, 2)
@@ -736,7 +607,7 @@ describe("updateWiresFromWorld()", () => {
 
 describe("setValueFromStagedInfo()", () => {
   test("can update from bp info", () => {
-    const { entity } = addEntity(1)
+    const { entity, luaEntity } = addEntity(1)
     const info: StageInfoExport = {
       firstStage: 2,
       lastStage: 5,
@@ -744,7 +615,7 @@ describe("setValueFromStagedInfo()", () => {
       stageDiffs: { "3": { name: "fast-inserter" } },
       unstagedValue: { "2": { _forTest: "foo" } },
     }
-    const ret = projectUpdates.setValueFromStagedInfo(entity, info.firstValue as any, info)
+    const ret = projectUpdates.setValueFromStagedInfo(entity, info, nil, luaEntity)
     expect(ret).toBe(StageMoveResult.Updated)
 
     expect(entity.firstStage).toBe(2)
@@ -762,13 +633,10 @@ describe("setValueFromStagedInfo()", () => {
   })
 
   test("clears stage diff if info has no diffs", () => {
-    const { entity } = addEntity(1)
+    const { entity, luaEntity } = addEntity(1)
     entity._applyDiffAtStage(2, { name: "fast-inserter" })
     const info: StageInfoExport = { firstStage: 2, lastStage: 5 }
-    const value = {
-      name: "fast-inserter",
-    } as BlueprintEntity
-    const ret = projectUpdates.setValueFromStagedInfo(entity, value, info)
+    const ret = projectUpdates.setValueFromStagedInfo(entity, info, nil, luaEntity)
     expect(ret).toBe(StageMoveResult.Updated)
 
     expect(entity.firstStage).toBe(2)

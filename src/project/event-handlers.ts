@@ -6,12 +6,9 @@
 import {
   BaseItemStack,
   BlueprintEntity,
-  BlueprintEntityWrite,
   BlueprintWire,
   CustomEventId,
   EventId,
-  InserterBlueprintEntity,
-  InserterBlueprintEntityWrite,
   LuaEntity,
   LuaItemPrototype,
   LuaItemStack,
@@ -25,7 +22,6 @@ import {
   OnPlayerSelectedAreaEvent,
   OnPreBuildEvent,
   PlayerIndex,
-  SplitterBlueprintEntity,
   Tags,
   UndergroundBeltBlueprintEntity,
   UnitNumber,
@@ -50,7 +46,7 @@ import {
   getStageFromUnitNumber,
 } from "../entity/registration"
 import { StageInfoExport } from "../import-export/entity"
-import { assertNever, Mutable, mutableShallowCopy, PRecord, ProtectedEvents } from "../lib"
+import { assertNever, isEmpty, PRecord, ProtectedEvents } from "../lib"
 import { Pos } from "../lib/geometry"
 import { addSelectionToolHandlers } from "../lib/selection-tool"
 import { L_Interaction } from "../locale"
@@ -68,7 +64,6 @@ import {
 } from "./undo"
 
 import "./tile-events"
-import transform = Pos.applyTransformation
 
 const Events = ProtectedEvents
 
@@ -277,7 +272,6 @@ let state: {
     needsManualConnections: number[]
     originalNumEntities: number
     allowPasteUpgrades: boolean
-    isFlipped: boolean
     flipVertical: boolean
     flipHorizontal: boolean
     direction: defines.direction
@@ -638,7 +632,6 @@ function onPreBlueprintPasted(player: LuaPlayer, stage: Stage | nil, event: OnPr
       needsManualConnections: [],
       originalNumEntities: numEntities,
       allowPasteUpgrades: event.build_mode == defines.build_mode.superforced,
-      isFlipped: (event.flip_vertical != event.flip_horizontal) != event.mirror,
       flipVertical: event.flip_vertical ?? false,
       flipHorizontal: event.flip_horizontal ?? false,
       direction: event.direction,
@@ -690,111 +683,43 @@ OnPrototypeInfoLoaded.addListener((e) => {
   mayHaveModdedGui = e.mayHaveModdedGui
 })
 
-function flipSplitterPriority(entity: Mutable<SplitterBlueprintEntity>) {
-  if (entity.input_priority) {
-    entity.input_priority = entity.input_priority == "left" ? "right" : "left"
-  }
-  if (entity.output_priority) {
-    entity.output_priority = entity.output_priority == "left" ? "right" : "left"
-  }
-}
-
-function mirrorEntity(entity: Mutable<BlueprintEntity>) {
-  entity.mirror = entity.mirror ? nil : true
-}
-
-function editPassedValue<T extends BlueprintEntityWrite>(entity: T, edit: (entity: Mutable<T>) => void): T {
-  const passedValue = mutableShallowCopy(entity)
-  assume<Mutable<T>>(passedValue)
-  const stageInfoTags = passedValue.tags?.bp100 as StageInfoExport | nil
-  if (!stageInfoTags?.firstValue) {
-    edit(passedValue)
-  } else {
-    edit(stageInfoTags.firstValue as Mutable<T>)
-    if (stageInfoTags?.stageDiffs) {
-      for (const [, value] of pairs(stageInfoTags.stageDiffs)) {
-        edit(value as Mutable<T>)
-      }
-    }
-  }
-  return passedValue
-}
-
 function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags: MarkerTags): void {
   const referencedName = tags.referencedName
   if (!referencedName) return
 
   const bpState = state.currentBlueprintPaste!
   const allowPasteUpgrades = bpState.allowPasteUpgrades
+  const searchNames = allowPasteUpgrades ? getCompatibleNames(referencedName) : referencedName
+  if (searchNames == nil) return
 
-  const { position, surface } = entity
-  let luaEntities = entity.surface.find_entities_filtered({
-    position,
+  const luaEntities = entity.surface.find_entities_filtered({
+    position: entity.position,
     radius: 0,
-    name: referencedName,
+    name: searchNames,
   })
-  if (!next(luaEntities)[0]) {
-    if (!allowPasteUpgrades) return
-    const compatible = getCompatibleNames(referencedName)
-    if (!compatible) return
-    luaEntities = surface.find_entities_filtered({
-      position,
-      radius: 0,
-      name: compatible,
-    })
-    if (!next(luaEntities)[0]) return
+  if (isEmpty(luaEntities)) {
+    return
   }
 
   const entityId = tags.referencedLuaIndex
   const value = bpState.entities[entityId - 1]
-  let passedValue: BlueprintEntityWrite = value
 
   let entityDir = entity.direction
 
   const valueName = value.name
   const type = nameToType.get(valueName)!
+  const isFlipped = bpState.flipVertical != bpState.flipHorizontal
   if (type == "storage-tank") {
     if (twoDirectionTanks.has(valueName)) {
-      entityDir = (entityDir + (bpState.isFlipped ? 4 : 0)) % 8
+      entityDir = (entityDir + (isFlipped ? 4 : 0)) % 8
     }
   } else if (type == "curved-rail-a" || type == "curved-rail-b") {
-    const isDiagonal = (((value.direction ?? 0) / 2) % 2 == 1) != bpState.isFlipped
+    const isDiagonal = (((value.direction ?? 0) / 2) % 2 == 1) != isFlipped
     if (isDiagonal) entityDir = (entityDir + 2) % 16
-  } else if (type == "splitter") {
-    if (bpState.isFlipped) {
-      assume<Mutable<SplitterBlueprintEntity>>(value)
-      passedValue = editPassedValue(value, flipSplitterPriority)
-    }
-  } else if (type == "inserter") {
-    assume<InserterBlueprintEntity>(passedValue)
-    if (passedValue.pickup_position || passedValue.drop_position) {
-      passedValue = editPassedValue<InserterBlueprintEntityWrite>(passedValue, (inserter) => {
-        if (inserter.pickup_position) {
-          inserter.pickup_position = transform(
-            Pos.normalize(inserter.pickup_position) as MapPosition,
-            bpState.flipHorizontal,
-            bpState.flipVertical,
-            bpState.direction,
-          )
-        }
-        if (inserter.drop_position) {
-          inserter.drop_position = transform(
-            Pos.normalize(inserter.drop_position) as MapPosition,
-            bpState.flipHorizontal,
-            bpState.flipVertical,
-            bpState.direction,
-          )
-        }
-      })
-    }
-  } else if (type == "assembling-machine") {
-    if (bpState.isFlipped) {
-      passedValue = editPassedValue(value, mirrorEntity)
-    }
   } else {
     const isDiagonal = (value.direction ?? 0) % 4 == 2
     if (isDiagonal) {
-      entityDir = (entityDir + (bpState.isFlipped ? 14 : 2)) % 16
+      entityDir = (entityDir + (isFlipped ? 14 : 2)) % 16
     }
   }
 
@@ -831,7 +756,8 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     stage.stageNumber,
     nil,
     e.player_index,
-    passedValue as BlueprintEntity,
+    value.tags?.bp100 as StageInfoExport | nil,
+    value.items,
   )
 
   if (value.wires) {

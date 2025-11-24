@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { BlueprintEntity, LuaEntity, LuaTrain, nil } from "factorio:runtime"
+import { BlueprintInsertPlan, LuaEntity, LuaTrain, nil } from "factorio:runtime"
 import { Entity, TrainEntity } from "../entity/Entity"
 import {
   getNameAndQuality,
@@ -19,7 +19,7 @@ import {
 } from "../entity/ProjectEntity"
 import { createProjectTile, ProjectTile } from "../entity/ProjectTile"
 import { areUpgradeableTypes, getPrototypeInfo } from "../entity/prototype-info"
-import { canBeAnyDirection, copyKnownValue, forceFlipUnderground, saveEntity } from "../entity/save-load"
+import { canBeAnyDirection, forceFlipUnderground, saveEntity } from "../entity/save-load"
 import { findUndergroundPair, undergroundCanReach } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
 import { fromExportStageDiffs, StageInfoExport } from "../import-export/entity"
@@ -54,24 +54,35 @@ export interface ProjectUpdates {
   addNewEntity<E extends Entity = Entity>(
     entity: LuaEntity,
     stage: StageNumber,
-    knownValue?: BlueprintEntity,
+    stagedInfo?: StageInfoExport,
+    items?: BlueprintInsertPlan[],
   ): ProjectEntity<E> | nil
-  addNewEntity(entity: LuaEntity, stage: StageNumber, knownValue?: BlueprintEntity): ProjectEntity | nil
+  addNewEntity(
+    entity: LuaEntity,
+    stage: StageNumber,
+    stagedInfo?: StageInfoExport,
+    items?: BlueprintInsertPlan[],
+  ): ProjectEntity | nil
 
   maybeDeleteProjectEntity(entity: ProjectEntity, stage: StageNumber): void
   deleteEntityOrCreateSettingsRemnant(entity: ProjectEntity): void
 
   /** Deleted entities should be able to be re-added via readdDeletedEntity */
   forceDeleteEntity(entity: ProjectEntity): void
-  readdDeletedEntity(value: ProjectEntity): void
+  readdDeletedEntity(entity: ProjectEntity): void
 
   tryReviveSettingsRemnant(entity: ProjectEntity, stage: StageNumber): StageMoveResult
-  tryUpdateEntityFromWorld(entity: ProjectEntity, stage: StageNumber, knownValue?: BlueprintEntity): EntityUpdateResult
+  tryUpdateEntityFromWorld(entity: ProjectEntity, stage: StageNumber, items?: BlueprintInsertPlan[]): EntityUpdateResult
   tryRotateEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult
   tryUpgradeEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult
   updateWiresFromWorld(entity: ProjectEntity, stage: StageNumber): WireUpdateResult
 
-  setValueFromStagedInfo(entity: ProjectEntity, value: BlueprintEntity, info: StageInfoExport): StageMoveResult
+  setValueFromStagedInfo(
+    entity: ProjectEntity,
+    info: StageInfoExport,
+    items: BlueprintInsertPlan[] | nil,
+    luaEntity: LuaEntity,
+  ): StageMoveResult
 
   trySetFirstStage(entity: ProjectEntity, stage: StageNumber): StageMoveResult
   trySetLastStage(entity: ProjectEntity, stage: StageNumber | nil): StageMoveResult
@@ -133,18 +144,9 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     scanProjectForExistingTiles,
   }
 
-  function fixNewUndergroundBelt(
-    projectEntity: ProjectEntity,
-    entity: LuaEntity,
-    stage: StageNumber,
-    knownValue: BlueprintEntity | nil,
-  ): void {
+  function fixNewUndergroundBelt(projectEntity: ProjectEntity, entity: LuaEntity, stage: StageNumber): void {
     if (entity.type != "underground-belt") return
     assume<UndergroundBeltProjectEntity>(projectEntity)
-    if (knownValue) {
-      // if blueprint paste, always respect REAL direction in case of flip
-      projectEntity.setTypeProperty(entity.belt_to_ground_type)
-    }
     const pair = findUndergroundPair(content, projectEntity, stage)
     if (pair) {
       const expectedType = pair.firstValue.type == "output" ? "input" : "output"
@@ -155,30 +157,32 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     }
   }
 
-  /**
-   * If is a knownValue with stageInfo tags, uses the stageInfo instead of the entity
-   */
   function createNewProjectEntity(
     entity: LuaEntity,
     stage: StageNumber,
-    knownValue: BlueprintEntity | nil,
+    stageInfo: StageInfoExport | nil,
+    items?: BlueprintInsertPlan[],
   ): ProjectEntity | nil {
-    const stageInfo = knownValue?.tags?.bp100 as StageInfoExport | nil
     if (stageInfo) {
-      return createProjectEntityFromStagedInfo(entity, knownValue, stageInfo)
+      return createProjectEntityFromStagedInfo(entity, stageInfo, items)
     }
 
-    const [saved, unstagedValue] = saveEntity(entity, knownValue)
-    if (!saved) return nil
-    return newProjectEntity(saved, entity.position, entity.direction, stage, unstagedValue)
+    const [value, unstagedValue] = saveEntity(entity, items)
+    if (!value) return nil
+    return newProjectEntity(value, entity.position, entity.direction, stage, unstagedValue)
   }
-  function addNewEntity(entity: LuaEntity, stage: StageNumber, knownValue?: BlueprintEntity): ProjectEntity | nil {
-    const projectEntity = createNewProjectEntity(entity, stage, knownValue)
+  function addNewEntity(
+    entity: LuaEntity,
+    stage: StageNumber,
+    stageInfo?: StageInfoExport,
+    items?: BlueprintInsertPlan[],
+  ): ProjectEntity | nil {
+    const projectEntity = createNewProjectEntity(entity, stage, stageInfo, items)
     if (!projectEntity) return nil
     projectEntity.replaceWorldEntity(stage, entity)
     content.addEntity(projectEntity)
 
-    fixNewUndergroundBelt(projectEntity, entity, stage, knownValue)
+    fixNewUndergroundBelt(projectEntity, entity, stage)
 
     if (projectEntity.getType() == "locomotive") {
       projectEntity.isNewRollingStock = true
@@ -256,12 +260,12 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     stage: StageNumber,
     entity: ProjectEntity,
     entitySource: LuaEntity,
-    knownValue?: BlueprintEntity,
+    items: BlueprintInsertPlan[] | nil,
   ): boolean {
-    const [newValue, unstagedValue] = saveEntity(entitySource, knownValue)
-    if (newValue == nil) return false
+    const [value, unstagedValue] = saveEntity(entitySource, items)
+    if (value == nil) return false
 
-    const hasDiff = entity.adjustValueAtStage(stage, newValue)
+    const hasDiff = entity.adjustValueAtStage(stage, value)
     const hasUnstagedDiff = entity.setUnstagedValue(stage, unstagedValue)
     return hasDiff || hasUnstagedDiff
   }
@@ -269,15 +273,11 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   function tryUpdateEntityFromWorld(
     entity: ProjectEntity,
     stage: StageNumber,
-    knownValue?: BlueprintEntity,
+    items: BlueprintInsertPlan[] | nil,
   ): EntityUpdateResult {
-    if (knownValue?.tags?.bp100) {
-      error("Should call setValueFromStagedInfo instead")
-    }
-
     const entitySource = entity.getWorldEntity(stage)
     if (!entitySource) return EntityUpdateResult.NoChange
-    return handleUpdate(entity, entitySource, stage, entitySource.direction, nil, true, knownValue)
+    return handleUpdate(entity, entitySource, stage, entitySource.direction, nil, true, items)
   }
 
   function tryRotateEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult {
@@ -307,7 +307,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     targetDirection: defines.direction | nil,
     targetUpgrade: NameAndQuality | nil,
     getBpValue: boolean,
-    knownBpValue: BlueprintEntity | nil,
+    items: BlueprintInsertPlan[] | nil,
   ): EntityUpdateResult {
     if (entity.isUndergroundBelt()) {
       return handleUndergroundBeltUpdate(
@@ -315,10 +315,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
         entitySource,
         stage,
         targetDirection,
-        targetUpgrade ??
-          (knownBpValue
-            ? getNameAndQuality(knownBpValue.name, knownBpValue.quality)
-            : getNameAndQuality(entitySource.name, entitySource.quality.name)),
+        targetUpgrade ?? getNameAndQuality(entitySource.name, entitySource.quality.name),
       )
     }
 
@@ -347,7 +344,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
       }
     }
     let hasDiff = false
-    if (getBpValue && applyValueFromWorld(stage, entity, entitySource, knownBpValue)) {
+    if (getBpValue && applyValueFromWorld(stage, entity, entitySource, items)) {
       hasDiff = true
     } else if (targetUpgrade) {
       checkUpgradeType(entity, targetUpgrade.name)
@@ -541,10 +538,11 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
 
   function createProjectEntityFromStagedInfo(
     entity: LuaEntity,
-    knownValue: BlueprintEntity | nil,
     stageInfo: StageInfoExport,
-  ): ProjectEntity {
-    const [value, unstagedValue] = copyKnownValue(knownValue!)
+    items: BlueprintInsertPlan[] | nil,
+  ): ProjectEntity | nil {
+    const [value, unstagedValue] = saveEntity(entity, items)
+    if (!value) return nil
 
     const projectEntity = newProjectEntity(
       stageInfo.firstValue ?? value,
@@ -564,9 +562,12 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
 
   function setValueFromStagedInfo(
     entity: ProjectEntity,
-    value: BlueprintEntity,
     info: StageInfoExport,
+    items: BlueprintInsertPlan[],
+    luaEntity: LuaEntity,
   ): StageMoveResult {
+    const firstValue = info.firstValue ?? saveEntity(luaEntity, items)[0]
+    if (!firstValue) return StageMoveResult.NoChange
     const targetStage = info.firstStage
     if (targetStage != entity.firstStage) {
       const result = checkCanSetFirstStage(entity, targetStage)
@@ -587,12 +588,9 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
 
     const oldStageDiffs = entity.stageDiffs
 
-    const [valueFromBp] = copyKnownValue(value)
-    // ignore unstaged value
-    entity.setFirstValueDirectly(info.firstValue ?? valueFromBp)
+    entity.setFirstValueDirectly(firstValue)
     const stageDiffs = info.stageDiffs ? fromExportStageDiffs(info.stageDiffs) : nil
     entity.setStageDiffsDirectly(stageDiffs)
-
     replaceUnstagedValue(entity, info)
 
     updateWorldEntities(entity, 1)
