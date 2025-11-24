@@ -696,7 +696,6 @@ class ProjectSettings extends Component<{
 
   private StageSettings(stage: Stage) {
     const isNormalSurface = !stage.project.isSpacePlatform()
-
     return (
       <>
         <frame style="subheader_frame" direction="horizontal" styleMod={{ horizontal_align: "center" }}>

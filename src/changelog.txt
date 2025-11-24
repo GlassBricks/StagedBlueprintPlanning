@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.10.6
 Date: ????
-  Changes:
+  Features:
+    - Added experimental better blueprint paste handling! This supports pasting wires from cut entities, and pasting from the blueprint library. Currently experimental, can be disabled with a new per-player setting.
 ---------------------------------------------------------------------------------------------------
 Version: 2.10.5
 Date: 2025-11-23

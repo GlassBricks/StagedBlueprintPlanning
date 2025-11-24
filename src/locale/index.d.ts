@@ -30,7 +30,7 @@ export declare const enum L_EntityName {
   Bp100BlueprintReferenceData = "entity-name.bp100_blueprint-reference-data",
 }
 export declare const enum L_EntityDescription {
-  /** Reference to a stage. Will be replaced with the actual blueprint when the template is compiled. */
+  /** Reference to a stage. Will be replaced with the actual blueprint when the template is compiled */
   StageReference = "entity-description.bph00:stage-reference",
 }
 export declare const enum L_ItemGroupName {
@@ -46,6 +46,8 @@ export declare const enum L_ModSettingName {
   Bp100DeleteAtNextStage = "mod-setting-name.bp100_delete-at-next-stage",
   /** Copy item requests */
   Bp100CopyItemRequests = "mod-setting-name.bp100_copy-item-requests",
+  /** Use experimental blueprint paste (experimental) */
+  Bp100UseBplibForBlueprintPaste = "mod-setting-name.bp100_use-bplib-for-blueprint-paste",
 }
 export declare const enum L_ModSettingDescription {
   /** Unhide infinity chests and pipes. This allows using them in upgrade planners. */
@@ -54,6 +56,8 @@ export declare const enum L_ModSettingDescription {
   Bp100DeleteAtNextStage = "mod-setting-description.bp100_delete-at-next-stage",
   /** When copying blueprints inside a project, also copy the entity's item requests. */
   Bp100CopyItemRequests = "mod-setting-description.bp100_copy-item-requests",
+  /** Use improved handling for blueprint pastes. This is possibly more performant, supports the blueprint library, and handles wire connections from cut entities. Currently experimental; please report bugs! */
+  Bp100UseBplibForBlueprintPaste = "mod-setting-description.bp100_use-bplib-for-blueprint-paste",
 }
 export declare const enum L_StringModSetting {
   /** Top */

@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+import { BlueprintBuild } from "__bplib__/blueprint"
 import {
   BaseItemStack,
   BlueprintEntity,
@@ -27,7 +28,7 @@ import {
   UnitNumber,
 } from "factorio:runtime"
 import { oppositedirection } from "util"
-import { CustomInputs, Prototypes } from "../constants"
+import { CustomInputs, Prototypes, Settings } from "../constants"
 import { BobInserterChangedPositionEvent } from "../declarations/mods"
 import { LuaEntityInfo } from "../entity/Entity"
 import { isWorldEntityProjectEntity, ProjectEntity } from "../entity/ProjectEntity"
@@ -46,8 +47,9 @@ import {
   getStageFromUnitNumber,
 } from "../entity/registration"
 import { StageInfoExport } from "../import-export/entity"
-import { assertNever, isEmpty, PRecord, ProtectedEvents } from "../lib"
-import { Pos } from "../lib/geometry"
+import { isEmpty, PRecord, ProtectedEvents } from "../lib"
+import { DelayedEvent } from "../lib/delayed-event"
+import { floorToCardinalDirection, Pos } from "../lib/geometry"
 import { addSelectionToolHandlers } from "../lib/selection-tool"
 import { L_Interaction } from "../locale"
 import { createBlueprintWithStageInfo } from "../ui/create-blueprint-with-stage-info"
@@ -254,6 +256,23 @@ Events.on_marked_for_upgrade((e) => luaEntityMarkedForUpgrade(e.entity, e.player
 interface ToBeFastReplacedEntity extends LuaEntityInfo {
   readonly stage: Stage
 }
+
+interface BplibPasteEntityData {
+  readonly blueprintEntity: BlueprintEntity
+  readonly worldPosition: MapPosition
+}
+
+interface BplibPasteData {
+  readonly stage: Stage
+  readonly playerIndex: PlayerIndex
+  readonly surface: LuaSurface
+  readonly entities: readonly BplibPasteEntityData[]
+  readonly allowPasteUpgrades: boolean
+  readonly flipVertical: boolean
+  readonly flipHorizontal: boolean
+  readonly direction: defines.direction
+}
+
 // in global, so no desync in case of bugs
 let state: {
   lastPreBuild?: {
@@ -271,11 +290,13 @@ let state: {
     knownLuaEntities: PRecord<number, LuaEntity>
     needsManualConnections: number[]
     originalNumEntities: number
-    allowPasteUpgrades: boolean
+    allowUpgrades: boolean
     flipVertical: boolean
     flipHorizontal: boolean
     direction: defines.direction
   }
+
+  pendingBplibPaste?: BplibPasteData
 
   accumulatedUndoActions?: UndoAction[]
 }
@@ -324,6 +345,60 @@ function setToBeFastReplaced(entity: LuaEntity, stage: Stage): void {
 
   clearToBeFastReplaced()
   state.toBeFastReplaced = newValue
+}
+
+const BplibPasteEvent = DelayedEvent<nil>("bplibPaste", () => {
+  flushPendingBplibPaste()
+})
+
+function flushPendingBplibPaste(): void {
+  const data = state.pendingBplibPaste
+  if (!data) return
+  state.pendingBplibPaste = nil
+
+  processPendingBplibPaste(data)
+}
+
+function processPendingBplibPaste(data: BplibPasteData): void {
+  const { stage, playerIndex, surface, entities, allowPasteUpgrades, flipVertical, flipHorizontal, direction } = data
+
+  for (const entityData of entities) {
+    const { blueprintEntity, worldPosition } = entityData
+
+    const rawDirection = blueprintEntity.direction ?? 0
+    const rotatedDirection = ((rawDirection + direction) % 16) as defines.direction
+    const cardinalDirection = floorToCardinalDirection(rotatedDirection)
+
+    const entityDir = calculateTransformedDirection(blueprintEntity, cardinalDirection, flipVertical != flipHorizontal)
+
+    const { entity: luaEntity } = findPastedEntity({
+      surface,
+      position: worldPosition,
+      blueprintEntity,
+      expectedDirection: entityDir,
+      allowUpgrades: allowPasteUpgrades,
+    })
+
+    if (!luaEntity) continue
+
+    const projectEntity = stage.actions.onEntityPossiblyUpdated(
+      luaEntity,
+      stage.stageNumber,
+      nil,
+      playerIndex,
+      blueprintEntity.tags?.bp100 as StageInfoExport | nil,
+      blueprintEntity.items,
+    )
+
+    let worldEntity: LuaEntity | nil = luaEntity
+    if (!luaEntity.valid && projectEntity) {
+      worldEntity = projectEntity.getWorldEntity(stage.stageNumber)
+    }
+
+    if (worldEntity?.valid) {
+      stage.actions.onWiresPossiblyUpdated(worldEntity, stage.stageNumber, playerIndex)
+    }
+  }
 }
 
 Events.on_pre_build((e) => {
@@ -463,6 +538,9 @@ Events.on_built_entity((e) => {
   const currentBlueprintPaste = state.currentBlueprintPaste
   if (currentBlueprintPaste) {
     if (innerName == Prototypes.EntityMarker) onEntityMarkerBuilt(e, entity)
+    return
+  }
+  if (state.pendingBplibPaste) {
     return
   }
   // just in case
@@ -610,6 +688,52 @@ function revertPreparedBlueprint(stack: LuaItemStack): void {
   stack.set_blueprint_entities(entities)
 }
 
+function onPreBlueprintPastedBplib(player: LuaPlayer, stage: Stage, event: OnPreBuildEvent): void {
+  flushPendingBplibPaste()
+
+  const bpBuild = BlueprintBuild.new(event)
+  if (!bpBuild) {
+    player.print([L_Interaction.BlueprintNotHandled])
+    return
+  }
+
+  const blueprintEntities = bpBuild.get_entities()
+  if (!blueprintEntities || blueprintEntities.length == 0) {
+    return
+  }
+
+  const positionMap = bpBuild.map_blueprint_indices_to_world_positions()
+  if (!positionMap) {
+    return
+  }
+
+  const entities: BplibPasteEntityData[] = []
+  for (const [index, position] of pairs(positionMap)) {
+    const blueprintEntity = blueprintEntities[index - 1]
+    if (!blueprintEntity) continue
+
+    entities.push({
+      blueprintEntity,
+      worldPosition: position,
+    })
+  }
+
+  if (entities.length == 0) return
+
+  state.pendingBplibPaste = {
+    stage,
+    playerIndex: player.index,
+    surface: bpBuild.surface,
+    entities,
+    allowPasteUpgrades: event.build_mode == defines.build_mode.superforced,
+    flipVertical: event.flip_vertical ?? false,
+    flipHorizontal: event.flip_horizontal ?? false,
+    direction: event.direction,
+  }
+
+  BplibPasteEvent(nil)
+}
+
 function onPreBlueprintPasted(player: LuaPlayer, stage: Stage | nil, event: OnPreBuildEvent): void {
   if (!stage) {
     tryFixBlueprint(player)
@@ -618,6 +742,15 @@ function onPreBlueprintPasted(player: LuaPlayer, stage: Stage | nil, event: OnPr
   if (blueprint_settings_pasted_event_id) {
     return // use new method
   }
+
+  flushPendingBplibPaste()
+
+  const useBplib = !!player.mod_settings[Settings.UseBplibForBlueprintPaste]?.value
+
+  if (useBplib) {
+    return onPreBlueprintPastedBplib(player, stage, event)
+  }
+
   const blueprint = getInnerBlueprint(player.cursor_stack)
   if (!blueprint) {
     player.print([L_Interaction.BlueprintNotHandled])
@@ -631,7 +764,7 @@ function onPreBlueprintPasted(player: LuaPlayer, stage: Stage | nil, event: OnPr
       knownLuaEntities: {},
       needsManualConnections: [],
       originalNumEntities: numEntities,
-      allowPasteUpgrades: event.build_mode == defines.build_mode.superforced,
+      allowUpgrades: event.build_mode == defines.build_mode.superforced,
       flipVertical: event.flip_vertical ?? false,
       flipHorizontal: event.flip_horizontal ?? false,
       direction: event.direction,
@@ -683,32 +816,17 @@ OnPrototypeInfoLoaded.addListener((e) => {
   mayHaveModdedGui = e.mayHaveModdedGui
 })
 
-function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags: MarkerTags): void {
-  const referencedName = tags.referencedName
-  if (!referencedName) return
-
-  const bpState = state.currentBlueprintPaste!
-  const allowPasteUpgrades = bpState.allowPasteUpgrades
-  const searchNames = allowPasteUpgrades ? getCompatibleNames(referencedName) : referencedName
-  if (searchNames == nil) return
-
-  const luaEntities = entity.surface.find_entities_filtered({
-    position: entity.position,
-    radius: 0,
-    name: searchNames,
-  })
-  if (isEmpty(luaEntities)) {
-    return
-  }
-
-  const entityId = tags.referencedLuaIndex
-  const value = bpState.entities[entityId - 1]
-
-  let entityDir = entity.direction
-
+function calculateTransformedDirection(
+  blueprintEntity: BlueprintEntity,
+  blueprintDirection: defines.direction,
+  isFlipped: boolean,
+): defines.direction {
+  const value = blueprintEntity
   const valueName = value.name
   const type = nameToType.get(valueName)!
-  const isFlipped = bpState.flipVertical != bpState.flipHorizontal
+
+  let entityDir = blueprintDirection
+
   if (type == "storage-tank") {
     if (twoDirectionTanks.has(valueName)) {
       entityDir = (entityDir + (isFlipped ? 4 : 0)) % 8
@@ -723,32 +841,87 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     }
   }
 
-  let luaEntity = luaEntities.find((e) => !e.supports_direction || e.direction == entityDir)
+  return entityDir
+}
+
+interface FindPastedEntityParams {
+  surface: LuaSurface
+  position: MapPosition
+  blueprintEntity: BlueprintEntity
+  expectedDirection: defines.direction
+  allowUpgrades: boolean
+}
+
+interface FindPastedEntityResult {
+  entity: LuaEntity | nil
+  wasUpgraded: boolean
+}
+
+function findPastedEntity(params: FindPastedEntityParams): FindPastedEntityResult {
+  const { surface, position, blueprintEntity, expectedDirection, allowUpgrades } = params
+  const referencedName = blueprintEntity.name
+  const searchNames = allowUpgrades ? getCompatibleNames(referencedName) : referencedName
+
+  if (searchNames == nil) return { entity: nil, wasUpgraded: false }
+
+  const luaEntities = surface.find_entities_filtered({
+    position,
+    radius: 0,
+    name: searchNames,
+  })
+
+  if (isEmpty(luaEntities)) return { entity: nil, wasUpgraded: false }
+
+  const type = nameToType.get(referencedName)!
+  let luaEntity = luaEntities.find((e) => !e.supports_direction || e.direction == expectedDirection)
+
   if (type == "underground-belt") {
-    const valueType = (value as UndergroundBeltBlueprintEntity).type ?? "input"
+    const valueType = (blueprintEntity as UndergroundBeltBlueprintEntity).type ?? "input"
     if (luaEntity) {
-      // make sure is also correct belt_to_ground_type, else would match the opposite direction
-      if (luaEntity.belt_to_ground_type != valueType) return
+      if (luaEntity.belt_to_ground_type != valueType) return { entity: nil, wasUpgraded: false }
     } else {
-      // entity was not found, check for the opposite type and direction
-      entityDir = oppositedirection(entityDir)
-      luaEntity = luaEntities.find((e) => e.direction == entityDir && e.belt_to_ground_type != valueType)
+      const oppositeDir = oppositedirection(expectedDirection)
+      luaEntity = luaEntities.find((e) => e.direction == oppositeDir && e.belt_to_ground_type != valueType)
     }
-    if (!luaEntity) return
-  } else if (!luaEntity) {
-    // slower path, check for other directions
+  }
+
+  if (!luaEntity) {
     const pasteRotatableType = getPrototypeRotationType(referencedName)
-    if (pasteRotatableType == nil) return
     if (pasteRotatableType == RotationType.AnyDirection) {
       luaEntity = luaEntities[0]
     } else if (pasteRotatableType == RotationType.Flippable) {
-      const oppositeDir = oppositedirection(entityDir)
+      const oppositeDir = oppositedirection(expectedDirection)
       luaEntity = luaEntities.find((e) => e.direction == oppositeDir)
-    } else {
-      assertNever(pasteRotatableType)
     }
-    if (!luaEntity) return
   }
+
+  const wasUpgraded = luaEntity != nil && luaEntity.name != referencedName
+  return { entity: luaEntity, wasUpgraded }
+}
+
+function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags: MarkerTags): void {
+  const referencedName = tags.referencedName
+  if (!referencedName) return
+
+  const bpState = state.currentBlueprintPaste!
+  const entityId = tags.referencedLuaIndex
+  const value = bpState.entities[entityId - 1]
+
+  const entityDir = calculateTransformedDirection(
+    value,
+    entity.direction,
+    bpState.flipVertical != bpState.flipHorizontal,
+  )
+
+  let { entity: luaEntity } = findPastedEntity({
+    surface: entity.surface,
+    position: entity.position,
+    blueprintEntity: value,
+    expectedDirection: entityDir,
+    allowUpgrades: bpState.allowUpgrades,
+  })
+
+  if (!luaEntity) return
 
   const stage = bpState.stage
   const projectEntity = stage.actions.onEntityPossiblyUpdated(
@@ -769,7 +942,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
         if (!luaEntity) return
 
         bpState.needsManualConnections.push(entityId)
-      } else if (luaEntity.type == "transport-belt" || allowPasteUpgrades) {
+      } else if (luaEntity.type == "transport-belt" || bpState.allowUpgrades) {
         // factorio bug? transport belts don't save circuit connections immediately when pasted
         bpState.needsManualConnections.push(entityId)
       } else {

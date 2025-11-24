@@ -79,7 +79,7 @@ declare module "__bplib__/blueprint" {
   }
 
   export interface BlueprintBuildConstructor {
-    new: (this: void, event: OnPreBuildEvent) => BlueprintBuild | undefined
+    new: (event: OnPreBuildEvent) => BlueprintBuild | undefined
   }
 
   export const BlueprintSetup: BlueprintSetupConstructor

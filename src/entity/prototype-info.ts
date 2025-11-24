@@ -246,10 +246,10 @@ export function areUpgradeableTypes(a: string, b: string): boolean {
   return aCategory == nameToCategory.get(b)
 }
 
-export function getCompatibleNames(entityName: string): readonly string[] | nil {
+export function getCompatibleNames(entityName: string): readonly string[] {
   const category = nameToCategory.get(entityName)
-  if (category == nil) return
-  return categories.get(category)
+  if (category == nil) return [entityName]
+  return categories.get(category) ?? [entityName]
 }
 
 /** For straight rails, paste rotation only applies to non-diagonal rails. */

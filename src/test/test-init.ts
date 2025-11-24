@@ -78,6 +78,7 @@ if ("factorio-test" in script.active_mods) {
       }
       player.get_main_inventory()?.clear()
       player.mod_settings[Settings.DeleteAtNextStage] = { value: false }
+      player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: false }
     }
     for (const [, surface] of game.surfaces) {
       if (surface.index != 1) game.delete_surface(surface)
@@ -114,7 +115,7 @@ if ("factorio-test" in script.active_mods) {
         status?: "passed" | "failed" | "todo"
         skipped: number
       }
-      const expectedSkipped = 1
+      const expectedSkipped = 3
       if (result.status == "passed" && result.skipped == expectedSkipped) {
         game.surfaces[1].clear()
         const player = game.players[1]

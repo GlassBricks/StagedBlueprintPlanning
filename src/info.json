@@ -37,6 +37,7 @@
   },
   "dependencies": [
     "base >= 2.0.64",
+    "bplib >= 1.1.0",
     "? bobinserters >= 1.0.0",
     "? boblogistics >= 1.0.0",
     "? EditorExtensions >= 2.0.0"
