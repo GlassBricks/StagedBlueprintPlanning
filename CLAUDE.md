@@ -22,6 +22,8 @@ npm run watch             # Watch mode for development
 npm run test              # Run all tests via factorio-test. Runs build as part of pre-test, no need to build first
 ```
 
+Grep inside factorio-test-data-dir/factorio-current.log for all log statements, including debugPrint statements, of last test run (not just test summary).
+
 ### Code Quality
 
 ```bash

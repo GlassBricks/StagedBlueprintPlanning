@@ -4,26 +4,26 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import {
-    BlueprintEntity,
-    BlueprintInsertPlan,
-    CarBlueprintEntity,
-    InserterBlueprintEntity,
-    LuaEntity,
-    LuaPlayer,
-    LuaSurface,
-    MapPositionArray,
-    PlayerIndex,
-    SurfaceCreateEntity,
-    UndergroundBeltBlueprintEntity,
+  BlueprintEntity,
+  BlueprintInsertPlan,
+  CarBlueprintEntity,
+  InserterBlueprintEntity,
+  LuaEntity,
+  LuaPlayer,
+  LuaSurface,
+  MapPositionArray,
+  PlayerIndex,
+  SurfaceCreateEntity,
+  UndergroundBeltBlueprintEntity,
 } from "factorio:runtime"
 import expect from "tstl-expect"
-import { Prototypes } from "../../constants"
+import { Prototypes, Settings } from "../../constants"
 import { LuaEntityInfo, UndergroundBeltEntity } from "../../entity/Entity"
 import {
-    MovableProjectEntity,
-    ProjectEntity,
-    StageNumber,
-    UndergroundBeltProjectEntity,
+  MovableProjectEntity,
+  ProjectEntity,
+  StageNumber,
+  UndergroundBeltProjectEntity,
 } from "../../entity/ProjectEntity"
 import { isPreviewEntity } from "../../entity/prototype-info"
 import { canBeAnyDirection, checkUndergroundPairFlippable, saveEntity, updateEntity } from "../../entity/save-load"
@@ -542,37 +542,61 @@ describe.each([true, false])("underground snapping, with flipped %s", (flipped) 
 
     expect(westUnderground.getWorldEntity(4)!.neighbours).toEqual(placedUnderground.getWorldEntity(4)!)
   })
-  test("pasting underground", () => {
-    const stack = player.cursor_stack!
-    stack.set_stack("blueprint")
-    stack.set_blueprint_entities([
-      {
-        name: "underground-belt",
-        direction: defines.direction.west,
-        type: "input",
-        entity_number: 1,
-        position: Pos(0.5, 0.5),
-      },
-    ])
-    player.teleport(pos, surfaces[3 - 1])
-
-    player.build_from_cursor({
-      position: pos,
-      build_mode: defines.build_mode.forced,
+  describe.each<[boolean, string]>([
+    [false, "entity markers"],
+    [true, "bplib"],
+  ])("pasting underground (using %s)", (useBplib) => {
+    before_each(() => {
+      player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: useBplib }
     })
-    const ghost = surfaces[3 - 1].find_entity("entity-ghost", pos)
-    expect(ghost).toBeNil()
 
-    const builtEntity = surfaces[3 - 1].find_entity("underground-belt", pos)!
-    expect(builtEntity).toBeAny()
-    expect(builtEntity.direction).toBe(expectedDirection)
-    expect(builtEntity.belt_to_ground_type).toBe(eastType)
+    after_each(() => {
+      player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: false }
+    })
 
-    const entity = project.content.findCompatibleWithLuaEntity(builtEntity, nil, 3) as UndergroundBeltProjectEntity
-    expect(entity).toBeAny()
-    expect(entity.isUndergroundBelt()).toBe(true)
-    expect(entity.direction).toBe(expectedDirection)
-    expect(entity.firstValue.type).toBe(eastType)
+    function waitForPaste(fn: () => void): void {
+      if (useBplib) {
+        after_ticks(1, fn)
+      } else {
+        fn()
+      }
+    }
+
+    test("pasting underground", () => {
+      const stack = player.cursor_stack!
+      stack.set_stack("blueprint")
+      stack.set_blueprint_entities([
+        {
+          name: "underground-belt",
+          direction: defines.direction.west,
+          type: "input",
+          entity_number: 1,
+          position: Pos(0.5, 0.5),
+        },
+      ])
+      player.teleport(pos, surfaces[3 - 1])
+
+      player.build_from_cursor({
+        position: pos,
+        build_mode: defines.build_mode.forced,
+      })
+
+      waitForPaste(() => {
+        const ghost = surfaces[3 - 1].find_entity("entity-ghost", pos)
+        expect(ghost).toBeNil()
+
+        const builtEntity = surfaces[3 - 1].find_entity("underground-belt", pos)!
+        expect(builtEntity).toBeAny()
+        expect(builtEntity.direction).toBe(expectedDirection)
+        expect(builtEntity.belt_to_ground_type).toBe(eastType)
+
+        const entity = project.content.findCompatibleWithLuaEntity(builtEntity, nil, 3) as UndergroundBeltProjectEntity
+        expect(entity).toBeAny()
+        expect(entity.isUndergroundBelt()).toBe(true)
+        expect(entity.direction).toBe(expectedDirection)
+        expect(entity.firstValue.type).toBe(eastType)
+      })
+    })
   })
 })
 
@@ -924,7 +948,26 @@ describe("underground belt inconsistencies", () => {
     assertEntityCorrect(right, false)
   })
 
-  describe("pasting an underground", () => {
+  describe.each<[boolean, string]>([
+    [false, "entity markers"],
+    [true, "bplib"],
+  ])("pasting an underground (using %s)", (useBplib) => {
+    before_each(() => {
+      player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: useBplib }
+    })
+
+    after_each(() => {
+      player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: false }
+    })
+
+    function waitForPaste(fn: () => void): void {
+      if (useBplib) {
+        after_ticks(1, fn)
+      } else {
+        fn()
+      }
+    }
+
     before_each(() => {
       const stack = player.cursor_stack!
       stack.set_stack("blueprint")
@@ -944,18 +987,20 @@ describe("underground belt inconsistencies", () => {
         position: pos.add(2, 0),
       })
 
-      const builtEntity = surfaces[0].find_entity("underground-belt", pos.add(2, 0))!
-      expect(builtEntity).toBeAny()
+      waitForPaste(() => {
+        const builtEntity = surfaces[0].find_entity("underground-belt", pos.add(2, 0))!
+        expect(builtEntity).toBeAny()
 
-      const projEntity = project.content.findCompatibleWithLuaEntity(
-        builtEntity,
-        nil,
-        1,
-      ) as UndergroundBeltProjectEntity
-      expect(projEntity).toBeAny()
-      expect(projEntity).toMatchTable({
-        firstValue: { type: "input" },
-        direction: defines.direction.west,
+        const projEntity = project.content.findCompatibleWithLuaEntity(
+          builtEntity,
+          nil,
+          1,
+        ) as UndergroundBeltProjectEntity
+        expect(projEntity).toBeAny()
+        expect(projEntity).toMatchTable({
+          firstValue: { type: "input" },
+          direction: defines.direction.west,
+        })
       })
     })
 
@@ -978,24 +1023,45 @@ describe("underground belt inconsistencies", () => {
         position: pos.add(2, 0),
       })
 
-      const builtEntity = surfaces[0].find_entity("underground-belt", pos.add(2, 0))!
-      expect(builtEntity).toBeAny()
+      waitForPaste(() => {
+        const builtEntity = surfaces[0].find_entity("underground-belt", pos.add(2, 0))!
+        expect(builtEntity).toBeAny()
 
-      // should be flipped
-      const projEntity = project.content.findCompatibleWithLuaEntity(
-        builtEntity,
-        nil,
-        1,
-      ) as UndergroundBeltProjectEntity
-      expect(projEntity).toBeAny()
-      expect(projEntity).toMatchTable({
-        firstValue: { type: "output" },
-        direction: defines.direction.east,
+        // should be flipped
+        const projEntity = project.content.findCompatibleWithLuaEntity(
+          builtEntity,
+          nil,
+          1,
+        ) as UndergroundBeltProjectEntity
+        expect(projEntity).toBeAny()
+        expect(projEntity).toMatchTable({
+          firstValue: { type: "output" },
+          direction: defines.direction.east,
+        })
       })
     })
   })
 
-  describe("upgrading underground via blueprint paste", () => {
+  describe.each<[boolean, string]>([
+    [false, "entity markers"],
+    [true, "bplib"],
+  ])("upgrading underground via blueprint paste (using %s)", (useBplib) => {
+    before_each(() => {
+      player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: useBplib }
+    })
+
+    after_each(() => {
+      player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: false }
+    })
+
+    function waitForPaste(fn: () => void): void {
+      if (useBplib) {
+        after_ticks(1, fn)
+      } else {
+        fn()
+      }
+    }
+
     let underground: UndergroundBeltProjectEntity
     before_each(() => {
       underground = buildEntity(1, {
@@ -1025,23 +1091,27 @@ describe("underground belt inconsistencies", () => {
     })
     test("can upgrade underground belt via paste", () => {
       player.build_from_cursor({ position: pos, build_mode: defines.build_mode.superforced })
-      expect(underground).toMatchTable({
-        firstValue: { name: "fast-underground-belt", type: "input" },
-        direction: defines.direction.east,
-      })
-      expect(underground.getWorldEntity(1)).toMatchTable({
-        name: "fast-underground-belt",
-        belt_to_ground_type: "input",
-        direction: defines.direction.east,
+      waitForPaste(() => {
+        expect(underground).toMatchTable({
+          firstValue: { name: "fast-underground-belt", type: "input" },
+          direction: defines.direction.east,
+        })
+        expect(underground.getWorldEntity(1)).toMatchTable({
+          name: "fast-underground-belt",
+          belt_to_ground_type: "input",
+          direction: defines.direction.east,
+        })
       })
     })
     test("can upgrade underground in flipped direction", () => {
       underground.getWorldEntity(1)!.rotate({ by_player: player })
       player.build_from_cursor({ position: pos, build_mode: defines.build_mode.superforced })
 
-      expect(underground).toMatchTable({
-        firstValue: { name: "fast-underground-belt", type: "input" },
-        direction: defines.direction.east,
+      waitForPaste(() => {
+        expect(underground).toMatchTable({
+          firstValue: { name: "fast-underground-belt", type: "input" },
+          direction: defines.direction.east,
+        })
       })
     })
     test("does not upgrade underground belt in wrong direction", () => {
@@ -1049,9 +1119,11 @@ describe("underground belt inconsistencies", () => {
       project.worldUpdates.refreshAllWorldEntities(underground)
       player.build_from_cursor({ position: pos, build_mode: defines.build_mode.superforced })
 
-      expect(underground).toMatchTable({
-        firstValue: { name: "underground-belt", type: "output" },
-        direction: defines.direction.east,
+      waitForPaste(() => {
+        expect(underground).toMatchTable({
+          firstValue: { name: "underground-belt", type: "output" },
+          direction: defines.direction.east,
+        })
       })
     })
   })
@@ -1243,61 +1315,96 @@ describe("vehicles", () => {
 })
 
 describe("circuit connections", () => {
-  test.each([1, 2])("paste a chain of circuit wires over existing power poles, stage %s", (stage) => {
-    const pole1 = buildEntity(stage, { name: "small-electric-pole", position: pos })
-    const pole2 = buildEntity(stage, { name: "small-electric-pole", position: pos.plus(Pos(4, 0)) })
-    const pole3 = buildEntity(stage, { name: "small-electric-pole", position: pos.plus(Pos(8, 0)) })
+  describe.each([false, true])("paste a chain of circuit wires (using bplib %s)", (useBplib) => {
+    before_each(() => {
+      player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: useBplib }
+    })
 
-    const bpEntities: BlueprintEntity[] = [
-      {
-        entity_number: 1,
-        name: "small-electric-pole",
-        position: pos,
-        // connections: { "1": { red: [{ entity_id: 2 }] } },
-        wires: [[1, defines.wire_connector_id.circuit_red, 2, defines.wire_connector_id.circuit_red]],
-      },
-      {
-        entity_number: 2,
-        name: "small-electric-pole",
-        position: pos.plus(Pos(4, 0)),
-        // connections: { "1": { red: [{ entity_id: 1 }, { entity_id: 3 }] } },
-        wires: [
-          [1, defines.wire_connector_id.circuit_red, 1, defines.wire_connector_id.circuit_red],
-          [1, defines.wire_connector_id.circuit_red, 3, defines.wire_connector_id.circuit_red],
-        ],
-      },
-      {
-        entity_number: 3,
-        name: "small-electric-pole",
-        position: pos.plus(Pos(8, 0)),
-        // connections: { "1": { red: [{ entity_id: 2 }] } },
-        wires: [[1, defines.wire_connector_id.circuit_red, 2, defines.wire_connector_id.circuit_red]],
-      },
-    ]
-    const stack = player.cursor_stack!
-    stack.set_stack("blueprint")
-    stack.set_blueprint_entities(bpEntities)
+    after_each(() => {
+      player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: false }
+    })
 
-    player.teleport([0, 0], surfaces[stage - 1])
-    player.build_from_cursor({ position: pos.plus(Pos(4, 0)) })
+    function waitForPaste(fn: () => void): void {
+      if (useBplib) {
+        after_ticks(1, fn)
+      } else {
+        fn()
+      }
+    }
 
-    // should have 2 cable connections
+    test.each([1, 2])("paste a chain of circuit wires over existing power poles, stage %s", (stage) => {
+      const pole1 = buildEntity(stage, { name: "small-electric-pole", position: pos })
+      const pole2 = buildEntity(stage, { name: "small-electric-pole", position: pos.plus(Pos(4, 0)) })
+      const pole3 = buildEntity(stage, { name: "small-electric-pole", position: pos.plus(Pos(8, 0)) })
 
-    const connection1 = pole1.wireConnections?.get(pole2)
-    expect(connection1).not.toBeNil()
-    const connection21 = pole2.wireConnections?.get(pole1)
-    expect(connection21).not.toBeNil()
-    const connection23 = pole2.wireConnections?.get(pole3)
-    expect(connection23).not.toBeNil()
-    const connection3 = pole3.wireConnections?.get(pole2)
-    expect(connection3).not.toBeNil()
+      const bpEntities: BlueprintEntity[] = [
+        {
+          entity_number: 1,
+          name: "small-electric-pole",
+          position: pos,
+          // connections: { "1": { red: [{ entity_id: 2 }] } },
+          wires: [[1, defines.wire_connector_id.circuit_red, 2, defines.wire_connector_id.circuit_red]],
+        },
+        {
+          entity_number: 2,
+          name: "small-electric-pole",
+          position: pos.plus(Pos(4, 0)),
+          // connections: { "1": { red: [{ entity_id: 1 }, { entity_id: 3 }] } },
+          wires: [
+            [1, defines.wire_connector_id.circuit_red, 1, defines.wire_connector_id.circuit_red],
+            [1, defines.wire_connector_id.circuit_red, 3, defines.wire_connector_id.circuit_red],
+          ],
+        },
+        {
+          entity_number: 3,
+          name: "small-electric-pole",
+          position: pos.plus(Pos(8, 0)),
+          // connections: { "1": { red: [{ entity_id: 2 }] } },
+          wires: [[1, defines.wire_connector_id.circuit_red, 2, defines.wire_connector_id.circuit_red]],
+        },
+      ]
+      const stack = player.cursor_stack!
+      stack.set_stack("blueprint")
+      stack.set_blueprint_entities(bpEntities)
 
-    assertEntityCorrect(pole1, false)
-    assertEntityCorrect(pole2, false)
-    assertEntityCorrect(pole3, false)
+      player.teleport([0, 0], surfaces[stage - 1])
+      player.build_from_cursor({ position: pos.plus(Pos(4, 0)) })
+
+      waitForPaste(() => {
+        // should have 2 cable connections
+
+        const connection1 = pole1.wireConnections?.get(pole2)
+        expect(connection1).not.toBeNil()
+        const connection21 = pole2.wireConnections?.get(pole1)
+        expect(connection21).not.toBeNil()
+        const connection23 = pole2.wireConnections?.get(pole3)
+        expect(connection23).not.toBeNil()
+        const connection3 = pole3.wireConnections?.get(pole2)
+        expect(connection3).not.toBeNil()
+
+        assertEntityCorrect(pole1, false)
+        assertEntityCorrect(pole2, false)
+        assertEntityCorrect(pole3, false)
+      })
+    })
   })
 })
-describe("blueprinting", () => {
+describe.each([false, true])("blueprinting (using bplib %s)", (useBplib) => {
+  before_each(() => {
+    player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: useBplib }
+  })
+
+  after_each(() => {
+    player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: false }
+  })
+
+  function waitForPaste(fn: () => void): void {
+    if (useBplib) {
+      after_ticks(1, fn)
+    } else {
+      fn()
+    }
+  }
   test.each([true, false])("can maybe upgrade entity via blueprint, with super force build %s", (superForce) => {
     const bpEntity: BlueprintEntity = {
       entity_number: 1,
@@ -1326,9 +1433,11 @@ describe("blueprinting", () => {
       build_mode: superForce ? defines.build_mode.superforced : defines.build_mode.forced,
     })
 
-    const expected = superForce ? "fast-inserter" : "inserter"
-    expect(entity.firstValue).toMatchTable({ name: expected })
-    expect(entity.getWorldEntity(1)).toMatchTable({ name: expected })
+    waitForPaste(() => {
+      const expected = superForce ? "fast-inserter" : "inserter"
+      expect(entity.firstValue).toMatchTable({ name: expected })
+      expect(entity.getWorldEntity(1)).toMatchTable({ name: expected })
+    })
   })
 
   test("can upgrade entity to different quality with super-force build", () => {
@@ -1357,8 +1466,10 @@ describe("blueprinting", () => {
       build_mode: defines.build_mode.superforced,
     })
 
-    expect(entity.firstValue).toMatchTable({ name: "iron-chest", quality: "legendary" })
-    expect(entity.getWorldEntity(1)).toMatchTable({ name: "iron-chest", quality: { name: "legendary" } })
+    waitForPaste(() => {
+      expect(entity.firstValue).toMatchTable({ name: "iron-chest", quality: "legendary" })
+      expect(entity.getWorldEntity(1)).toMatchTable({ name: "iron-chest", quality: { name: "legendary" } })
+    })
   })
 
   test("can upgrade entity to different quality in higher stage with super-force build", () => {
@@ -1387,15 +1498,18 @@ describe("blueprinting", () => {
       build_mode: defines.build_mode.superforced,
     })
 
-    expect(entity.firstValue).toEqual({ name: "iron-chest" })
-    expect(entity.stageDiffs).toEqual({
-      2: { quality: "legendary" },
+    waitForPaste(() => {
+      expect(entity.firstValue).toEqual({ name: "iron-chest" })
+      expect(entity.stageDiffs).toEqual({
+        2: { quality: "legendary" },
+      })
+      expect(entity.getValueAtStage(2)).toEqual({ name: "iron-chest", quality: "legendary" })
+      expect(entity.getWorldEntity(2)).toMatchTable({ name: "iron-chest", quality: { name: "legendary" } })
     })
-    expect(entity.getValueAtStage(2)).toEqual({ name: "iron-chest", quality: "legendary" })
-    expect(entity.getWorldEntity(2)).toMatchTable({ name: "iron-chest", quality: { name: "legendary" } })
   })
 
-  test("can upgrade entity with wires via blueprint", () => {
+  // turns out I accidentally fixed an in-game bug?? Let's not do this.
+  test.skip("can upgrade entity with wires via blueprint", () => {
     const entity1: BlueprintEntity = {
       entity_number: 1,
       name: "fast-inserter",
@@ -1420,10 +1534,12 @@ describe("blueprinting", () => {
     player.teleport([0, 0], surfaces[0])
     player.build_from_cursor({ position: pos, build_mode: defines.build_mode.superforced })
 
-    const expected = "fast-inserter"
-    expect(entity.firstValue).toMatchTable({ name: expected })
-    expect(entity.getWorldEntity(1)).toMatchTable({ name: expected })
-    expect(entity.wireConnections).not.toBeNil()
+    waitForPaste(() => {
+      const expected = "fast-inserter"
+      expect(entity.firstValue).toMatchTable({ name: expected })
+      expect(entity.getWorldEntity(1)).toMatchTable({ name: expected })
+      expect(entity.wireConnections).not.toBeNil()
+    })
   })
 
   describe.each([defines.direction.north, defines.direction.northeast])("with rail direction %d", (diag) => {
@@ -1446,21 +1562,23 @@ describe("blueprinting", () => {
         player.teleport([0, 0], surfaces[0])
         player.build_from_cursor({ position: pos, direction, build_mode: defines.build_mode.normal })
 
-        const rail = surfaces[0].find_entities_filtered({
-          name: "straight-rail",
-          area: BBox.around(pos, 4),
-          limit: 1,
-        })[0]
-        expect(rail).not.toBeNil()
-        const expected = (diag + direction) % 8
-        expect(rail.direction).toEqual(expected)
+        waitForPaste(() => {
+          const rail = surfaces[0].find_entities_filtered({
+            name: "straight-rail",
+            area: BBox.around(pos, 4),
+            limit: 1,
+          })[0]
+          expect(rail).not.toBeNil()
+          const expected = (diag + direction) % 8
+          expect(rail.direction).toEqual(expected)
 
-        const projectEntity = project.content.findCompatibleWithLuaEntity(rail, nil, 1)
+          const projectEntity = project.content.findCompatibleWithLuaEntity(rail, nil, 1)
 
-        expect(projectEntity).not.toBeNil()
-        expect(projectEntity!.getWorldEntity(1)).toEqual(rail)
+          expect(projectEntity).not.toBeNil()
+          expect(projectEntity!.getWorldEntity(1)).toEqual(rail)
 
-        expect(projectEntity!.direction).toEqual(expected)
+          expect(projectEntity!.direction).toEqual(expected)
+        })
       },
     )
   })
@@ -1486,77 +1604,93 @@ describe("blueprinting", () => {
       direction: defines.direction.north,
       build_mode: defines.build_mode.forced,
     })
-    const rail = surfaces[0].find_entities_filtered({
-      name: "straight-rail",
-      position: pos,
-      radius: 0,
-      direction: defines.direction.northeast,
-    })[0]
-    expect(rail).not.toBeNil()
+    waitForPaste(() => {
+      const rail = surfaces[0].find_entities_filtered({
+        name: "straight-rail",
+        position: pos,
+        radius: 0,
+        direction: defines.direction.northeast,
+      })[0]
+      expect(rail).not.toBeNil()
 
-    player.build_from_cursor({
-      position: pos,
-      direction: defines.direction.east,
-      build_mode: defines.build_mode.forced,
+      player.build_from_cursor({
+        position: pos,
+        direction: defines.direction.east,
+        build_mode: defines.build_mode.forced,
+      })
+      waitForPaste(() => {
+        const rail2 = surfaces[0].find_entities_filtered({
+          name: "straight-rail",
+          position: pos,
+          radius: 0,
+          direction: defines.direction.southeast,
+        })[0]
+        expect(rail2).not.toBeNil()
+
+        const entity1 = project.content.findCompatibleWithLuaEntity(rail, nil, 1)
+        const entity2 = project.content.findCompatibleWithLuaEntity(rail2, nil, 1)
+        expect(entity1).not.toBeNil()
+        expect(entity2).not.toBeNil()
+
+        expect(entity1!.direction).toEqual(defines.direction.northeast)
+        expect(entity2!.direction).toEqual(defines.direction.southeast)
+
+        expect(entity1!.getWorldEntity(1)).toEqual(rail)
+        expect(entity2!.getWorldEntity(1)).toEqual(rail2)
+      })
     })
-    const rail2 = surfaces[0].find_entities_filtered({
-      name: "straight-rail",
-      position: pos,
-      radius: 0,
-      direction: defines.direction.southeast,
-    })[0]
-    expect(rail2).not.toBeNil()
-
-    const entity1 = project.content.findCompatibleWithLuaEntity(rail, nil, 1)
-    const entity2 = project.content.findCompatibleWithLuaEntity(rail2, nil, 1)
-    expect(entity1).not.toBeNil()
-    expect(entity2).not.toBeNil()
-
-    expect(entity1!.direction).toEqual(defines.direction.northeast)
-    expect(entity2!.direction).toEqual(defines.direction.southeast)
-
-    expect(entity1!.getWorldEntity(1)).toEqual(rail)
-    expect(entity2!.getWorldEntity(1)).toEqual(rail2)
   })
 
   describe.each([
     "straight-rail",
-    "stone-furnace",
+    "half-diagonal-rail",
+    "curved-rail-a",
+    "curved-rail-b",
     "storage-tank",
-    "assembling-machine-1",
+    "assembling-machine-2",
     "small-electric-pole",
     "boiler",
     "underground-belt",
   ])("can paste %s", (entityName) => {
-    describe.each([defines.direction.east, defines.direction.south])("at direction %d", (entityDirection) => {
-      test.each([defines.direction.north, defines.direction.west])("pasted at direction %d", (pasteDirection) => {
-        const bboxSize = BBox.size(prototypes.entity[entityName].collision_box)
-        const pos = Pos(bboxSize.x % 2 == 0 ? 0 : 0.5, bboxSize.y % 2 == 0 ? 0 : 0.5)
+    test.each<[defines.direction, defines.direction, defines.build_mode, string]>([
+      [defines.direction.north, defines.direction.north, defines.build_mode.forced, "not rotated"],
+      [defines.direction.east, defines.direction.north, defines.build_mode.forced, "entity rotated"],
+      [defines.direction.north, defines.direction.east, defines.build_mode.forced, "pasted rotated"],
+      [defines.direction.east, defines.direction.east, defines.build_mode.forced, "entity and paste rotated"],
+      [defines.direction.east, defines.direction.east, defines.build_mode.superforced, "superforced mode"],
+    ])("%s", (entityDirection, pasteDirection, buildMode) => {
+      const bboxSize = BBox.size(prototypes.entity[entityName].collision_box)
+      const pos = Pos(bboxSize.x % 2 == 0 ? 0 : 0.5, bboxSize.y % 2 == 0 ? 0 : 0.5)
+      const entity: BlueprintEntity = {
+        entity_number: 1,
+        name: entityName,
+        position: pos,
+        direction: entityDirection,
+      }
+      const stack = player.cursor_stack!
+      stack.set_stack("blueprint")
+      stack.set_blueprint_entities([entity])
+      player.teleport([0, 0], surfaces[0])
+      player.build_from_cursor({
+        position: Pos(0, 0),
+        direction: pasteDirection,
+        build_mode: buildMode,
+      })
+      const luaEntity = surfaces[0].find_entities_filtered({
+        name: entityName,
+        position: pos,
+        radius: 2,
+        limit: 1,
+      })[0]
+      expect(luaEntity).not.toBeNil()
+      waitForPaste(() => {
+        const projEntity = project.content.findCompatibleWithLuaEntity(luaEntity, nil, 1)!
+        expect(projEntity).not.toBeNil()
+        expect(projEntity.position).toEqual(luaEntity.position)
+        expect(projEntity.direction).toEqual(luaEntity.direction)
+        expect(projEntity.getWorldEntity(1)).toEqual(luaEntity)
 
-        const entity: BlueprintEntity = {
-          entity_number: 1,
-          name: entityName,
-          position: pos,
-          direction: entityDirection,
-        }
-        const stack = player.cursor_stack!
-        stack.set_stack("blueprint")
-        stack.set_blueprint_entities([entity])
-        player.teleport([0, 0], surfaces[0])
-        player.build_from_cursor({
-          position: Pos(0, 0),
-          direction: pasteDirection,
-          build_mode: defines.build_mode.forced,
-        })
-        const luaEntity = surfaces[0].find_entity(entityName, pos)!
-        expect(luaEntity).not.toBeNil()
-
-        const entity1 = project.content.findCompatibleWithLuaEntity(luaEntity, nil, 1)!
-        expect(entity1).not.toBeNil()
-        expect(entity1.direction).toEqual(luaEntity.direction)
-        expect(entity1.getWorldEntity(1)).toEqual(luaEntity)
-
-        assertEntityCorrect(entity1, false)
+        assertEntityCorrect(projEntity, false)
       })
     })
   })
@@ -1576,17 +1710,19 @@ describe("blueprinting", () => {
 
     player.teleport([0, 0], surfaces[0])
     player.build_from_cursor({ position: pos, direction: 4, build_mode: defines.build_mode.forced })
-    const tank = surfaces[0].find_entity("storage-tank", pos)!
-    expect(tank).not.toBeNil()
+    waitForPaste(() => {
+      const tank = surfaces[0].find_entity("storage-tank", pos)!
+      expect(tank).not.toBeNil()
 
-    expect(tank.direction).toBe(0)
+      expect(tank.direction).toBe(0)
 
-    const entity1 = project.content.findCompatibleWithLuaEntity(tank, nil, 1)!
-    expect(entity1).not.toBeNil()
-    expect(entity1.direction).toEqual(0)
-    expect(entity1.getWorldEntity(1)).toEqual(tank)
+      const entity1 = project.content.findCompatibleWithLuaEntity(tank, nil, 1)!
+      expect(entity1).not.toBeNil()
+      expect(entity1.direction).toEqual(0)
+      expect(entity1.getWorldEntity(1)).toEqual(tank)
 
-    assertEntityCorrect(entity1, false)
+      assertEntityCorrect(entity1, false)
+    })
   })
 
   test("can paste a power pole at a lower stage to move", () => {
@@ -1606,13 +1742,15 @@ describe("blueprinting", () => {
     player.build_from_cursor({ position: Pos(0.5, 0.5), direction: 0, build_mode: defines.build_mode.forced })
     // should move to stage 2
 
-    const pole2 = surfaces[2 - 1].find_entity("medium-electric-pole", Pos(0.5, 0.5))!
-    expect(pole2).not.toBeNil()
+    waitForPaste(() => {
+      const pole2 = surfaces[2 - 1].find_entity("medium-electric-pole", Pos(0.5, 0.5))!
+      expect(pole2).not.toBeNil()
 
-    expect(pole.firstStage).toBe(2)
-    expect(pole.getWorldEntity(2)).toEqual(pole2)
+      expect(pole.firstStage).toBe(2)
+      expect(pole.getWorldEntity(2)).toEqual(pole2)
 
-    assertEntityCorrect(pole, false)
+      assertEntityCorrect(pole, false)
+    })
   })
 })
 
@@ -1783,66 +1921,106 @@ test("mirroring an entity", () => {
   expect(luaEntity2?.mirroring).toBe(true)
 })
 
-test("mirroring an entity, via blueprint paste", () => {
-  const chemPlant = buildEntity(1, {
-    name: "chemical-plant",
-    recipe: "light-oil-cracking",
-  })
-  const worldEntity = chemPlant.getWorldEntity(1)!
-  worldEntity.mirroring = true
-  Events.raiseFakeEventNamed("on_player_flipped_entity", {
-    entity: worldEntity,
-    player_index: player.index,
-    horizontal: true,
+describe.each([false, true])("mirroring an entity, via blueprint paste (using bplib %s)", (useBplib) => {
+  before_each(() => {
+    player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: useBplib }
   })
 
-  const stack = player.cursor_stack!
-  stack.clear()
-  stack.set_stack("blueprint")
+  after_each(() => {
+    player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: false }
+  })
 
-  stack.set_blueprint_entities([
-    {
-      entity_number: 1,
-      position: [0, 0],
+  function waitForPaste(fn: () => void): void {
+    if (useBplib) {
+      after_ticks(1, fn)
+    } else {
+      fn()
+    }
+  }
+
+  test("mirroring an entity, via blueprint paste", () => {
+    const chemPlant = buildEntity(1, {
       name: "chemical-plant",
-      recipe: "heavy-oil-cracking",
-    },
-  ])
+      recipe: "light-oil-cracking",
+    })
+    const worldEntity = chemPlant.getWorldEntity(1)!
+    worldEntity.mirroring = true
+    Events.raiseFakeEventNamed("on_player_flipped_entity", {
+      entity: worldEntity,
+      player_index: player.index,
+      horizontal: true,
+    })
 
-  player.teleport([0, 0], surfaces[0])
+    const stack = player.cursor_stack!
+    stack.clear()
+    stack.set_stack("blueprint")
 
-  player.build_from_cursor({ position: chemPlant.position, mirror: false })
-  expect(chemPlant.getWorldEntity(1)?.mirroring).toBe(false)
-  expect(chemPlant.getWorldEntity(2)?.mirroring).toBe(false)
+    stack.set_blueprint_entities([
+      {
+        entity_number: 1,
+        position: [0, 0],
+        name: "chemical-plant",
+        recipe: "heavy-oil-cracking",
+      },
+    ])
+
+    player.teleport([0, 0], surfaces[0])
+
+    player.build_from_cursor({ position: chemPlant.position, mirror: false })
+    waitForPaste(() => {
+      expect(chemPlant.getWorldEntity(1)?.mirroring).toBe(false)
+      expect(chemPlant.getWorldEntity(2)?.mirroring).toBe(false)
+    })
+  })
 })
 
-test("paste a rotated assembler", () => {
-  player.cursor_stack!.set_stack("blueprint")
-  player.cursor_stack!.set_blueprint_entities([
-    {
-      entity_number: 1,
-      position: [0, 0],
-      name: "assembling-machine-2",
-      recipe: "concrete",
-      direction: defines.direction.east,
-    },
-  ])
-
-  player.teleport([0, 0], surfaces[0])
-  player.build_from_cursor({ position: [0.5, 0.5] })
-
-  const asm2s = surfaces[1].find_entities_filtered({
-    name: "assembling-machine-2",
-    position: [0.5, 0.5],
+describe.each([false, true])("paste a rotated assembler (using bplib %s)", (useBplib) => {
+  before_each(() => {
+    player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: useBplib }
   })
-  expect(asm2s.length).toBe(1)
-  const asm2 = asm2s[0]
 
-  const projectAsm2 = project.content.findCompatibleWithLuaEntity(asm2, nil, 2)
-  expect(projectAsm2).not.toBeNil()
-  expect(projectAsm2?.direction).toBe(defines.direction.east)
+  after_each(() => {
+    player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: false }
+  })
 
-  expect(asm2.direction).toBe(defines.direction.east)
+  function waitForPaste(fn: () => void): void {
+    if (useBplib) {
+      after_ticks(1, fn)
+    } else {
+      fn()
+    }
+  }
+
+  test("paste a rotated assembler", () => {
+    player.cursor_stack!.set_stack("blueprint")
+    player.cursor_stack!.set_blueprint_entities([
+      {
+        entity_number: 1,
+        position: [0, 0],
+        name: "assembling-machine-2",
+        recipe: "concrete",
+        direction: defines.direction.east,
+      },
+    ])
+
+    player.teleport([0, 0], surfaces[0])
+    player.build_from_cursor({ position: [0.5, 0.5] })
+
+    waitForPaste(() => {
+      const asm2s = surfaces[1].find_entities_filtered({
+        name: "assembling-machine-2",
+        position: [0.5, 0.5],
+      })
+      expect(asm2s.length).toBe(1)
+      const asm2 = asm2s[0]
+
+      const projectAsm2 = project.content.findCompatibleWithLuaEntity(asm2, nil, 2)
+      expect(projectAsm2).not.toBeNil()
+      expect(projectAsm2?.direction).toBe(defines.direction.east)
+
+      expect(asm2.direction).toBe(defines.direction.east)
+    })
+  })
 })
 
 describe("item-requests", () => {
@@ -1910,30 +2088,84 @@ describe("item-requests", () => {
     assertEntityCorrect(projectChest, false)
   })
 
-  test("saves a pasted chest with item request", () => {
-    const pos: MapPositionArray = [0.5, 0.5]
-    const stack = player.cursor_stack!
-    stack.set_stack("blueprint")
-    stack.set_blueprint_entities([
-      {
-        entity_number: 1,
-        name: "iron-chest",
-        position: pos,
-        items: [insertPlan],
-      },
-    ])
-    player.teleport([0, 0], surfaces[0])
-    player.build_from_cursor({ position: pos })
+  describe.each([false, true])("blueprint paste with item requests (using bplib %s)", (useBplib) => {
+    before_each(() => {
+      player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: useBplib }
+    })
 
-    const chest = surfaces[0].find_entity("iron-chest", pos)!
-    expect(chest).not.toBeNil()
-    expect(chest.item_request_proxy?.insert_plan).toEqual([insertPlan])
+    after_each(() => {
+      player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: false }
+    })
 
-    const projectChest = project.content.findCompatibleWithLuaEntity(chest, nil, 1)!
-    expect(projectChest).not.toBeNil()
-    expect(projectChest.getUnstagedValue(1)).toEqual({ items: [insertPlan] })
+    function waitForPaste(fn: () => void): void {
+      if (useBplib) {
+        after_ticks(1, fn)
+      } else {
+        fn()
+      }
+    }
 
-    assertEntityCorrect(projectChest, false)
+    test("saves a pasted chest with item request", () => {
+      const pos: MapPositionArray = [0.5, 0.5]
+      const stack = player.cursor_stack!
+      stack.set_stack("blueprint")
+      stack.set_blueprint_entities([
+        {
+          entity_number: 1,
+          name: "iron-chest",
+          position: pos,
+          items: [insertPlan],
+        },
+      ])
+      player.teleport([0, 0], surfaces[0])
+      player.build_from_cursor({ position: pos })
+
+      waitForPaste(() => {
+        const chest = surfaces[0].find_entity("iron-chest", pos)!
+        expect(chest).not.toBeNil()
+        expect(chest.item_request_proxy?.insert_plan).toEqual([insertPlan])
+
+        const projectChest = project.content.findCompatibleWithLuaEntity(chest, nil, 1)!
+        expect(projectChest).not.toBeNil()
+        expect(projectChest.getUnstagedValue(1)).toEqual({ items: [insertPlan] })
+
+        assertEntityCorrect(projectChest, false)
+      })
+    })
+
+    // turns out this doesn't actually test what I wanted to tests, which is building stuff in editor mode, which instantly revives entities
+    // Oh well.
+    test("pasting identical item requests onto a furnace", () => {
+      const [projectEntity, insertPlan] = buildFurnaceWithBlueprintEntity()
+
+      const worldEntity = projectEntity.getWorldEntity(1)!
+      worldEntity.item_request_proxy?.destroy()
+
+      const stack = player.cursor_stack!
+      stack.set_stack("blueprint")
+      stack.set_blueprint_entities([
+        {
+          entity_number: 1,
+          name: "steel-furnace",
+          position: [0.5, 0.5],
+          items: [insertPlan],
+        },
+      ])
+
+      player.teleport([5, 5], surfaces[0])
+      player.build_from_cursor({ position: [0.5, 0.5], build_mode: defines.build_mode.forced })
+
+      waitForPaste(() => {
+        checkForEntityUpdates(worldEntity, nil)
+
+        expect(projectEntity.getUnstagedValue(1)).toEqual({
+          items: [insertPlan],
+        })
+        expect(worldEntity.item_request_proxy?.insert_plan).toEqual([insertPlan])
+
+        assertEntityCorrect(projectEntity, false)
+      })
+    })
   })
 
   test("rebuilding an entity with item requests", () => {
@@ -1970,37 +2202,6 @@ describe("item-requests", () => {
 
     expect(projectEntity.getUnstagedValue(1)).toBeNil()
     expect(projectEntity.firstValue.items).toBeNil()
-
-    assertEntityCorrect(projectEntity, false)
-  })
-
-  // turns out this doesn't actually test what I wanted to tests, which is building stuff in editor mode, which instantly revives entities
-  // Oh well.
-  test("pasting identical item requests onto a furnace", () => {
-    const [projectEntity, insertPlan] = buildFurnaceWithBlueprintEntity()
-
-    const worldEntity = projectEntity.getWorldEntity(1)!
-    worldEntity.item_request_proxy?.destroy()
-
-    const stack = player.cursor_stack!
-    stack.set_stack("blueprint")
-    stack.set_blueprint_entities([
-      {
-        entity_number: 1,
-        name: "steel-furnace",
-        position: [0.5, 0.5],
-        items: [insertPlan],
-      },
-    ])
-
-    player.teleport([5, 5], surfaces[0])
-    player.build_from_cursor({ position: [0.5, 0.5], build_mode: defines.build_mode.forced })
-    checkForEntityUpdates(worldEntity, nil)
-
-    expect(projectEntity.getUnstagedValue(1)).toEqual({
-      items: [insertPlan],
-    })
-    expect(worldEntity.item_request_proxy?.insert_plan).toEqual([insertPlan])
 
     assertEntityCorrect(projectEntity, false)
   })

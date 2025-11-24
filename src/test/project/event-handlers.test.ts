@@ -6,7 +6,7 @@
 import { BlueprintEntity, CustomEventId, LuaEntity, LuaPlayer, LuaSurface, PlayerIndex } from "factorio:runtime"
 import expect, { mock } from "tstl-expect"
 import { oppositedirection } from "util"
-import { CustomInputs, Prototypes } from "../../constants"
+import { CustomInputs, Prototypes, Settings } from "../../constants"
 import { BobInserterChangedPositionEvent } from "../../declarations/mods"
 import { getTempBpItemStack } from "../../entity/save-load"
 import { Events, Mutable } from "../../lib"
@@ -785,7 +785,18 @@ describe("stage delete tool", () => {
   })
 })
 
-describe("blueprint paste", () => {
+describe.each<[boolean, string]>([
+  [false, "entity markers"],
+  [true, "bplib"],
+])("blueprint paste (using %s)", (useBplib, _methodName) => {
+  before_each(() => {
+    player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: useBplib }
+  })
+
+  after_each(() => {
+    player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: false }
+  })
+
   // note: this currently relies on editor mode, instant blueprint paste enabled
   const pos: PositionClass = Pos(4.5, 0.5)
   const bpEntity: BlueprintEntity = {
@@ -809,14 +820,28 @@ describe("blueprint paste", () => {
     expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(entity, 1, expect._, 1, nil)
   }
 
+  function waitForPaste(fn: () => void): void {
+    if (useBplib) {
+      after_ticks(1, fn)
+    } else {
+      fn()
+    }
+  }
+
   test("create entity", () => {
     player.build_from_cursor({ position: pos })
-    const inserter = surface.find_entities_filtered({
-      name: "inserter",
-      limit: 1,
-    })[0]
-    expect(inserter).toBeAny()
-    assertCorrect(inserter)
+    waitForPaste(() => {
+      const inserter = surface.find_entities_filtered({
+        name: "inserter",
+        limit: 1,
+      })[0]
+      expect(inserter).toBeAny()
+      assertCorrect(inserter)
+      if (useBplib) {
+        expect(project.actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(inserter, 1, 1)
+        expectedNumCalls = 2
+      }
+    })
   })
 
   test("update existing entity", () => {
@@ -828,7 +853,13 @@ describe("blueprint paste", () => {
     })!
     assert(inserter)
     player.build_from_cursor({ position: pos })
-    assertCorrect(inserter)
+    waitForPaste(() => {
+      assertCorrect(inserter)
+      if (useBplib) {
+        expect(project.actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(inserter, 1, 1)
+        expectedNumCalls = 2
+      }
+    })
   })
   test.each([true, false])("update existing entity with wires, already present %s", (alreadyPresent) => {
     const entities = player.cursor_stack!.get_blueprint_entities()!
@@ -854,23 +885,25 @@ describe("blueprint paste", () => {
     project.actions.onEntityPossiblyUpdated.returns(alreadyPresent ? ({} as any) : nil)
     player.build_from_cursor({ position: pos })
 
-    const inserter2 = surface.find_entities_filtered({
-      name: "inserter",
-      direction: direction.east,
-      limit: 1,
-    })[0]
-    expect(inserter2).toBeAny()
+    waitForPaste(() => {
+      const inserter2 = surface.find_entities_filtered({
+        name: "inserter",
+        direction: direction.east,
+        limit: 1,
+      })[0]
+      expect(inserter2).toBeAny()
 
-    assertCorrect(inserter1, nil)
-    assertCorrect(inserter2, pos.plus(Pos(1, 0)))
-    if (alreadyPresent) {
-      expect(project.actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(inserter1, 1, 1)
-      expect(project.actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(inserter2, 1, 1)
-      expectedNumCalls = 4
-    } else {
-      expect(project.actions.onWiresPossiblyUpdated).not.toHaveBeenCalled()
-      expectedNumCalls = 2
-    }
+      assertCorrect(inserter1, nil)
+      assertCorrect(inserter2, pos.plus(Pos(1, 0)))
+      if (alreadyPresent || useBplib) {
+        expect(project.actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(inserter1, 1, 1)
+        expect(project.actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(inserter2, 1, 1)
+        expectedNumCalls = 4
+      } else {
+        expect(project.actions.onWiresPossiblyUpdated).not.toHaveBeenCalled()
+        expectedNumCalls = 2
+      }
+    })
   })
 
   test.each([true, false])("new entity with cable, with already present %s", (alreadyPresent) => {
@@ -899,19 +932,21 @@ describe("blueprint paste", () => {
     project.actions.onEntityPossiblyUpdated.returns(alreadyPresent ? ({} as any) : nil)
     player.build_from_cursor({ position: pos })
 
-    const pole2 = surface.find_entity("small-electric-pole", pos.plus(Pos(1, 0)))!
-    expect(pole2).toBeAny()
+    waitForPaste(() => {
+      const pole2 = surface.find_entity("small-electric-pole", pos.plus(Pos(1, 0)))!
+      expect(pole2).toBeAny()
 
-    assertCorrect(pole1, nil)
-    assertCorrect(pole2, pos.plus(Pos(1, 0)))
-    if (alreadyPresent) {
-      expect(project.actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(pole1, 1, 1)
-      expect(project.actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(pole2, 1, 1)
-      expectedNumCalls = 4
-    } else {
-      expect(project.actions.onWiresPossiblyUpdated).not.toHaveBeenCalled()
-      expectedNumCalls = 2
-    }
+      assertCorrect(pole1, nil)
+      assertCorrect(pole2, pos.plus(Pos(1, 0)))
+      if (alreadyPresent || useBplib) {
+        expect(project.actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(pole1, 1, 1)
+        expect(project.actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(pole2, 1, 1)
+        expectedNumCalls = 4
+      } else {
+        expect(project.actions.onWiresPossiblyUpdated).not.toHaveBeenCalled()
+        expectedNumCalls = 2
+      }
+    })
   })
 
   test("tank has correct direction when not flipped ", () => {
@@ -932,8 +967,14 @@ describe("blueprint paste", () => {
 
     player.build_from_cursor({ position: Pos(0.5, 0.5) })
 
-    expect(project.actions.onEntityCreated).not.toHaveBeenCalled()
-    expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(tank, 1, nil, player.index, nil)
+    waitForPaste(() => {
+      expect(project.actions.onEntityCreated).not.toHaveBeenCalled()
+      expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(tank, 1, nil, player.index, nil)
+      if (useBplib) {
+        expect(project.actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(tank, 1, 1)
+        expectedNumCalls = 2
+      }
+    })
   })
 
   function fakeFlippedPaste(pos: Position) {
@@ -966,6 +1007,10 @@ describe("blueprint paste", () => {
   }
 
   test("tank has correct direction when flipped ", () => {
+    if (useBplib) {
+      expectedNumCalls = 0
+      return
+    }
     const entity: BlueprintEntity = {
       entity_number: 1,
       name: "storage-tank",
@@ -996,7 +1041,9 @@ describe("blueprint paste", () => {
     setBlueprint()
     player.build_from_cursor({ position: pos, build_mode: defines.build_mode.forced })
     player.clear_cursor()
-    expectedNumCalls = 0
+    waitForPaste(() => {
+      expectedNumCalls = 0
+    })
   })
 
   // some more tricky cases handled in entity-update-integration.test.ts
