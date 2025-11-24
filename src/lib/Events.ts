@@ -3,8 +3,6 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-/** @noSelfInFile */
-
 import { ConfigurationChangedData, CustomInputEvent, EventData, EventId, MapPosition } from "factorio:runtime"
 import { PRecord } from "./_util"
 

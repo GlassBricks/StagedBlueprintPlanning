@@ -3,8 +3,6 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-/** @noSelfInFile */
-
 import { BoundingBox as PBoundingBox } from "factorio:prototype"
 import { BoundingBox } from "factorio:runtime"
 import { WithMetatable } from "../_util"

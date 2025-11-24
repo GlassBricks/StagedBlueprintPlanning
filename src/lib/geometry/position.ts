@@ -3,8 +3,6 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-/** @noSelfInFile */
-
 import { MapPosition, MapPositionArray } from "factorio:runtime"
 import * as util from "util"
 import { WithMetatable } from "../_util"
