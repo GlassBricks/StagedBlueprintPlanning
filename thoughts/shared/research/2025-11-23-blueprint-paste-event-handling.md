@@ -1,18 +1,19 @@
 ---
 date: 2025-11-23T17:25:58-06:00
-git_commit: 99bf9c8713645d2a47e39dfbde56a5d270d672e0
+git_commit: aff9bfc6fd5787bc8ce7f3de83efd55fba11e6d3
 branch: better-bp-paste
 repository: StagedBlueprintPlanning
 topic: "How is blueprint paste events handled; how does the mod handle updates when a blueprint is pasted?"
 tags: [research, codebase, blueprint-paste, event-handling, entity-markers, project-updates]
 status: complete
 last_updated: 2025-11-23
+last_updated_note: "Updated to reflect removal of knownValue parameter"
 ---
 
 # Research: Blueprint Paste Event Handling
 
 **Date**: 2025-11-23T17:25:58-06:00
-**Git Commit**: 99bf9c8713645d2a47e39dfbde56a5d270d672e0
+**Git Commit**: aff9bfc6fd5787bc8ce7f3de83efd55fba11e6d3
 **Branch**: better-bp-paste
 **Repository**: StagedBlueprintPlanning
 
@@ -122,12 +123,13 @@ As Factorio pastes the blueprint:
    - Underground belts: Match by direction AND `belt_to_ground_type`
    - Other entities: Match by rotation type
 
-5. **Project entity update** (lines 829-835)
+5. **Project entity update** (lines 755-762)
    - Calls `stage.actions.onEntityPossiblyUpdated()` with:
      - Found `luaEntity`
      - Current `stage.stageNumber`
      - Player index
-     - **Blueprint entity data** as `passedValue` parameter
+     - **Stage info** extracted from blueprint tags: `value.tags?.bp100 as StageInfoExport | nil`
+     - **Items** from blueprint entity: `value.items`
 
 6. **Wire connection handling** (lines 837-854)
    - Deferred for transport belts and upgraded entities
@@ -155,83 +157,83 @@ After all markers are processed:
 
 #### Stage Information Detection
 
-Location: `src/project/user-actions.ts:374-392` (`onEntityPossiblyUpdated()`)
+Location: `src/project/user-actions.ts:375-385` (`onEntityPossiblyUpdated()`)
 
 When an entity is built or updated during blueprint paste:
 
-1. **Entry point** (line 374)
-   - Receives `knownBpValue?: BlueprintEntity` parameter
-   - Contains full blueprint entity data passed from marker handler
+1. **Entry point** (line 375)
+   - Receives `stagedInfo?: StageInfoExport` parameter
+   - Receives `items?: BlueprintInsertPlan[]` parameter
+   - Stage info is extracted from blueprint tags by the caller
 
-2. **Stage info extraction** (lines 381-383)
+2. **Stage info routing** (lines 383-384)
    ```typescript
-   const stagedInfo = knownBpValue?.tags?.bp100 as StageInfoExport | nil
    if (stagedInfo) {
-     return handlePasteValue(entity, stage, previousDirection, byPlayer, knownBpValue!, stagedInfo)
+     return handlePasteValue(entity, stage, previousDirection, byPlayer, stagedInfo, items)
    }
    ```
 
-   - Checks for `tags.bp100` property containing multi-stage metadata
-   - Routes to specialized paste handler if found
+   - Routes to specialized paste handler if stage info is present
 
 #### Stage Information Application
 
-Location: `src/project/project-updates.ts:565-604` (`setValueFromStagedInfo()`)
+Location: `src/project/project-updates.ts:563-602` (`setValueFromStagedInfo()`)
 
 For existing entities being updated with stage info:
 
-1. **First stage update** (lines 570-575)
+1. **First value determination** (lines 569-570)
+   - Extracts `info.firstValue` from `StageInfoExport`, or if not present
+   - Calls `saveEntity(luaEntity, items)` to read current entity value from the world
+
+2. **First stage update** (lines 571-576)
    - Extracts `info.firstStage` from `StageInfoExport`
    - Validates via `checkCanSetFirstStage()`
    - Applies: `entity.setFirstStageUnchecked(targetStage)`
 
-2. **Last stage update** (lines 576-586)
+3. **Last stage update** (lines 577-587)
    - Extracts `info.lastStage`
    - Validates via `checkCanSetLastStage()`
    - Calls `updateWorldEntitiesOnLastStageChanged()` to remove entities from deleted stages
 
-3. **First value and stage diffs restoration** (lines 588-594)
+4. **First value and stage diffs restoration** (lines 591-594)
 
    ```typescript
-   const [valueFromBp] = copyKnownValue(value)
-   entity.setFirstValueDirectly(info.firstValue ?? valueFromBp)
+   entity.setFirstValueDirectly(firstValue)
    const stageDiffs = info.stageDiffs ? fromExportStageDiffs(info.stageDiffs) : nil
    entity.setStageDiffsDirectly(stageDiffs)
+   replaceUnstagedValue(entity, info)
    ```
 
    - Sets base entity configuration
    - Restores per-stage property changes
+   - Restores unstaged values (items/item requests) per stage
 
-4. **Unstaged values restoration** (lines 596, 606-616)
-   - Calls `replaceUnstagedValue()` to restore items/item requests per stage
-   - Iterates through `info.unstagedValue` record
-   - Calls `entity.setUnstagedValue(stageNumber, value)` for each stage
-
-5. **World synchronization** (line 598)
+5. **World synchronization** (line 596)
    - Calls `updateWorldEntities(entity, 1)` to sync all stages
    - Updates entity highlights
 
 #### New Entity Creation from Paste
 
-Location: `src/project/project-updates.ts:161-194`
+Location: `src/project/project-updates.ts:160-199`
 
 For new entities created during paste:
 
-1. **Stage info detection** (lines 166-169 in `createNewProjectEntity()`)
+1. **Stage info detection** (lines 166-168 in `createNewProjectEntity()`)
 
    ```typescript
-   const stageInfo = knownValue?.tags?.bp100 as StageInfoExport | nil
    if (stageInfo) {
-     return createProjectEntityFromStagedInfo(entity, knownValue, stageInfo)
+     return createProjectEntityFromStagedInfo(entity, stageInfo, items)
    }
    ```
 
-   - Checks for stage info in blueprint tags
-   - Routes to specialized creation if found
+   - Routes to specialized creation if stage info is provided
 
-2. **ProjectEntity creation with stage info** (lines 542-563, `createProjectEntityFromStagedInfo()`)
+2. **ProjectEntity creation with stage info** (lines 539-561, `createProjectEntityFromStagedInfo()`)
 
    ```typescript
+   const [value, unstagedValue] = saveEntity(entity, items)
+   if (!value) return nil
+
    const projectEntity = newProjectEntity(
      stageInfo.firstValue ?? value,
      entity.position,
@@ -247,16 +249,17 @@ For new entities created during paste:
    replaceUnstagedValue(projectEntity, stageInfo)
    ```
 
-   - Creates entity with first value and first stage
+   - Calls `saveEntity(entity, items)` to read current entity value from the world
+   - Creates entity with first value (from stage info or current value) and first stage
    - Sets last stage
    - Applies stage diffs
    - Restores unstaged values
 
-3. **Entity addition** (line 179)
+3. **Entity addition** (line 183)
    - Calls `content.addEntity(projectEntity)` to add to collection
    - Uses `LinkedMap2D` spatial index for fast position lookup
 
-4. **World sync and highlights** (lines 187-192)
+4. **World sync and highlights** (lines 191-196)
    - Updates wire connections
    - Refreshes entity highlights
 
@@ -301,11 +304,11 @@ interface StageInfoExport {
 
 ### Project Updates
 
-- `src/project/user-actions.ts:374-392` - `onEntityPossiblyUpdated()` - Entry point
-- `src/project/user-actions.ts:339-365` - `handlePasteValue()` - Paste orchestration
-- `src/project/project-updates.ts:161-194` - `createNewProjectEntity()` - Entity creation
-- `src/project/project-updates.ts:542-563` - `createProjectEntityFromStagedInfo()` - Stage info creation
-- `src/project/project-updates.ts:565-604` - `setValueFromStagedInfo()` - Stage info application
+- `src/project/user-actions.ts:375-399` - `onEntityPossiblyUpdated()` - Entry point
+- `src/project/user-actions.ts:340-366` - `handlePasteValue()` - Paste orchestration
+- `src/project/project-updates.ts:160-199` - `createNewProjectEntity()` - Entity creation
+- `src/project/project-updates.ts:539-561` - `createProjectEntityFromStagedInfo()` - Stage info creation
+- `src/project/project-updates.ts:563-602` - `setValueFromStagedInfo()` - Stage info application
 
 ### Import/Export
 

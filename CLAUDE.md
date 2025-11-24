@@ -63,6 +63,7 @@ Since code compiles to Lua:
 - gb-tstl-utils for compiler utilities
 
 Note:
+
 - with `noEmitOnError`, TSTL warnings will cause no emit, possibly failing tests
 
 ### Key Directories
@@ -162,7 +163,10 @@ For Factorio API documentation, prefer to inspect or grep `typed-factorio`, inst
 
 ## Docs, planning, and research
 
-- Omit code comments in code snippets that are not in the original code. Instead, make notes about the code after code snippets.
+- Omit explanatory code comments in code snippets, that should not end up in the final code. Instead:
+  - Put explanatory notes about code _after_ code blocks.
+  - Prefer self-documenting code to code comments
+  - Comments clearly delineating placeholders are ok: `// ... rest of code`
 - Prefer automated testing over manual testing. No manual testing is ok if it can be all covered by automated tests.
 - Prefer testing as you go (TDD) instead of saving all testing for the end.
 

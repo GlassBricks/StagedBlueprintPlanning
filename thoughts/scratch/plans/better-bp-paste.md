@@ -17,42 +17,54 @@ A future Factorio version will supply an event that allows this.
 We can try a new approach using bplib, now in the current Factorio version.
 Bplib provides info about overlapping entities when a blueprint is pasted. We can use this instead, replacing the old approach.
 
+Essentially, use bplib to provide an association of BlueprintEntity <-> Position, instead of getting it via entity markers.
+
 Benefits:
 
 - More performant
 - Supports blueprint library
 - No jank blueprint modification
-- No need to manually transformations blueprint entities
 - No need to manually connect circuit wires
 - Supports "external wire connections", which uses data not available in modding API, by reading the in-world entity-state instead of relying on blueprint data.
 
-## First step: remove "knownValue"
-
-Passing "knownValue" around is only used as a performance optimization to avoid re-blueprinting an entity again. However, this is excessively complex.
-We expect with new approach performance can improve enough that we can skip this.
-
-As such, part the implementation should be removing all parameters, functions, logic, etc.. related to "knownValue", and instead always re-blueprinting to get it's value.
-
-"knownValue" is however used to pass blueprint tags, which might contain `bp100: StageInfoExport`. We still need this in some places, as such, instead of known value, pass `StageInfoExport | nil` instead if needed.
-
 ## Implementation details
 
-### New entities
+We WON'T use map_blueprint_indices_to_overlapping_entities; we will instead use map_blueprint_indices_to_world_positions, just for the positions; then apply the same approach we're using for updated entities in onEntityMarkerBuilt.
 
-Handling created entities (not updated ones), can now be mostly the same as normal entities.
-However, this needs handling in some cases: the pasted blueprint entity may have tags, which will modify the entity besides what's in blueprint data. We need to handle this.
-All the "entity built"-like should provide `tags`, which are supplied from a blueprint when the entity is built or revived from a ghost. We need to read and handle these.
+### Direction transformation
 
-### Updated entities
+We can't use `blueprintEntity.direction` directly for the blueprint direction. Entity markers were rotated along with the blueprint during paste, but with bplib we have the raw blueprint entity data which is not pre-transformed.
+
+To get the correct direction for matching with world entities:
+1. Round blueprint entity's direction to nearest multiple of 4 (cardinal direction)
+2. Apply blueprint paste's rotation (from `event.direction`)
+3. Apply flipx and flipy transformations (from `event.flip_horizontal` and `event.flip_vertical`)
+
+This requires new utilities in `lib/geometry` for transforming direction values (not positions).
+
+### Delayed event handling
 
 A caveat is: bplib provides these events _before_ the blueprint is pasted in world. This means we can't yet see the effect of updated entities, but we want to.
 To do this, use a delayed event (see delayed-event.ts), which enables us to run code AFTER the current event has finished processing.
 
-- during on_pre_build, detect overlapping/updated entities, but store needed data about updated entities
-- Trigger a delayed event with the data
+Flow may be:
+
+- during on_pre_build, detect overlapping/updated entities, and store info equivalent to [BlueprintEntity, MapPosition][]
+- Trigger a delayed event to check this data
 - Handle updated entities only in the delayed event
 
-### Notes
+As a defensive measure:
+
+- Also "flush" stored data on any on_pre_build event (flush = check if stored data is present; and if so, update all entities first, and remove any stored data)
+- Make this a function, so it can possibly be "flushed" from elsewhere too
+
+### Toggleable via new setting
+
+For an experimental phase, we want to toggle this feature via a new user setting, to choose between new and old behavior.
+
+Extract any common code into new functions first.
+
+## Implementation phases
 
 - Make sure all cases of special blueprint tag behavior is handled
 - Don't pass "known"
