@@ -92,7 +92,6 @@ Then wait for the user's research query.
      ```markdown
      ---
      date: [Current date and time with timezone in ISO format]
-     researcher: [Researcher name from metadata]
      git_commit: [Current commit hash]
      branch: [Current branch name]
      repository: [Repository name]
@@ -100,7 +99,6 @@ Then wait for the user's research query.
      tags: [research, codebase, relevant-component-names]
      status: complete
      last_updated: [Current date in YYYY-MM-DD format]
-     last_updated_by: [Researcher name]
      ---
 
      # Research: [User's Question/Topic]
@@ -155,7 +153,7 @@ Then wait for the user's research query.
 
 9. **Handle follow-up questions:**
    - If the user has follow-up questions, append to the same research document
-   - Update the frontmatter fields `last_updated` and `last_updated_by` to reflect the update
+   - Update the frontmatter fields `last_updated` to reflect the update
    - Add `last_updated_note: "Added follow-up research for [brief description]"` to frontmatter
    - Add a new section: `## Follow-up Research [timestamp]`
    - Spawn new sub-agents as needed for additional investigation
