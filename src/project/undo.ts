@@ -163,7 +163,7 @@ export function performUndoAction(action: UndoAction): void {
   doUndoEntry(game.get_player(action.playerIndex)!, action)
 }
 
-Migrations.to($CURRENT_VERSION, () => {
+Migrations.to("2.10.6", () => {
   assume<{
     futureUndoData?: LuaMap<number, UndoEntry>
   }>(storage)
