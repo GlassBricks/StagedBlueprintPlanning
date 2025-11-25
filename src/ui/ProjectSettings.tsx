@@ -724,38 +724,34 @@ class ProjectSettings extends Component<{
             />
           </flow>
           <line />
-          {isNormalSurface && (
-            <>
-              <label caption={[L_GuiProjectSettings.MapGenSettings]} style="caption_label" />
-              <button
-                caption={[L_GuiProjectSettings.SetMapGenSettingsFromPlanet]}
-                tooltip={[L_GuiProjectSettings.SetMapGenSettingsFromPlanetTooltip]}
-                on_gui_click={ibind(this.openMapGenSettingsSelect)}
-              />
-              <button
-                caption={[L_GuiProjectSettings.SyncMapGenSettings]}
-                tooltip={[L_GuiProjectSettings.SyncMapGenSettingsTooltip]}
-                on_gui_click={ibind(this.syncMapGenSettings)}
-              />
-              <line />
-              <label caption={[L_GuiProjectSettings.Tiles]} style="caption_label" />
-              <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
-                <checkbox
-                  state={this.project.stagedTilesEnabled}
-                  caption={[L_GuiProjectSettings.EnableStagedTiles]}
-                  tooltip={[L_GuiProjectSettings.EnableStagedTilesTooltip]}
-                />
-                <HorizontalSpacer width={10} />
-                <button
-                  styleMod={{ width: StageSettingsButtonWidth }}
-                  caption={[L_GuiProjectSettings.ScanExistingTiles]}
-                  tooltip={[L_GuiProjectSettings.ScanExistingTilesTooltip]}
-                  enabled={this.project.stagedTilesEnabled}
-                  on_gui_click={ibind(this.scanExistingTiles)}
-                />
-              </flow>
-            </>
-          )}
+          <label caption={[L_GuiProjectSettings.MapGenSettings]} style="caption_label" />
+          <button
+            caption={[L_GuiProjectSettings.SetMapGenSettingsFromPlanet]}
+            tooltip={[L_GuiProjectSettings.SetMapGenSettingsFromPlanetTooltip]}
+            on_gui_click={ibind(this.openMapGenSettingsSelect)}
+          />
+          <button
+            caption={[L_GuiProjectSettings.SyncMapGenSettings]}
+            tooltip={[L_GuiProjectSettings.SyncMapGenSettingsTooltip]}
+            on_gui_click={ibind(this.syncMapGenSettings)}
+          />
+          <line />
+          <label caption={[L_GuiProjectSettings.Tiles]} style="caption_label" />
+          <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+            <checkbox
+              state={this.project.stagedTilesEnabled}
+              caption={[L_GuiProjectSettings.EnableStagedTiles]}
+              tooltip={[L_GuiProjectSettings.EnableStagedTilesTooltip]}
+            />
+            <HorizontalSpacer width={10} />
+            <button
+              styleMod={{ width: StageSettingsButtonWidth }}
+              caption={[L_GuiProjectSettings.ScanExistingTiles]}
+              tooltip={[L_GuiProjectSettings.ScanExistingTilesTooltip]}
+              enabled={this.project.stagedTilesEnabled}
+              on_gui_click={ibind(this.scanExistingTiles)}
+            />
+          </flow>
         </flow>
       </>
     )
