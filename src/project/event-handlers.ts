@@ -56,7 +56,7 @@ import { createBlueprintWithStageInfo } from "../ui/create-blueprint-with-stage-
 import { getProjectPlayerData } from "./player-project-data"
 import { getStageAtSurface } from "./project-refs"
 import { Stage } from "./ProjectDef"
-import { handleTileMined, withTileEventsDisabled } from "./tile-events"
+import { handleTileMined, withTileEventsDisabled } from "../tiles/tile-events"
 import {
   onUndoReferenceBuilt,
   registerGroupUndoAction,
@@ -65,7 +65,7 @@ import {
   UndoAction,
 } from "./undo"
 
-import "./tile-events"
+import "../tiles/tile-events"
 
 const Events = ProtectedEvents
 

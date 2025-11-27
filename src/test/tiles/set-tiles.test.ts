@@ -7,7 +7,7 @@ import { LuaSurface } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
-import { setTiles, setTilesAndCheckerboard, setTilesAndWater, setTilesAndWaterForStage } from "../../project/set-tiles"
+import { setTiles, setTilesAndCheckerboard, setTilesAndWater, setTilesAndWaterForStage } from "../../tiles/set-tiles"
 import { createUserProject } from "../../project/UserProject"
 import { fStub } from "../f-mock"
 

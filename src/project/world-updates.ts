@@ -13,7 +13,7 @@ import {
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../entity/ProjectEntity"
-import { ProjectTile } from "../entity/ProjectTile"
+import { ProjectTile } from "../tiles/ProjectTile"
 import {
   elevatedRailTypes,
   isPreviewEntity,
@@ -30,7 +30,7 @@ import { LoopTask, submitTask } from "../lib/task"
 import { L_GuiTasks } from "../locale"
 import { EntityHighlights } from "./entity-highlights"
 import { Project } from "./ProjectDef"
-import { withTileEventsDisabled } from "./tile-events"
+import { withTileEventsDisabled } from "../tiles/tile-events"
 
 /** @noSelf */
 export interface WorldUpdates {

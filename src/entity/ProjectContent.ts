@@ -11,7 +11,7 @@ import { BBox, Position } from "../lib/geometry"
 import { EntityIdentification } from "./Entity"
 import { LinkedMap2D, newLinkedMap2d, newMap2d, ReadonlyMap2D } from "./map2d"
 import { ProjectEntity, StageNumber, UndergroundBeltProjectEntity } from "./ProjectEntity"
-import { ProjectTile } from "./ProjectTile"
+import { ProjectTile } from "../tiles/ProjectTile"
 import {
   isMovableEntity,
   isPreviewEntity,

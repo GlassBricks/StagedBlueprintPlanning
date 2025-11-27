@@ -5,7 +5,7 @@
 
 import { PRecord, RegisterClass, shiftNumberKeysDown, shiftNumberKeysUp } from "../lib"
 import { getNilPlaceholder, NilPlaceholder } from "../utils/diff-value"
-import { StageNumber } from "./ProjectEntity"
+import { StageNumber } from "../entity/ProjectEntity"
 
 export interface ProjectTile {
   readonly values: PRecord<StageNumber, string | NilPlaceholder>

@@ -13,7 +13,7 @@ import {
 } from "factorio:runtime"
 import { BBox } from "../lib/geometry"
 import { Stage, UserProject } from "./ProjectDef"
-import { withTileEventsDisabled } from "./tile-events"
+import { withTileEventsDisabled } from "../tiles/tile-events"
 
 export interface NormalSurfaceSettings {
   readonly type: "normal"

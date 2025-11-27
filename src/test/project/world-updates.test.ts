@@ -14,7 +14,7 @@ import {
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../../entity/ProjectEntity"
-import { createProjectTile } from "../../entity/ProjectTile"
+import { createProjectTile } from "../../tiles/ProjectTile"
 import { createEntity, createPreviewEntity, saveEntity } from "../../entity/save-load"
 import { Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"

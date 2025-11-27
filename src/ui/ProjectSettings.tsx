@@ -46,7 +46,7 @@ import {
   setTilesAndCheckerboardForStage,
   setTilesAndWaterForStage,
   setTilesForStage,
-} from "../project/set-tiles"
+} from "../tiles/set-tiles"
 import { highlightIfNotNil, highlightIfOverriden } from "../utils/DiffedProperty"
 import { ManualRevertButton, MaybeRevertButton } from "../utils/RevertButton"
 import { exportProjectToString } from "./blueprint-string"

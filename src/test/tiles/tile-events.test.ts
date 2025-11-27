@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import expect, { mock } from "tstl-expect"
-import { withTileEventsDisabled } from "../project/tile-events"
+import { withTileEventsDisabled } from "../../tiles/tile-events"
 
 test("calls function with tile events disabled", () => {
   const oldHandler = script.get_event_handler(defines.events.script_raised_set_tiles)

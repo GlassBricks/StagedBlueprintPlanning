@@ -7,7 +7,7 @@ import { LocalisedString, LuaEntity, PlayerIndex, SurfaceCreateEntity } from "fa
 import expect from "tstl-expect"
 import { L_Game, Prototypes, Settings } from "../../constants"
 import { newProjectEntity, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
-import { createProjectTile, ProjectTile } from "../../entity/ProjectTile"
+import { createProjectTile, ProjectTile } from "../../tiles/ProjectTile"
 import { createPreviewEntity, saveEntity } from "../../entity/save-load"
 import { StageInfoExport } from "../../import-export/entity"
 import { Pos } from "../../lib/geometry"

@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import expect from "tstl-expect"
-import { createProjectTile } from "../../entity/ProjectTile"
+import { createProjectTile } from "../../tiles/ProjectTile"
 import { getNilPlaceholder } from "../../utils/diff-value"
 
 describe("ProjectTile", () => {

@@ -13,7 +13,7 @@ import {
 import { mergeInventoryPositions } from "../entity/item-requests"
 import { newMap2d } from "../entity/map2d"
 import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
-import { createProjectTile } from "../entity/ProjectTile"
+import { createProjectTile } from "../tiles/ProjectTile"
 import { Mutable, PRecord } from "../lib"
 import { Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"

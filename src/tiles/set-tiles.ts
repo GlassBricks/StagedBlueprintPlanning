@@ -7,7 +7,7 @@ import { BoundingBox, LuaSurface, Tile, TileWrite } from "factorio:runtime"
 import { newMap2d } from "../entity/map2d"
 import { Mutable } from "../lib"
 import { BBox } from "../lib/geometry"
-import { Stage } from "./ProjectDef"
+import { Stage } from "../project/ProjectDef"
 import { withTileEventsDisabled } from "./tile-events"
 
 function getTiles(area: BoundingBox, tile: string): Mutable<TileWrite>[] {

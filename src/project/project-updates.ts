@@ -17,7 +17,7 @@ import {
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../entity/ProjectEntity"
-import { createProjectTile, ProjectTile } from "../entity/ProjectTile"
+import { createProjectTile, ProjectTile } from "../tiles/ProjectTile"
 import { areUpgradeableTypes, getPrototypeInfo } from "../entity/prototype-info"
 import { canBeAnyDirection, forceFlipUnderground, saveEntity } from "../entity/save-load"
 import { findUndergroundPair, undergroundCanReach } from "../entity/underground-belt"
