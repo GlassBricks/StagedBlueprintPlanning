@@ -775,11 +775,19 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
 
     const nextStage = tile.setTileAtStage(stage, value)
 
-    if (tile.isEmpty()) {
+    const wasEmpty = tile.isEmpty()
+    if (wasEmpty) {
       content.deleteTile(position)
-      updateTilesInRange(position, stage, nil)
-    } else {
-      updateTilesInRange(position, stage, nextStage)
+    }
+
+    const collision = updateTilesInRange(position, stage, wasEmpty ? nil : nextStage)
+
+    if (collision) {
+      if (wasEmpty) {
+        tile = createProjectTile()
+        content.setTile(position, tile)
+      }
+      tile.setTileAtStage(collision.stage, collision.actualValue)
     }
   }
 

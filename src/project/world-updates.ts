@@ -32,6 +32,11 @@ import { EntityHighlights } from "./entity-highlights"
 import { Project } from "./ProjectDef"
 import { withTileEventsDisabled } from "../tiles/tile-events"
 
+export interface TileCollision {
+  stage: StageNumber
+  actualValue: string
+}
+
 /** @noSelf */
 export interface WorldUpdates {
   updateWorldEntities(entity: ProjectEntity, startStage: StageNumber, updateHighlights?: boolean): void
@@ -60,7 +65,7 @@ export interface WorldUpdates {
   rebuildStage(stage: StageNumber): void
   rebuildAllStages(): void
 
-  updateTilesInRange(position: Position, fromStage: StageNumber, toStage: StageNumber | nil): void
+  updateTilesInRange(position: Position, fromStage: StageNumber, toStage: StageNumber | nil): TileCollision | nil
 
   // passed from EntityHighlights
   updateAllHighlights(entity: ProjectEntity): void
@@ -441,11 +446,13 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     position: Position,
     fromStage: StageNumber,
     endStage: StageNumber = project.numStages(),
-  ): void {
+  ): TileCollision | nil {
     const tile = content.tiles.get(position.x, position.y)
 
     const tileWrite: Mutable<TileWrite> = { position, name: "" }
     const tileWriteArr = [tileWrite]
+
+    let collision: TileCollision | nil = nil
 
     withTileEventsDisabled(() => {
       for (let stage = fromStage; stage <= endStage; stage++) {
@@ -459,9 +466,19 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
             : (surface.get_hidden_tile(position) ?? ((position.x + position.y) % 2 == 0 ? "lab-dark-1" : "lab-dark-2"))
           tileWrite.name = defaultTile
         }
-        surface.set_tiles(tileWriteArr, true, false, true, true)
+        surface.set_tiles(tileWriteArr, true, "abort_on_collision", true, true)
+
+        const actualTile = surface.get_tile(position.x, position.y)
+        const actualValue = actualTile?.name
+        if (actualValue != tileWrite.name) {
+          collision = { stage, actualValue: actualValue! }
+          return
+        }
+
         surface.find_entity("tile-ghost", { x: position.x + 0.5, y: position.y + 0.5 })?.destroy()
       }
     })
+
+    return collision
   }
 }

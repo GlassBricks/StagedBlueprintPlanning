@@ -705,5 +705,42 @@ describe("tiles", () => {
       expect(project.getSurface(3)!.get_tile(0, 0).name).toBe("concrete")
       expect(project.getSurface(4)!.get_tile(0, 0).name).toBe("lab-white")
     })
+
+    test("returns collision info when tile can't be set due to entity", () => {
+      const tile = createProjectTile()
+      tile.setTileAtStage(1, "concrete")
+      project.content.setTile(position, tile)
+
+      for (let stage = 1; stage <= 4; stage++) {
+        project.getSurface(stage)!.set_tiles([{ position, name: "concrete" }], true, false)
+      }
+
+      const surface2 = project.getSurface(2)!
+      surface2.create_entity({
+        name: "iron-chest",
+        position: { x: 0.5, y: 0.5 },
+      })
+
+      tile.setTileAtStage(1, "water")
+
+      const collision = worldUpdates.updateTilesInRange(position, 1, nil)
+
+      expect(collision).not.toBeNil()
+      expect(collision!.stage).toBe(2)
+      expect(collision!.actualValue).toBe("concrete")
+
+      expect(project.getSurface(1)!.get_tile(0, 0).name).toBe("water")
+      expect(project.getSurface(2)!.get_tile(0, 0).name).toBe("concrete")
+    })
+
+    test("returns nil when no collision occurs", () => {
+      const tile = createProjectTile()
+      tile.setTileAtStage(2, "concrete")
+      project.content.setTile(position, tile)
+
+      const collision = worldUpdates.updateTilesInRange(position, 2, nil)
+
+      expect(collision).toBeNil()
+    })
   })
 })

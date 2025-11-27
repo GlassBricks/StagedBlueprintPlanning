@@ -1405,5 +1405,34 @@ describe("car", () => {
 
       expectedWuCalls = 1
     })
+
+    test("records collision value when updateTilesInRange returns collision", () => {
+      projectUpdates.setTileAtStage(position, 2, "concrete")
+      mock.clear(worldUpdates)
+
+      worldUpdates.updateTilesInRange.invokes(() => ({ stage: 4, actualValue: "stone-path" }))
+
+      projectUpdates.setTileAtStage(position, 2, "water")
+
+      const tile = project.content.tiles.get(1, 2)!
+      expect(tile.getTileAtStage(4)).toBe("stone-path")
+
+      expectedWuCalls = 1
+    })
+
+    test("recreates tile when collision occurs after tile was deleted", () => {
+      projectUpdates.setTileAtStage(position, 2, "concrete")
+      mock.clear(worldUpdates)
+
+      worldUpdates.updateTilesInRange.invokes(() => ({ stage: 3, actualValue: "concrete" }))
+
+      projectUpdates.setTileAtStage(position, 2, nil)
+
+      const tile = project.content.tiles.get(1, 2)
+      expect(tile).not.toBeNil()
+      expect(tile!.getTileAtStage(3)).toBe("concrete")
+
+      expectedWuCalls = 1
+    })
   })
 })

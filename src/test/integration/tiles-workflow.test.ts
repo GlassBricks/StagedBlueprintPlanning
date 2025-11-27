@@ -96,4 +96,64 @@ describe("Tiles integration tests", () => {
     expect(tile.getTileAtStage(2)).toBeNil()
     expect(tile.getTileAtStage(3)).toBe("stone-path")
   })
+
+  test("tile change stops propagating when entity blocks it", () => {
+    const pos = Pos(25, 25)
+
+    project.updates.setTileAtStage(pos, 1, "concrete")
+
+    const tile = project.content.tiles.get(25, 25)!
+    expect(tile.getTileAtStage(1)).toBe("concrete")
+    expect(tile.getTileAtStage(3)).toBe("concrete")
+
+    const stage1 = project.getSurface(1)!
+    const stage3 = project.getSurface(3)!
+
+    expect(stage1.get_tile(pos).name).toBe("concrete")
+    expect(stage3.get_tile(pos).name).toBe("concrete")
+
+    stage3.create_entity({
+      name: "iron-chest",
+      position: { x: pos.x + 0.5, y: pos.y + 0.5 },
+    })
+
+    project.updates.setTileAtStage(pos, 1, "water")
+
+    expect(tile.getTileAtStage(1)).toBe("water")
+    expect(tile.getTileAtStage(2)).toBe("water")
+    expect(tile.getTileAtStage(3)).toBe("concrete")
+    expect(tile.getTileAtStage(4)).toBe("concrete")
+
+    expect(stage1.get_tile(pos).name).toBe("water")
+    expect(stage3.get_tile(pos).name).toBe("concrete")
+  })
+
+  test("changing tile to water at middle stage stops at entity in later stage", () => {
+    const pos = Pos(30, 30)
+
+    project.updates.setTileAtStage(pos, 1, "concrete")
+    project.updates.setTileAtStage(pos, 5, "stone-path")
+
+    const tile = project.content.tiles.get(30, 30)!
+    expect(tile.getTileAtStage(1)).toBe("concrete")
+    expect(tile.getTileAtStage(3)).toBe("concrete")
+    expect(tile.getTileAtStage(5)).toBe("stone-path")
+
+    const stage3 = project.getSurface(3)!
+    stage3.create_entity({
+      name: "iron-chest",
+      position: { x: pos.x + 0.5, y: pos.y + 0.5 },
+    })
+
+    project.updates.setTileAtStage(pos, 2, "water")
+
+    expect(tile.getTileAtStage(1)).toBe("concrete")
+    expect(tile.getTileAtStage(2)).toBe("water")
+    expect(tile.getTileAtStage(3)).toBe("concrete")
+    expect(tile.getTileAtStage(5)).toBe("stone-path")
+
+    const stage2 = project.getSurface(2)!
+    expect(stage2.get_tile(pos).name).toBe("water")
+    expect(stage3.get_tile(pos).name).toBe("concrete")
+  })
 })
