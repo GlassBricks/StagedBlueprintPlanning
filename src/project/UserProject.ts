@@ -112,6 +112,7 @@ class UserProjectImpl implements UserProjectInternal {
 
     if (this.isSpacePlatform()) {
       this.stagedTilesEnabled.set(true)
+      this.landfillTile.set("space-platform-foundation")
     }
   }
   private static getDisplayName(this: void, id: ProjectId, name: string): LocalisedString {

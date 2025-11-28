@@ -282,6 +282,8 @@ export declare const enum L_GuiProjectSettings {
   SetTiles = "bp100.gui.project-settings.set-tiles",
   /** Landfill tile: */
   SelectedTile = "bp100.gui.project-settings.selected-tile",
+  /** Platform tile: */
+  PlatformTile = "bp100.gui.project-settings.platform-tile",
   /** Allow non-blueprintable tiles */
   AllowNonBlueprintableTiles = "bp100.gui.project-settings.allow-non-blueprintable-tiles",
   /** Fill with lab tiles */

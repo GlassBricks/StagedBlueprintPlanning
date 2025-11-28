@@ -240,7 +240,11 @@ class ProjectSettings extends Component<{
               right_margin: 5,
             }}
           >
-            <label caption={[L_GuiProjectSettings.SelectedTile]} />
+            <label
+              caption={
+                this.project.isSpacePlatform() ? [L_GuiProjectSettings.PlatformTile] : [L_GuiProjectSettings.SelectedTile]
+              }
+            />
             <choose-elem-button
               elem_type="tile"
               elem_value={selectedTile}
