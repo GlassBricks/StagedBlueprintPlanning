@@ -1284,7 +1284,7 @@ Extract `StageCount` as a first-class interface. Also extract `lastStageFor` as 
 
 ```typescript
 export interface StageCount {
-  readonly stageCount: StageNumber
+  stageCount(): StageNumber
 }
 ```
 
@@ -1336,7 +1336,7 @@ Create role-based interfaces for remaining settings:
 
 ```typescript
 export interface EntityBehaviorSettings {
-  readonly isSpacePlatform: boolean
+  isSpacePlatform(): boolean
   readonly landfillTile: Property<string | nil>
 }
 
@@ -1397,7 +1397,7 @@ export class ProjectSettings implements ProjectSettingsWriter {
   readonly stagedTilesEnabled: MutableProperty<boolean>
   readonly defaultBlueprintSettings: MutableProperty<OverrideableBlueprintSettings>
   readonly surfaceSettings: Property<SurfaceSettings>
-  readonly isSpacePlatform: boolean
+  private readonly _isSpacePlatform: boolean
 
   private readonly stages: { name: MutableProperty<string>, settings: MutableProperty<StageSettingsData> }[] = []
   private blueprintBookTemplateInv?: LuaInventory
@@ -1409,7 +1409,7 @@ export class ProjectSettings implements ProjectSettingsWriter {
     this.stagedTilesEnabled = property(data.stagedTilesEnabled)
     this.defaultBlueprintSettings = property(data.defaultBlueprintSettings)
     this.surfaceSettings = property(data.surfaceSettings)
-    this.isSpacePlatform = data.isSpacePlatform
+    this._isSpacePlatform = data.isSpacePlatform
 
     for (let i = 1; i <= stageCount; i++) {
       const stageData = data.stages[i] ?? { name: `Stage ${i}`, blueprintOverrides: {} }
@@ -1420,7 +1420,8 @@ export class ProjectSettings implements ProjectSettingsWriter {
     }
   }
 
-  get stageCount(): StageNumber { return this._stageCount }
+  stageCount(): StageNumber { return this._stageCount }
+  isSpacePlatform(): boolean { return this._isSpacePlatform }
   getStageName(stage: StageNumber): LocalisedString { return this.stages[stage].name.get() }
   getStageNameProperty(stage: StageNumber): MutableProperty<string> { return this.stages[stage].name }
   getStageSettings(stage: StageNumber): MutableProperty<StageSettingsData> { return this.stages[stage].settings }
@@ -1510,7 +1511,7 @@ Update UserProject to expose `settings: ProjectSettings`.
 ```typescript
 export function createMockStagePresentation(count: number, names?: string[]): StagePresentation {
   return {
-    stageCount: count,
+    stageCount() { return count },
     getStageName(stage: StageNumber): LocalisedString {
       return names?.[stage - 1] ?? `Stage ${stage}`
     },
@@ -1523,7 +1524,7 @@ export function createMockStagePresentation(count: number, names?: string[]): St
 
 #### 5. Migrate Code and Tests
 
-Replace `project.numStages()` with `settings.stageCount`. Components should take the minimal interface they need:
+Replace `project.numStages()` with `settings.stageCount()`. Components should take the minimal interface they need:
 
 ```typescript
 class WorldPresentation {
@@ -1540,7 +1541,7 @@ function StageLabel(presentation: StagePresentation, stage: StageNumber) {
 }
 
 function handleTiles(behavior: EntityBehaviorSettings) {
-  if (behavior.isSpacePlatform) { ... }
+  if (behavior.isSpacePlatform()) { ... }
   const tile = behavior.landfillTile.get()
 }
 ```
@@ -1567,7 +1568,7 @@ before_each(() => {
 
 ```typescript
 class StageImpl implements Stage {
-  get name(): MutableProperty<string> {
+  getName(): MutableProperty<string> {
     return this.project.settings.getStageNameProperty(this.stageNumber)
   }
 }
@@ -1850,13 +1851,13 @@ class UserProjectImpl {
 export class UserActions {
   constructor(private readonly worldPresentation: WorldPresentation) {}
 
-  private get stagePresentation(): StagePresentation {
+  private stagePresentation(): StagePresentation {
     return this.worldPresentation.stagePresentation
   }
-  private get surfaces(): SurfaceProvider {
+  private surfaces(): SurfaceProvider {
     return this.worldPresentation.surfaces
   }
-  private get content(): MutableProjectContent {
+  private content(): MutableProjectContent {
     return this.worldPresentation.content
   }
 
@@ -1950,20 +1951,20 @@ class StageImpl implements Stage {
     if (project.id != 0) storage.surfaceIndexToStage.set(this.surfaceIndex, this)
   }
 
-  get actions(): UserActions { return this.project.actions }
-  get name(): MutableProperty<string> { return this.project.settings.getStageNameProperty(this.stageNumber) }
+  getActions(): UserActions { return this.project.actions }
+  getName(): MutableProperty<string> { return this.project.settings.getStageNameProperty(this.stageNumber) }
 
-  get blueprintOverrideSettings(): BlueprintSettingsOverrideTable {
+  getBlueprintOverrideSettings(): BlueprintSettingsOverrideTable {
     return this.project.settings.getStageSettings(this.stageNumber).get().blueprintOverrides
   }
-  get stageBlueprintSettings(): StageBlueprintSettingsTable {
+  getStageBlueprintSettings(): StageBlueprintSettingsTable {
     return this.project.settings.getStageSettings(this.stageNumber).get().stageBlueprintSettings
   }
 
   getBlueprintSettingsView(): BlueprintSettingsTable {
     return mergeBlueprintSettings(
       this.project.settings.defaultBlueprintSettings.get(),
-      this.blueprintOverrideSettings
+      this.getBlueprintOverrideSettings()
     )
   }
 
@@ -2143,7 +2144,7 @@ class UserProjectImpl implements UserProject {
 @RegisterClass("WorldPresentation")
 export class WorldPresentation implements ContentObserver, ProjectLifecycleObserver {
   onStageAdded(stage: Stage): void {
-    if (this.entityBehavior.isSpacePlatform) {
+    if (this.entityBehavior.isSpacePlatform()) {
       this.initSpacePlatformStage(stage)
     }
     this.rebuildStage(stage.stageNumber)
@@ -2260,7 +2261,7 @@ static create(...): UserProjectImpl {
   project.registerEvents()
 
   // One-time initialization for space platform projects
-  if (project.settings.isSpacePlatform) {
+  if (project.settings.isSpacePlatform()) {
     project.worldPresentation.initSpacePlatform()
   }
 
@@ -2805,8 +2806,8 @@ if (project.isSpacePlatform()) { ... }
 
 // After
 const name = project.settings.getStageName(stage)
-const count = project.settings.stageCount
-if (project.settings.isSpacePlatform) { ... }
+const count = project.settings.stageCount()
+if (project.settings.isSpacePlatform()) { ... }
 ```
 
 ### Test Mock Creation
