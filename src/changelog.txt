@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
-Version: 2.11.2
+Version: 2.12.0
 Date: ????
   Features:
     - Added blueprint setting: "Custom blueprint name" to use something other than the stage's name.
