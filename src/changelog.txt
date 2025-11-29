@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
-Version: 2.10.8
+Version: 2.11.0
 Date: ????
   Features:
     - Tile changes now stop propagating to further stages when blocked by an entity, preventing invalid tile configurations on space platforms.
