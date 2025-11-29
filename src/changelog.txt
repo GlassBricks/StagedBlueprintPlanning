@@ -2,6 +2,7 @@
 Version: 2.11.1
 Date: ????
   Changes:
+    - "Reset space platform tiles" will no longer try to connect ghosted tiles
 ---------------------------------------------------------------------------------------------------
 Version: 2.11.0
 Date: 2025-11-29

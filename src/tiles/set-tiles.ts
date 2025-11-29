@@ -187,7 +187,7 @@ export function resetSpacePlatformTiles(stage: Stage): boolean {
   if (!tileName) return false
 
   const tiles = getTiles(area, tileName)
-  surface.set_tiles(tiles)
+  surface.set_tiles(tiles, true, "abort_on_collision")
 
   const emptyTiles = getTiles(area, "empty-space")
   surface.set_tiles(emptyTiles, true, "abort_on_collision")
