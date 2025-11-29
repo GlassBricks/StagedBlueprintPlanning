@@ -13,7 +13,6 @@ import {
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../entity/ProjectEntity"
-import { ProjectTile } from "../tiles/ProjectTile"
 import {
   elevatedRailTypes,
   isPreviewEntity,
@@ -28,9 +27,10 @@ import { deepCompare, Mutable, PRecord, RegisterClass } from "../lib"
 import { Position } from "../lib/geometry"
 import { LoopTask, submitTask } from "../lib/task"
 import { L_GuiTasks } from "../locale"
+import { ProjectTile } from "../tiles/ProjectTile"
+import { withTileEventsDisabled } from "../tiles/tile-events"
 import { EntityHighlights } from "./entity-highlights"
 import { Project } from "./ProjectDef"
-import { withTileEventsDisabled } from "../tiles/tile-events"
 
 export interface TileCollision {
   stage: StageNumber
@@ -466,12 +466,12 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
             : (surface.get_hidden_tile(position) ?? ((position.x + position.y) % 2 == 0 ? "lab-dark-1" : "lab-dark-2"))
           tileWrite.name = defaultTile
         }
-        surface.set_tiles(tileWriteArr, true, "abort_on_collision", true, true)
+        surface.set_tiles(tileWriteArr, true, "abort_on_collision", true, false)
 
         const actualTile = surface.get_tile(position.x, position.y)
         const actualValue = actualTile?.name
-        if (actualValue != tileWrite.name) {
-          collision = { stage, actualValue: actualValue! }
+        if (stage != fromStage && actualValue != tileWrite.name) {
+          collision = { stage, actualValue }
           return
         }
 

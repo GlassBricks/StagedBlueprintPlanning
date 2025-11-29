@@ -52,11 +52,11 @@ import { DelayedEvent } from "../lib/delayed-event"
 import { floorToCardinalDirection, Pos } from "../lib/geometry"
 import { addSelectionToolHandlers } from "../lib/selection-tool"
 import { L_Interaction } from "../locale"
+import { handleTileMined, withTileEventsDisabled } from "../tiles/tile-events"
 import { createBlueprintWithStageInfo } from "../ui/create-blueprint-with-stage-info"
 import { getProjectPlayerData } from "./player-project-data"
 import { getStageAtSurface } from "./project-refs"
 import { Stage } from "./ProjectDef"
-import { handleTileMined, withTileEventsDisabled } from "../tiles/tile-events"
 import {
   onUndoReferenceBuilt,
   registerGroupUndoAction,

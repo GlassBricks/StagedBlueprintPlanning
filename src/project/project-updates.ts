@@ -17,13 +17,13 @@ import {
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../entity/ProjectEntity"
-import { createProjectTile, ProjectTile } from "../tiles/ProjectTile"
 import { areUpgradeableTypes, getPrototypeInfo } from "../entity/prototype-info"
 import { canBeAnyDirection, forceFlipUnderground, saveEntity } from "../entity/save-load"
 import { findUndergroundPair, undergroundCanReach } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
 import { fromExportStageDiffs, StageInfoExport } from "../import-export/entity"
 import { Pos, Position } from "../lib/geometry"
+import { createProjectTile, ProjectTile } from "../tiles/ProjectTile"
 import { Project } from "./ProjectDef"
 import { WorldUpdates } from "./world-updates"
 import min = math.min

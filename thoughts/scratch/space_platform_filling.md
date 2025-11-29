@@ -6,13 +6,21 @@ If project is space platform:
 
 - The default "landfillTile" setting value should become "space-platform-foundation"
 - Ui: replace label with "Platform tile:"
-- In world updates: use landfillTile instead of hardcoded "space-platform-foundation"
 
-## New: reset space platform foundations
+## Reset space platform foundations function
 
-- Replace "fill with landfill tile" buttons etc. with just one button to "Reset space platform foundations"
-- New algorithm to reset space platform foundations
-  1. Get project bounding box
-  2. Fill entire bounding box with "space-platform-foundation" tile
-  3. Fill entire bounding box with "empty-space", this time with "remove_on_colliding: false"
-  4. Steiner tree: find 8-connected components of space platform foundations. Naive algorithm for now: repeatedly (but efficiently) find shortest path between components until all components are connected. Place space platform tiles to connect all components
+- Replace "fill with landfill tile" buttons in ui, when is space platform. With just one button to "Reset space platform foundations"
+- Algorithm to reset space platform foundations:
+
+1. Work in the provided surface.
+2. Fill/with space platform foundations, similar to "fill with landfill" operation:
+
+- Fill all tiles with "space-platform-foundation" tile, forcibly
+- Fill all tiles with "empty-space", this time with "abort_on_collision"
+- Query info about tiles vs empty space to a binary map (platform, no platform)
+
+3. Connect islands algorithmically
+  - use a simple heuristic algorithm for steiner tree problem
+  - See @island_connector.ts. However, that is written in generic TS, not TSTL. May need tweaks for TypescriptToLua:
+     - `tostring(), nil, LuaMap/LuaSet or even Record<> preferred over Map/Set
+5. After getting final tile map, and staged tiles are enabled, adjust stored tile data (mine or place tiles) to match the tile map.

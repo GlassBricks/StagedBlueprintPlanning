@@ -8,6 +8,7 @@ import { newMap2d } from "../entity/map2d"
 import { Mutable } from "../lib"
 import { BBox } from "../lib/geometry"
 import { Stage } from "../project/ProjectDef"
+import { posToKey, solveSteinerErosion } from "./steiner-erosion"
 import { withTileEventsDisabled } from "./tile-events"
 
 function getTiles(area: BoundingBox, tile: string): Mutable<TileWrite>[] {
@@ -144,6 +145,80 @@ function setTilesUnderEntities(
 
 export function setCheckerboard(surface: LuaSurface, area: BoundingBox): void {
   surface.build_checkerboard(area)
+}
+
+function applyOptimizedTiles(surface: LuaSurface, bbox: BBox, optimized: LuaSet<string>, tileName: string): void {
+  const tiles: Mutable<TileWrite>[] = []
+
+  for (const [x, y] of BBox.iterateTiles(bbox)) {
+    const gridX = x - bbox.left_top.x
+    const gridY = y - bbox.left_top.y
+    const k = posToKey([gridX, gridY])
+
+    tiles.push({
+      position: { x, y },
+      name: optimized.has(k) ? tileName : "empty-space",
+    })
+  }
+
+  surface.set_tiles(tiles, true, true, true, true)
+}
+
+function syncStagedTiles(stage: Stage, bbox: BBox, optimized: LuaSet<string>, tileName: string): void {
+  const project = stage.project
+
+  for (const [x, y] of BBox.iterateTiles(bbox)) {
+    const gridX = x - bbox.left_top.x
+    const gridY = y - bbox.left_top.y
+    const k = posToKey([gridX, gridY])
+
+    const tileValue = optimized.has(k) ? tileName : nil
+    project.updates.setTileAtStage({ x, y }, stage.stageNumber, tileValue)
+  }
+}
+
+export function resetSpacePlatformTiles(stage: Stage): boolean {
+  const project = stage.project
+  const surface = stage.surface
+  const area = stage.getBlueprintBBox()
+  const bbox = BBox.load(area)
+
+  const tileName = project.landfillTile.get()
+  if (!tileName) return false
+
+  const tiles = getTiles(area, tileName)
+  surface.set_tiles(tiles)
+
+  const emptyTiles = getTiles(area, "empty-space")
+  surface.set_tiles(emptyTiles, true, "abort_on_collision")
+
+  const required = new LuaSet<string>()
+  const foundationTiles = surface.find_tiles_filtered({
+    area,
+    name: tileName,
+  })
+
+  for (const tile of foundationTiles) {
+    const pos = tile.position
+    const gridX = math.floor(pos.x - bbox.left_top.x)
+    const gridY = math.floor(pos.y - bbox.left_top.y)
+    required.add(posToKey([gridX, gridY]))
+  }
+
+  const size = BBox.size(bbox)
+  const width = size.x
+  const height = size.y
+  const optimized = solveSteinerErosion(width, height, required)
+
+  withTileEventsDisabled(() => {
+    applyOptimizedTiles(surface, bbox, optimized, tileName)
+  })
+
+  if (project.stagedTilesEnabled.get()) {
+    syncStagedTiles(stage, bbox, optimized, tileName)
+  }
+
+  return true
 }
 
 export const _mockable = true

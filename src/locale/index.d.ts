@@ -298,6 +298,10 @@ export declare const enum L_GuiProjectSettings {
   SetSelectedTileAndLabTooltip = "bp100.gui.project-settings.set-selected-tile-and-lab-tooltip",
   /** Tiles underneath entities will be set to the selected tile\nOther tiles will be set to water. */
   SetSelectedTileAndWaterTooltip = "bp100.gui.project-settings.set-selected-tile-and-water-tooltip",
+  /** Reset space platform tiles [img=info] */
+  ResetSpacePlatformFoundations = "bp100.gui.project-settings.reset-space-platform-foundations",
+  /** Removes all space platform tiles to only those under entities. Then, connects islands components using a heuristic algorithm. Hand-optimization may give better results. */
+  ResetSpacePlatformFoundationsTooltip = "bp100.gui.project-settings.reset-space-platform-foundations-tooltip",
   /** No tile selected */
   FailedToSetTiles = "bp100.gui.project-settings.failed-to-set-tiles",
   /**  ⋎ Merge stage with previous */

@@ -42,6 +42,7 @@ import { L_GuiProjectSettings, L_Interaction } from "../locale"
 import { syncMapGenSettings } from "../project/surfaces"
 import { Stage, UserProject } from "../project/ProjectDef"
 import {
+  resetSpacePlatformTiles,
   setCheckerboard,
   setTilesAndCheckerboardForStage,
   setTilesAndWaterForStage,
@@ -242,7 +243,9 @@ class ProjectSettings extends Component<{
           >
             <label
               caption={
-                this.project.isSpacePlatform() ? [L_GuiProjectSettings.PlatformTile] : [L_GuiProjectSettings.SelectedTile]
+                this.project.isSpacePlatform()
+                  ? [L_GuiProjectSettings.PlatformTile]
+                  : [L_GuiProjectSettings.SelectedTile]
               }
             />
             <choose-elem-button
@@ -255,28 +258,38 @@ class ProjectSettings extends Component<{
           </flow>
           <checkbox state={allowNonBlueprintable} caption={[L_GuiProjectSettings.AllowNonBlueprintableTiles]} />
         </flow>
-        <button
-          styleMod={{ width: LandfillButtonWidth }}
-          caption={[L_GuiProjectSettings.SetLabTiles]}
-          on_gui_click={ibind(this.setLabTiles)}
-        />
-        <button
-          styleMod={{ width: LandfillButtonWidth }}
-          caption={[L_GuiProjectSettings.SetSelectedTile]}
-          on_gui_click={ibind(this.setSelectedTile)}
-        />
-        <button
-          styleMod={{ width: LandfillButtonWidth }}
-          caption={[L_GuiProjectSettings.SetSelectedTileAndLab]}
-          tooltip={[L_GuiProjectSettings.SetSelectedTileAndLabTooltip]}
-          on_gui_click={ibind(this.setLandfillAndLabTiles)}
-        />
-        <button
-          styleMod={{ width: LandfillButtonWidth }}
-          caption={[L_GuiProjectSettings.SetSelectedTileAndWater]}
-          tooltip={[L_GuiProjectSettings.SetSelectedTileAndWaterTooltip]}
-          on_gui_click={ibind(this.setLandfillAndWater)}
-        />
+        {this.project.isSpacePlatform() ? (
+          <button
+            caption={[L_GuiProjectSettings.ResetSpacePlatformFoundations]}
+            tooltip={[L_GuiProjectSettings.ResetSpacePlatformFoundationsTooltip]}
+            on_gui_click={ibind(this.resetSpacePlatformFoundations)}
+          />
+        ) : (
+          <>
+            <button
+              styleMod={{ width: LandfillButtonWidth }}
+              caption={[L_GuiProjectSettings.SetLabTiles]}
+              on_gui_click={ibind(this.setLabTiles)}
+            />
+            <button
+              styleMod={{ width: LandfillButtonWidth }}
+              caption={[L_GuiProjectSettings.SetSelectedTile]}
+              on_gui_click={ibind(this.setSelectedTile)}
+            />
+            <button
+              styleMod={{ width: LandfillButtonWidth }}
+              caption={[L_GuiProjectSettings.SetSelectedTileAndLab]}
+              tooltip={[L_GuiProjectSettings.SetSelectedTileAndLabTooltip]}
+              on_gui_click={ibind(this.setLandfillAndLabTiles)}
+            />
+            <button
+              styleMod={{ width: LandfillButtonWidth }}
+              caption={[L_GuiProjectSettings.SetSelectedTileAndWater]}
+              tooltip={[L_GuiProjectSettings.SetSelectedTileAndWaterTooltip]}
+              on_gui_click={ibind(this.setLandfillAndWater)}
+            />
+          </>
+        )}
         <VerticalPusher />
         <button style="mini_button" tooltip="super secret setting" on_gui_click={ibind(this.sss)} />
       </frame>
@@ -322,6 +335,18 @@ class ProjectSettings extends Component<{
     const stage = playerCurrentStage(this.playerIndex).get()
     if (!stage || !stage.valid) return
     const success = fn(stage)
+    if (!success) {
+      game.get_player(this.playerIndex)?.create_local_flying_text({
+        text: [L_GuiProjectSettings.FailedToSetTiles],
+        create_at_cursor: true,
+      })
+    }
+  }
+
+  private resetSpacePlatformFoundations() {
+    const stage = playerCurrentStage(this.playerIndex).get()
+    if (!stage || !stage.valid) return
+    const success = resetSpacePlatformTiles(stage)
     if (!success) {
       game.get_player(this.playerIndex)?.create_local_flying_text({
         text: [L_GuiProjectSettings.FailedToSetTiles],

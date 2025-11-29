@@ -1,8 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.10.8
 Date: ????
-  Bugfixes:
+  Features:
     - Tile changes now stop propagating to further stages when blocked by an entity, preventing invalid tile configurations on space platforms.
+    - Added "Reset space platforms" action, that places minimal space platform tiles using a heuristic algorithm.
 ---------------------------------------------------------------------------------------------------
 Version: 2.10.7
 Date: 2025-11-25
