@@ -455,6 +455,13 @@ class ProjectSettings extends Component<{
 
         <label caption={[L_GuiProjectSettings.BlueprintSettings]} style="caption_label" />
 
+        <CheckboxTextfield
+          captionBefore={[L_GuiProjectSettings.CustomBlueprintName]}
+          captionAfter=""
+          tooltip={[L_GuiProjectSettings.CustomBlueprintNameTooltip]}
+          value={settings.customBlueprintName}
+          textfieldWidth={120}
+        />
         <IconsEdit settings={settings} />
         <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
           <label
@@ -486,6 +493,7 @@ class ProjectSettings extends Component<{
             captionAfter={[L_GuiProjectSettings.IncludeEntitiesInTheNextNStages2]}
             tooltip={[L_GuiProjectSettings.IncludeEntitiesInTheNextNStagesTooltip]}
             value={settings.stageLimit}
+            numeric
           />
           <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
             <label

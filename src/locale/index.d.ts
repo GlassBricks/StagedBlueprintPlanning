@@ -346,6 +346,10 @@ export declare const enum L_GuiProjectSettings {
   ExcludeFromFutureBlueprints = "bp100.gui.project-settings.exclude-from-future-blueprints",
   /** Entities in this stage will not be present in later stage blueprints. However, entity UPDATES will still be present. */
   ExcludeFromFutureBlueprintsTooltip = "bp100.gui.project-settings.exclude-from-future-blueprints-tooltip",
+  /** Custom blueprint name: */
+  CustomBlueprintName = "bp100.gui.project-settings.custom-blueprint-name",
+  /** If unchecked, uses the stage name. */
+  CustomBlueprintNameTooltip = "bp100.gui.project-settings.custom-blueprint-name-tooltip",
   /** Only include entities changed in the last */
   IncludeEntitiesInTheNextNStages1 = "bp100.gui.project-settings.include-entities-in-the-next-n-stages-1",
   /** stages [img=info] */

@@ -16,11 +16,13 @@ export interface BlueprintGridSettings {
 }
 
 export interface BlueprintTakeSettings extends BlueprintGridSettings {
-  // kinda dumb, but works for now
   readonly icon1: SignalID | nil
   readonly icon2: SignalID | nil
   readonly icon3: SignalID | nil
   readonly icon4: SignalID | nil
+
+  /** If nil, uses the stage name. */
+  readonly customBlueprintName: string | nil
 
   readonly appendStageNumbersToIcons: boolean
 
@@ -112,6 +114,7 @@ export function getDefaultBlueprintSettings(): OverrideableBlueprintSettings {
     icon2: nil,
     icon3: nil,
     icon4: nil,
+    customBlueprintName: nil,
     appendStageNumbersToIcons: true,
     positionOffset: nil,
     snapToGrid: nil,

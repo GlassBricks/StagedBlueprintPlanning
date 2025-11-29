@@ -47,6 +47,7 @@ function getBasicBlueprintTakeParams(settings: BlueprintSettingsTable): Blueprin
     icon3: settings.icon3.get(),
     icon4: settings.icon4.get(),
     appendStageNumbersToIcons: settings.appendStageNumbersToIcons.get(),
+    customBlueprintName: settings.customBlueprintName.get(),
   }
 }
 

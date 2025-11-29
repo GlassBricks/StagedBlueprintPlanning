@@ -14,23 +14,38 @@ import { Component, Element, FactorioJsx } from "../../lib/factoriojsx"
 import { getDefaultValueIfIsOverridenProp, highlightIfOverriden } from "../../utils/DiffedProperty"
 import { MaybeRevertButton } from "../../utils/RevertButton"
 
-export interface CheckboxTextfieldProps {
+interface BaseCheckboxTextfieldProps {
   captionBefore: LocalisedString
   captionAfter: LocalisedString
   tooltip?: LocalisedString
-
-  value: MutableProperty<number | nil>
+  textfieldWidth?: number
 }
+
+export interface NumericCheckboxTextfieldProps extends BaseCheckboxTextfieldProps {
+  value: MutableProperty<number | nil>
+  numeric: true
+}
+
+export interface StringCheckboxTextfieldProps extends BaseCheckboxTextfieldProps {
+  value: MutableProperty<string | nil>
+  numeric?: false
+}
+
+export type CheckboxTextfieldProps = NumericCheckboxTextfieldProps | StringCheckboxTextfieldProps
+
 @RegisterClass("gui:CheckboxTextfield")
 export class CheckboxTextfield extends Component<CheckboxTextfieldProps> {
-  private value!: MutableProperty<number | nil>
+  private value!: MutableProperty<number | string | nil>
+  private isNumeric!: boolean
 
   override render(props: CheckboxTextfieldProps): Element {
     const { captionBefore, captionAfter, value } = props
     this.value = value
+    this.isNumeric = props.numeric ?? false
 
-    const isTruthy = this.value.truthy()
+    const isEnabled = this.isNumeric ? this.value.truthy() : this.value.map(ibind(this.isNotNil))
     const highlightStyleMod = highlightIfOverriden(value)
+    const textfieldWidth = props.textfieldWidth ?? (this.isNumeric ? 50 : 150)
     return (
       <flow
         direction="horizontal"
@@ -39,20 +54,22 @@ export class CheckboxTextfield extends Component<CheckboxTextfieldProps> {
         }}
       >
         <checkbox
-          state={isTruthy}
+          state={isEnabled}
           caption={captionBefore}
           styleMod={highlightStyleMod}
           on_gui_checked_state_changed={ibind(this.onCheckboxChanged)}
         />
         <textfield
-          style="short_number_textfield"
-          numeric={true}
+          style={this.isNumeric ? "short_number_textfield" : "stretchable_textfield"}
+          numeric={this.isNumeric}
           allow_decimal={false}
           allow_negative={false}
           text={this.value.map(ibind(this.valueToText))}
-          enabled={isTruthy}
+          enabled={isEnabled}
           on_gui_text_changed={ibind(this.onTextChanged)}
-          styleMod={{ width: 50 }}
+          styleMod={{ width: textfieldWidth }}
+          lose_focus_on_confirm
+          icon_selector={!this.isNumeric}
         />
         <label caption={captionAfter} tooltip={props.tooltip} styleMod={highlightStyleMod} />
         {MaybeRevertButton(value)}
@@ -60,23 +77,31 @@ export class CheckboxTextfield extends Component<CheckboxTextfieldProps> {
     )
   }
 
-  private valueToText(value: number | nil) {
+  private isNotNil(value: unknown) {
+    return value != nil
+  }
+
+  private valueToText(value: number | string | nil) {
     if (value == nil) return ""
     return tostring(value)
   }
 
   private onCheckboxChanged(e: OnGuiCheckedStateChangedEvent) {
     const newState = (e.element as CheckboxGuiElement).state
-    if (newState) {
-      this.value.set(getDefaultValueIfIsOverridenProp(this.value) ?? 1)
-    } else {
+    if (!newState) {
       this.value.set(nil)
+    } else {
+      const defaultValue = getDefaultValueIfIsOverridenProp(this.value)
+      if (this.isNumeric) {
+        this.value.set(defaultValue ?? 1)
+      } else {
+        this.value.set(defaultValue ?? "")
+      }
     }
   }
 
   private onTextChanged(e: OnGuiTextChangedEvent) {
-    const number = tonumber(e.text)
-    if (number == nil) return // ignore invalid input
-    this.value.set(number)
+    const value = this.isNumeric ? tonumber(e.text) : e.text
+    this.value.set(value)
   }
 }

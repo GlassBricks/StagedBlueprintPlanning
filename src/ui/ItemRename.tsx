@@ -44,6 +44,7 @@ export class ItemRename extends Component<ItemRenameProps> {
         on_gui_confirmed={Props.setValueFn(this.isRenaming, false)}
         styleMod={{ maximal_width: this.item.maximalWidth ?? 200 }}
         onCreate={(e) => e.focus()}
+        icon_selector
       />
     ) : (
       <label

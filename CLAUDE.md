@@ -123,7 +123,7 @@ When editing anything in `storage`:
 See mini framework in `src/lib/migration.ts`
 
 - Place project-related migrations in: `src/project/index.ts`
-- use the global variable `$CURRENT_VERSION` as a placeholder for current version, it will be substituted by a script during publishing.
+- use `Migrations.to($CURRENT_VERSION)` as a placeholder for current version. Global var will be substituted by a script later.
 
 Don't forget to consider if migrations in planning.
 

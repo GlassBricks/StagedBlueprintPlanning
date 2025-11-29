@@ -180,7 +180,8 @@ class TakeStageBlueprintStep implements BlueprintStep {
     })
     this.stagePlan.result = result
     if (this.actualStack.is_blueprint && this.actualStack.is_blueprint_setup()) {
-      this.actualStack.label = stageName
+      const customName = this.overrideableSettings.customBlueprintName
+      this.actualStack.label = customName ?? stageName
       this.actualStack.blueprint_description = this.stageSettings.description
     }
 

@@ -6,6 +6,7 @@
 import { ItemInventoryPositions, SignalID } from "factorio:runtime"
 import {
   BlueprintSettingsOverrideTable,
+  BlueprintSettingsTable,
   BlueprintTakeSettings,
   createStageBlueprintSettingsTable,
   iconNumbers,
@@ -14,7 +15,7 @@ import { mergeInventoryPositions } from "../entity/item-requests"
 import { newMap2d } from "../entity/map2d"
 import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import { createProjectTile } from "../tiles/ProjectTile"
-import { Mutable, PRecord } from "../lib"
+import { Mutable, PRecord, property } from "../lib"
 import { Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { getNilPlaceholder } from "../utils/diff-value"
@@ -175,6 +176,18 @@ Migrations.to("2.8.4", () => {
   for (const project of getAllProjects()) {
     for (const stage of project.getAllStages()) {
       game.forces.player.set_surface_hidden(stage.surface, true)
+    }
+  }
+})
+
+Migrations.to($CURRENT_VERSION, () => {
+  for (const project of getAllProjects()) {
+    assume<Mutable<BlueprintSettingsTable>>(project.defaultBlueprintSettings)
+    project.defaultBlueprintSettings.customBlueprintName = property(nil)
+
+    for (const stage of project.getAllStages()) {
+      assume<Mutable<BlueprintSettingsOverrideTable>>(stage.blueprintOverrideSettings)
+      stage.blueprintOverrideSettings.customBlueprintName = property(nil)
     }
   }
 })

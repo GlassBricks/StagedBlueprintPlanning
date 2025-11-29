@@ -1,7 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.11.2
 Date: ????
-  Changes:
+  Features:
+    - Added blueprint setting: "Custom blueprint name" to use something other than the stage's name.
+    - Added icon selector to renaming UI.
 ---------------------------------------------------------------------------------------------------
 Version: 2.11.1
 Date: 2025-11-29

@@ -71,6 +71,26 @@ test("can take single blueprint using stage settings", () => {
   expect(stack.preview_icons).toMatchTable([{ index: 1, signal: { type: "virtual", name: "signal-1" } }])
 })
 
+describe("customBlueprintName()", () => {
+  test("Respects customBlueprintName settings", () => {
+    const stage = project.getStage(1)!
+    createEntity(stage)
+
+    const stack = player.cursor_stack!
+    takeStageBlueprint(stage, stack)
+    expect(stack.label).toEqual(stage.name.get())
+
+    stage.blueprintOverrideSettings.customBlueprintName.set("")
+    takeStageBlueprint(stage, stack)
+    // Factorio treats empty string label as nil
+    expect(stack.label).toBeNil()
+
+    stage.blueprintOverrideSettings.customBlueprintName.set("My Custom Name")
+    takeStageBlueprint(stage, stack)
+    expect(stack.label).toEqual("My Custom Name")
+  })
+})
+
 test("includes only entities present in last x stages or in additionalWhitelist when stageLimit set", () => {
   const [stage1, stage2, stage3, stage4] = project.getAllStages()
 
