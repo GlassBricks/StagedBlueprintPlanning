@@ -180,7 +180,7 @@ Migrations.to("2.8.4", () => {
   }
 })
 
-Migrations.to($CURRENT_VERSION, () => {
+Migrations.to("2.12.0", () => {
   for (const project of getAllProjects()) {
     assume<Mutable<BlueprintSettingsTable>>(project.defaultBlueprintSettings)
     project.defaultBlueprintSettings.customBlueprintName = property(nil)
