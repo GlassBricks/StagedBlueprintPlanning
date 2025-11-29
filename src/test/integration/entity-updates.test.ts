@@ -43,7 +43,7 @@ import { _deleteAllProjects, createUserProject } from "../../project/UserProject
 import { debugPrint } from "../../lib/test/misc"
 import { createRollingStock } from "../entity/createRollingStock"
 import { simpleInsertPlan } from "../entity/entity-util"
-import * as integrationUtil from "./entity-integration-test-util"
+import * as integrationUtil from "./integration-test-util"
 import direction = defines.direction
 
 let project: UserProject

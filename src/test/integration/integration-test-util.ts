@@ -17,7 +17,7 @@ import {
   assertItemRequestHighlightsCorrect,
   assertLastStageHighlightCorrect,
   assertNoHighlightsAfterLastStage,
-} from "./entity-highlight-test-util"
+} from "../project/entity-highlight-test-util"
 
 export function assertEntityCorrect(project: UserProject, entity: ProjectEntity, expectError: number | false): void {
   expect(entity.isSettingsRemnant).toBeFalsy()

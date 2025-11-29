@@ -10,7 +10,7 @@ import { BBox } from "../../lib/geometry"
 import { UserProject } from "../../project/ProjectDef"
 import { SpacePlatformSettings } from "../../project/surfaces"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
-import { assertEntityCorrect } from "./entity-integration-test-util"
+import { assertEntityCorrect } from "./integration-test-util"
 
 before_each(() => {
   _deleteAllProjects()
