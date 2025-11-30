@@ -463,13 +463,13 @@ export function saveEntity(entity: LuaEntity, items?: BlueprintInsertPlan[]): Nu
     assume<SpacePlatformHubBlueprintEntity>(bpEntity)
     fixPlatformRequests(bpEntity)
   }
-
-  const itemRequests = items ?? getNonModuleRequests(entity)
-  const unstagedProps = itemRequests && {
-    items: itemRequests,
-  }
   const [result] = removeExtraProperties(bpEntity)
-  // ignore non-module requests gotten via blueprint; use item request proxy for those instead
+  // ignore non-module requests gotten via blueprint. Use either authoritative blueprint, or item-request-proxy, for those instead
+  const nonModuleRequests: BlueprintInsertPlan[] | nil =
+    items != nil ? partitionModulesAndRemoveGridRequests(items, entity.name)[1] : getNonModuleRequests(entity)
+  const unstagedProps = nonModuleRequests && {
+    items: nonModuleRequests,
+  }
   return $multi(result, unstagedProps)
 }
 

@@ -2026,7 +2026,7 @@ describe.each([false, true])("paste a rotated assembler (using bplib %s)", (useB
 describe("item-requests", () => {
   const slot = 2
   const count = 2
-  const insertPlan = simpleInsertPlan(defines.inventory.chest, "iron-plate", slot, count)
+  const chestPlateInsertPlan = simpleInsertPlan(defines.inventory.chest, "iron-plate", slot, count)
   function buildChest(): ProjectEntity {
     const chest = buildEntity(1, {
       position: [0.5, 0.5],
@@ -2074,7 +2074,7 @@ describe("item-requests", () => {
       chest,
       { name: "iron-chest" },
       {
-        items: [insertPlan],
+        items: [chestPlateInsertPlan],
       },
       0,
     )
@@ -2082,8 +2082,8 @@ describe("item-requests", () => {
 
     checkForEntityUpdates(chest, nil)
 
-    expect(projectChest.getPropertyAllStages("unstagedValue")).toEqual({ 2: { items: [insertPlan] } })
-    expect(chest.item_request_proxy?.insert_plan).toEqual([insertPlan])
+    expect(projectChest.getPropertyAllStages("unstagedValue")).toEqual({ 2: { items: [chestPlateInsertPlan] } })
+    expect(chest.item_request_proxy?.insert_plan).toEqual([chestPlateInsertPlan])
 
     assertEntityCorrect(projectChest, false)
   })
@@ -2105,7 +2105,7 @@ describe("item-requests", () => {
       }
     }
 
-    test("saves a pasted chest with item request", () => {
+    test("paste a chest with item request, saved as unstaged value", () => {
       const pos: MapPositionArray = [0.5, 0.5]
       const stack = player.cursor_stack!
       stack.set_stack("blueprint")
@@ -2114,7 +2114,7 @@ describe("item-requests", () => {
           entity_number: 1,
           name: "iron-chest",
           position: pos,
-          items: [insertPlan],
+          items: [chestPlateInsertPlan],
         },
       ])
       player.teleport([0, 0], surfaces[0])
@@ -2123,16 +2123,50 @@ describe("item-requests", () => {
       waitForPaste(() => {
         const chest = surfaces[0].find_entity("iron-chest", pos)!
         expect(chest).not.toBeNil()
-        expect(chest.item_request_proxy?.insert_plan).toEqual([insertPlan])
+        expect(chest.item_request_proxy?.insert_plan).toEqual([chestPlateInsertPlan])
 
         const projectChest = project.content.findCompatibleWithLuaEntity(chest, nil, 1)!
         expect(projectChest).not.toBeNil()
-        expect(projectChest.getUnstagedValue(1)).toEqual({ items: [insertPlan] })
+        expect(projectChest.getUnstagedValue(1)).toEqual({ items: [chestPlateInsertPlan] })
 
         assertEntityCorrect(projectChest, false)
       })
     })
 
+    test("paste assembling-machine-2 with prod module item requests, saved as value", () => {
+      const pos: MapPositionArray = [0.5, 0.5]
+      const moduleInsertPlan: BlueprintInsertPlan = simpleInsertPlan(
+        defines.inventory.crafter_modules,
+        "productivity-module",
+        0,
+      )
+      const stack = player.cursor_stack!
+      stack.set_stack("blueprint")
+      stack.set_blueprint_entities([
+        {
+          entity_number: 1,
+          name: "assembling-machine-2",
+          position: pos,
+          recipe: "iron-gear-wheel",
+          items: [moduleInsertPlan],
+        },
+      ])
+      player.teleport([0, 0], surfaces[0])
+      player.build_from_cursor({ position: pos })
+
+      waitForPaste(() => {
+        const assembler = surfaces[0].find_entity("assembling-machine-2", pos)!
+        expect(assembler).not.toBeNil()
+        expect(assembler.item_request_proxy?.insert_plan).toBeNil()
+
+        const projectAssembler = project.content.findCompatibleWithLuaEntity(assembler, nil, 1)!
+        expect(projectAssembler).not.toBeNil()
+        expect(projectAssembler.getUnstagedValue(1)).toBe(nil)
+        expect(projectAssembler.getValueAtStage(1)!.items).toEqual([moduleInsertPlan])
+
+        assertEntityCorrect(projectAssembler, false)
+      })
+    })
     // turns out this doesn't actually test what I wanted to tests, which is building stuff in editor mode, which instantly revives entities
     // Oh well.
     test("pasting identical item requests onto a furnace", () => {
@@ -2170,17 +2204,17 @@ describe("item-requests", () => {
 
   test("rebuilding an entity with item requests", () => {
     const projectChest = buildChest()
-    projectChest.setUnstagedValue(2, { items: [insertPlan] })
+    projectChest.setUnstagedValue(2, { items: [chestPlateInsertPlan] })
     project.worldUpdates.updateWorldEntities(projectChest, 2)
 
     const chest = projectChest.getWorldEntity(2)!
-    expect(chest.item_request_proxy?.insert_plan).toEqual([insertPlan])
+    expect(chest.item_request_proxy?.insert_plan).toEqual([chestPlateInsertPlan])
 
     project.worldUpdates.rebuildStage(2)
 
     const newChest = projectChest.getWorldEntity(2)!
-    expect(newChest.item_request_proxy?.insert_plan).toEqual([insertPlan])
-    expect(projectChest.getUnstagedValue(2)).toEqual({ items: [insertPlan] })
+    expect(newChest.item_request_proxy?.insert_plan).toEqual([chestPlateInsertPlan])
+    expect(projectChest.getUnstagedValue(2)).toEqual({ items: [chestPlateInsertPlan] })
 
     assertEntityCorrect(projectChest, false)
   })
