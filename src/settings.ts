@@ -36,7 +36,7 @@ data.extend<StringSettingDefinition | BoolSettingDefinition>([
     name: Settings.UseBplibForBlueprintPaste,
     type: "bool-setting",
     setting_type: "runtime-per-user",
-    default_value: true,
+    default_value: false,
     order: "f",
   },
   {
