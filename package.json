@@ -34,7 +34,7 @@
     "typescript-to-lua": "^1.33.2",
     "typescript-tstl-plugin": "^0.3.2",
     "factorio-test": "^3.0.0",
-    "factorio-test-cli": "^3.0.4"
+    "factorio-test-cli": "^3.1.1"
   },
   "type": "module",
   "scripts": {
