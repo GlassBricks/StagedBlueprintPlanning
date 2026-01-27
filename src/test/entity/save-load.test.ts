@@ -305,7 +305,7 @@ test("can update an entity", () => {
   expect(entity.get_inventory(defines.inventory.chest)!.get_bar() - 1).toBe(4)
 })
 
-test("can set recipe of assembling machine even if not researched", () => {
+test("can set recipe of assembling machine even if not researched (update)", () => {
   game.forces.player.recipes["rocket-fuel"].enabled = false
   after_test(() => (game.forces.player.recipes["rocket-fuel"].enabled = true))
   const entity = surface.create_entity({

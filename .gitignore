@@ -136,10 +136,7 @@ factorio/
 
 src/**/*.hide.*
 
-factorio-test-data-dir/**/*
-!factorio-test-data-dir/mods
-factorio-test-data-dir/mods/*
-!factorio-test-data-dir/mods/factorio-test_*.zip
+factorio-test-data-dir/
 
 # license files are in root; copied to src for packaging only
 src/COPYING*

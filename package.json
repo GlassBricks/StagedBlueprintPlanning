@@ -10,6 +10,7 @@
     "@eslint/js": "^9.33.0",
     "@tsconfig/node18": "^18.2.4",
     "@types/node": "^24.2.1",
+    "@types/semver": "^7.7.0",
     "concurrently": "^9.2.0",
     "copyfiles": "^2.4.1",
     "del-cli": "^6.0.0",
@@ -19,8 +20,6 @@
     "eslint-plugin-eslint-comments": "^3.2.0",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-prettier": "^5.5.4",
-    "factorio-test": "^2.0.0",
-    "factorio-test-cli": "^2.0.0",
     "factoriomod-debug": "^2.0.8",
     "gb-tstl-utils": "^1.0.2",
     "lua-types": "^2.13.1",
@@ -30,10 +29,12 @@
     "tstl-expect": "^0.4.6",
     "tsx": "^4.20.3",
     "typed-factorio": "^3.33.0",
-    "typescript": "5.8.2",
+    "typescript": "5.9.3",
     "typescript-eslint": "^8.39.1",
-    "typescript-to-lua": "^1.31.4",
-    "typescript-tstl-plugin": "^0.3.2"
+    "typescript-to-lua": "^1.33.2",
+    "typescript-tstl-plugin": "^0.3.2",
+    "factorio-test": "^3.0.0",
+    "factorio-test-cli": "^3.0.4"
   },
   "type": "module",
   "scripts": {
@@ -52,8 +53,9 @@
     "format:fix": "prettier --write \"src/**/*.ts\" \"src/**/*.tsx\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"src/**/*.tsx\"",
     "lint": "eslint",
-    "pretest": "npm run clean && npm run build:test",
-    "test": "factorio-test run ./src --mods EditorExtensions flib quality elevated-rails space-age bplib -- --graphics-quality very-low --cache-sprite-atlas true --disable-audio",
+    "pretest": "tstl",
+    "test": "factorio-test run",
+    "test:rebuild": "npm run clean && npm run build:test && npm run test",
     "check-clean-tree": "git diff --exit-code HEAD --",
     "check": "conc \"npm:format:check\" \"npm:lint\" \"npm:test\" \"npm:check-clean-tree\"",
     "subst-current-version": "tsx scripts/subst-current-version.ts",
@@ -68,8 +70,5 @@
     "execMap": {
       "ts": "tsx"
     }
-  },
-  "dependencies": {
-    "@types/semver": "^7.7.0"
   }
 }

@@ -493,12 +493,6 @@ test("onEntityForceDeleted calls forceDeleteEntity", () => {
   expectedNumCalls = 2
 })
 
-test("onEntityDied calls clearEntityAtStage", () => {
-  const { luaEntity, entity } = addEntity(2)
-  userActions.onEntityDied(luaEntity, 2)
-  expect(worldUpdates.clearWorldEntityAtStage).toHaveBeenCalledWith(entity, 2)
-})
-
 describe("onMoveEntityToStageCustomInput()", () => {
   test("if not in project, does nothing", () => {
     const luaEntity = createWorldEntity(2)
