@@ -20,8 +20,11 @@
     "eslint-plugin-eslint-comments": "^3.2.0",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-prettier": "^5.5.4",
+    "factorio-test": "^3.0.0",
+    "factorio-test-cli": "^3.1.1",
     "factoriomod-debug": "^2.0.8",
     "gb-tstl-utils": "^1.0.2",
+    "globals": "^17.1.0",
     "lua-types": "^2.13.1",
     "nodemon": "^3.1.10",
     "prettier": "^3.6.2",
@@ -32,9 +35,7 @@
     "typescript": "5.9.3",
     "typescript-eslint": "^8.39.1",
     "typescript-to-lua": "^1.33.2",
-    "typescript-tstl-plugin": "^0.3.2",
-    "factorio-test": "^3.0.0",
-    "factorio-test-cli": "^3.1.1"
+    "typescript-tstl-plugin": "^0.3.2"
   },
   "type": "module",
   "scripts": {

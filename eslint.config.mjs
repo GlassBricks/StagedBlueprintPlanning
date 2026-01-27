@@ -31,7 +31,6 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: true,
-        project: ["tsconfig.json"],
       },
     },
 
@@ -114,12 +113,15 @@ export default tseslint.config(
       },
       parserOptions: {
         projectService: true,
-        project: ["scripts/tsconfig.json"],
       },
     },
     rules: {
       "import/no-nodejs-modules": "off",
-      "no-unused-vars": "off", // bug somewhere
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
     },
   },
 )

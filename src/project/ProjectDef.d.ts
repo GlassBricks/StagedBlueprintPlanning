@@ -59,9 +59,7 @@ export interface NestedProjectSettings {
 }
 
 export interface UserProject
-  extends Project,
-    PropertiesTable<ProjectSettings>,
-    NestedPropertiesTable<NestedProjectSettings> {
+  extends Project, PropertiesTable<ProjectSettings>, NestedPropertiesTable<NestedProjectSettings> {
   readonly id: ProjectId
 
   // settings

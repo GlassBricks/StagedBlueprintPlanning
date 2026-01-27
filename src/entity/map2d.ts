@@ -36,8 +36,7 @@ class LinkedMap2DImpl<
   T extends {
     _next?: T
   },
-> implements LinkedMap2D<T>
-{
+> implements LinkedMap2D<T> {
   [x: number]: PRecord<number, T | nil>
   get(x: number, y: number): T | nil {
     const byX = this[x]
