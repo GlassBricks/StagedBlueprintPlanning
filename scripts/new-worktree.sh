@@ -27,4 +27,4 @@ fi
 echo "Created worktree at $WORKTREE_PATH"
 
 cd "$WORKTREE_PATH"
-npm ci
+pnpm ci
