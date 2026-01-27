@@ -16,7 +16,6 @@
 // git add all changed files
 import * as child_process from "child_process"
 import * as fsp from "fs/promises"
-import { globbyStream } from "globby"
 import * as path from "path"
 import { fileURLToPath } from "url"
 
@@ -29,28 +28,27 @@ const infoJson = fsp.readFile(infoJsonPath, "utf-8").then((content) => {
   return `"${JSON.parse(content).version}"`
 })
 
-const files = globbyStream(["**/*.{ts,tsx}", "!control.ts"], {
+const files = fsp.glob(["**/*.ts", "**/*.tsx"], {
   cwd: srcDir,
-  absolute: true,
-  ignore: ["**/node_modules/**"],
+  exclude: (name) => name === "control.ts" || name === "node_modules",
 })
 
-async function replaceInFile(file: string | Buffer) {
+async function replaceInFile(file: string): Promise<string | undefined> {
   const content = await fsp.readFile(file, "utf-8")
   const newContent = content.replace(/\$CURRENT_VERSION/g, await infoJson)
   if (content !== newContent) {
     await fsp.writeFile(file, newContent, "utf-8")
-    return file.toString()
+    return file
   }
 }
 
 const promises: Promise<string | undefined>[] = []
 for await (const file of files) {
-  promises.push(replaceInFile(file))
+  promises.push(replaceInFile(path.join(srcDir, file)))
 }
 const filesChanged = (await Promise.all(promises)).filter((file) => file !== undefined)
 console.log(filesChanged)
 
-if (filesChanged) {
+if (filesChanged.length > 0) {
   child_process.execSync(`git add ${filesChanged.join(" ")}`)
 }
