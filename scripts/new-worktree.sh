@@ -26,5 +26,11 @@ fi
 
 echo "Created worktree at $WORKTREE_PATH"
 
+if [[ -f "$GIT_ROOT/factorio-test-data-dir/config.ini" ]]; then
+    mkdir -p "$WORKTREE_PATH/factorio-test-data-dir"
+    cp "$GIT_ROOT/factorio-test-data-dir/config.ini" "$WORKTREE_PATH/factorio-test-data-dir/"
+    echo "Copied factorio-test-data-dir/config.ini"
+fi
+
 cd "$WORKTREE_PATH"
 pnpm i
