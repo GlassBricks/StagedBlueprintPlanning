@@ -10,7 +10,7 @@ npm run build:release     # Production build
 npm run test              # Run tests (incremental build)
 npm run test:rebuild      # Clean, rebuild, and test
 
-npm run test "filter1" "foo-test > block name > test" # Run a specific test; foo.test.ts becomes foo-test
+npm run test "filter1" "foo%-test > block name" # Run specific test (Lua patterns: escape - as %-)
 
 npm run format:fix        # Prettier
 npm run lint              # ESLint
