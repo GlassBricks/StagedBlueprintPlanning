@@ -17,6 +17,8 @@ npm run lint              # ESLint
 npm run check             # Full validation (format, lint, test, git tree clean)
 ```
 
+Run format and lint after changes.
+
 ### Build Scripts
 
 These are run as part of full rebuild.
@@ -27,33 +29,25 @@ These are run as part of full rebuild.
 
 ## Code Style
 
-### Lua Conventions
-
-Since Typescript code compiles to Lua:
-
-- Use `==` instead of `===`, `!=` instead of `!==`
-- Use `nil` instead of `undefined`, avoid `null`
-
-### TypeScript Style
-
 - No semicolons, 120 char line width
 - Explicit member accessibility required (`accessibility: "no-public"`)
 - Explicit module boundary types
 - Test files end with `.test.ts`
 - Avoid casting to `any` in new code. Prefer casting to an explicit type; creating types if it does not exist yet.
 
-## Architecture
+### Lua
 
-### Tech Stack
+Since Typescript code compiles to Lua:
+
+- Use `==` instead of `===`, `!=` instead of `!==`
+- Use `nil` instead of `undefined`, avoid `null`
+
+## Architecture
 
 - TypeScriptToLua (TSTL)
 - typed-factorio for Factorio API type definitions
 - factorio-test for testing
 - gb-tstl-utils for compiler utilities
-
-## Notes
-
-- with `noEmitOnError`, TSTL warnings will cause no emit, possibly failing tests
 
 ### Key Directories
 
@@ -131,3 +125,8 @@ in `src/project/`:
 - One logical assertion per test (multiple expects OK if testing same concept)
 
 For Factorio API documentation, prefer inspecting `node_modules/typed-factorio/**/*.d.ts` instead of online documentation.
+
+## Notes
+
+- with `noEmitOnError`, TSTL warnings will cause no emit, possibly failing tests
+- For user-visible changes, also update src/changelog.txt
