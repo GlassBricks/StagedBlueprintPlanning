@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
-Version: 2.12.2
+Version: 2.13.0
 Date: ????
   Features:
     - Added "Resync with world" action that reads actual world state into the project, useful for recovering from desync issues.
