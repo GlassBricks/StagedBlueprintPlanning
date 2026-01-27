@@ -274,7 +274,7 @@ export declare const enum L_GuiProjectSettings {
   RebuildStageTooltip = "bp100.gui.project-settings.rebuild-stage-tooltip",
   /** [img=utility/refresh] Rebuild all stages */
   RebuildAllStages = "bp100.gui.project-settings.rebuild-all-stages",
-  /** [img=utility/refresh] Resync with world [img=info] */
+  /** [img=utility/reset] Resync with world [img=info] */
   ResyncWithWorld = "bp100.gui.project-settings.resync-with-world",
   /** Reads the actual world state into the project, then rebuilds all stages.\nUseful if world state has diverged from stored data. */
   ResyncWithWorldTooltip = "bp100.gui.project-settings.resync-with-world-tooltip",
