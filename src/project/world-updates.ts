@@ -64,6 +64,7 @@ export interface WorldUpdates {
 
   rebuildStage(stage: StageNumber): void
   rebuildAllStages(): void
+  resyncWithWorld(): void
 
   updateTilesInRange(position: Position, fromStage: StageNumber, toStage: StageNumber | nil): TileCollision | nil
 
@@ -84,6 +85,53 @@ class RebuildAllStagesTask extends LoopTask {
   }
   protected getTitleForStep(step: number): LocalisedString {
     return [L_GuiTasks.RebuildingStage, this.project.getStageName(step + 1)]
+  }
+}
+
+let worldUpdatesBlocked = false
+
+@RegisterClass("ResyncWithWorldTask")
+class ResyncWithWorldTask extends LoopTask {
+  constructor(private project: Project) {
+    super(project.numStages() * 2)
+  }
+
+  override getTitle(): LocalisedString {
+    return [L_GuiTasks.ResyncWithWorld]
+  }
+
+  protected override doStep(i: number): void {
+    const numStages = this.project.numStages()
+    if (i < numStages) {
+      this.doReadStep(i + 1)
+    } else {
+      const rebuildStage = i - numStages + 1
+      if (rebuildStage == 1) worldUpdatesBlocked = false
+      this.project.worldUpdates.rebuildStage(rebuildStage)
+    }
+  }
+
+  private doReadStep(stage: StageNumber): void {
+    if (stage == 1) worldUpdatesBlocked = true
+    const surface = this.project.getSurface(stage)
+    if (!surface) return
+    for (const entity of surface.find_entities()) {
+      if (isWorldEntityProjectEntity(entity)) {
+        this.project.actions.onEntityPossiblyUpdated(entity, stage, nil, nil)
+      }
+    }
+  }
+
+  protected getTitleForStep(step: number): LocalisedString {
+    const numStages = this.project.numStages()
+    if (step < numStages) {
+      return [L_GuiTasks.ReadingStage, this.project.getStageName(step + 1)]
+    }
+    return [L_GuiTasks.RebuildingStage, this.project.getStageName(step - numStages + 1)]
+  }
+
+  override cancel(): void {
+    worldUpdatesBlocked = false
   }
 }
 
@@ -128,8 +176,18 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     deleteWorldEntities,
     resetUnderground,
     rebuildAllStages,
-    updateAllHighlights,
+    resyncWithWorld,
+    updateAllHighlights: updateAllHighlightsIfNotBlocked,
     updateTilesInRange,
+  }
+
+  function resyncWithWorld(): void {
+    submitTask(new ResyncWithWorldTask(project))
+  }
+
+  function updateAllHighlightsIfNotBlocked(entity: ProjectEntity): void {
+    if (worldUpdatesBlocked) return
+    updateAllHighlights(entity)
   }
 
   function makePreviewEntity(
@@ -239,6 +297,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
   }
 
   function updateWires(entity: ProjectEntity, startStage: StageNumber): void {
+    if (worldUpdatesBlocked) return
     const lastStage = project.lastStageFor(entity)
     for (const stage of $range(startStage, lastStage)) {
       updateWireConnectionsAtStage(content, entity, stage)
@@ -246,6 +305,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
   }
 
   function updateWorldEntities(entity: ProjectEntity, startStage: StageNumber, updateHighlights: boolean = true): void {
+    if (worldUpdatesBlocked) return
     if (entity.isSettingsRemnant) return makeSettingsRemnant(entity)
     const lastStage = project.lastStageFor(entity)
     if (lastStage < startStage) return
@@ -253,8 +313,9 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     updateWires(entity, startStage)
     if (updateHighlights) updateAllHighlights(entity)
   }
-  // extra hot path
+
   function updateNewWorldEntitiesWithoutWires(entity: ProjectEntity): void {
+    if (worldUpdatesBlocked) return
     const hasError = updateWorldEntitiesInRange(entity, 1, project.lastStageFor(entity))
     // performance: if there are no errors, then there are no highlights to update
     // (no stage diff or last stage, either)
@@ -306,14 +367,13 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
   }
 
   function updateWorldEntitiesOnLastStageChanged(entity: ProjectEntity, oldLastStage: StageNumber | nil): void {
+    if (worldUpdatesBlocked) return
     const movedDown = entity.lastStage != nil && (oldLastStage == nil || entity.lastStage < oldLastStage)
     if (movedDown) {
-      // delete all entities after the new last stage
       for (const stage of $range(entity.lastStage + 1, oldLastStage ?? project.numStages())) {
         entity.destroyWorldOrPreviewEntity(stage)
       }
     } else if (oldLastStage) {
-      // moved up
       updateWorldEntities(entity, oldLastStage + 1)
     }
     updateAllHighlights(entity)

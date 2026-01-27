@@ -2362,3 +2362,35 @@ describe("stage deletion", () => {
     assertAllInsertersInProject()
   })
 })
+
+describe("resyncWithWorld", () => {
+  test("discovers new entities and reads updates from world", () => {
+    const entity1 = buildEntity(1, { position: Pos(5.5, 5.5) })
+    assertEntityCorrect(entity1, false)
+
+    const entity2Pos = Pos(7.5, 7.5)
+    const unregisteredEntity = surfaces[0].create_entity({
+      name: "inserter",
+      position: entity2Pos,
+      direction: defines.direction.north,
+      force: "player",
+    })!
+    unregisteredEntity.inserter_stack_size_override = 1
+
+    entity1.getWorldEntity(3)!.inserter_stack_size_override = 3
+    unregisteredEntity.clone({ position: entity2Pos, surface: surfaces[2] })!.inserter_stack_size_override = 5
+
+    project.worldUpdates.resyncWithWorld()
+    runEntireCurrentTask()
+
+    expect(entity1.stageDiffs).toMatchTable({ 3: { override_stack_size: 3 } })
+
+    const entity2 = project.content.findCompatibleEntity("inserter", entity2Pos, nil, 1)
+    expect(entity2).toBeAny()
+    expect(entity2!.firstStage).toBe(1)
+    expect(entity2!.stageDiffs).toMatchTable({ 3: { override_stack_size: 5 } })
+
+    assertEntityCorrect(entity1, false)
+    assertEntityCorrect(entity2!, false)
+  })
+})

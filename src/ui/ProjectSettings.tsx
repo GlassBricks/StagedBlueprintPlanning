@@ -210,6 +210,13 @@ class ProjectSettings extends Component<{
         <label caption={[L_GuiProjectSettings.Rebuild]} style="caption_label" />
         <button
           styleMod={{ width: StageSettingsButtonWidth }}
+          caption={[L_GuiProjectSettings.ResyncWithWorld]}
+          tooltip={[L_GuiProjectSettings.ResyncWithWorldTooltip]}
+          on_gui_click={ibind(this.resyncWithWorld)}
+        />
+        <empty-widget styleMod={{ height: 5 }} />
+        <button
+          styleMod={{ width: StageSettingsButtonWidth }}
           caption={[L_GuiProjectSettings.RebuildStage]}
           tooltip={[L_GuiProjectSettings.RebuildStageTooltip]}
           on_gui_click={ibind(this.rebuildStage)}
@@ -703,6 +710,10 @@ class ProjectSettings extends Component<{
   }
   private rebuildAllStages() {
     this.project.worldUpdates.rebuildAllStages()
+  }
+
+  private resyncWithWorld() {
+    this.project.worldUpdates.resyncWithWorld()
   }
 
   private syncMapGenSettings() {

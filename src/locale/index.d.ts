@@ -274,6 +274,10 @@ export declare const enum L_GuiProjectSettings {
   RebuildStageTooltip = "bp100.gui.project-settings.rebuild-stage-tooltip",
   /** [img=utility/refresh] Rebuild all stages */
   RebuildAllStages = "bp100.gui.project-settings.rebuild-all-stages",
+  /** [img=utility/refresh] Resync with world [img=info] */
+  ResyncWithWorld = "bp100.gui.project-settings.resync-with-world",
+  /** Reads the actual world state into the project, then rebuilds all stages.\nUseful if world state has diverged from stored data. */
+  ResyncWithWorldTooltip = "bp100.gui.project-settings.resync-with-world-tooltip",
   /** Disable all entities */
   DisableAllEntities = "bp100.gui.project-settings.disable-all-entities",
   /** Enable all entities */
@@ -434,6 +438,10 @@ export declare const enum L_GuiTasks {
   RebuildAllStages = "bp100.gui.tasks.rebuild-all-stages",
   /** Rebuilding __1__ */
   RebuildingStage = "bp100.gui.tasks.rebuilding-stage",
+  /** Resync with world */
+  ResyncWithWorld = "bp100.gui.tasks.resync-with-world",
+  /** Reading __1__ */
+  ReadingStage = "bp100.gui.tasks.reading-stage",
 }
 export declare const enum L_GuiBlueprintBookTask {
   /** Assembling blueprint book */

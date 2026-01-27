@@ -14,13 +14,13 @@ import {
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../../entity/ProjectEntity"
-import { createProjectTile } from "../../tiles/ProjectTile"
 import { createEntity, createPreviewEntity, saveEntity } from "../../entity/save-load"
 import { Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
 import { EntityHighlights } from "../../project/entity-highlights"
 import { Project } from "../../project/ProjectDef"
 import { WorldUpdates } from "../../project/world-updates"
+import { createProjectTile } from "../../tiles/ProjectTile"
 import { createRollingStock } from "../entity/createRollingStock"
 import { moduleInsertPlan, simpleInsertPlan } from "../entity/entity-util"
 import { fMock } from "../f-mock"
