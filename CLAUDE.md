@@ -5,16 +5,16 @@ Staged Blueprint Planning is a Factorio mod for designing multi-stage blueprints
 ## Development Commands
 
 ```bash
-npm run build:test        # Full build (run once initially, or after clean)
-npm run build:release     # Production build
-npm run test              # Run tests (incremental build)
-npm run test:rebuild      # Clean, rebuild, and test
+pnpm run build:test        # Full build (run once initially, or after clean)
+pnpm run build:release     # Production build
+pnpm run test              # Run tests (incremental build)
+pnpm run test:rebuild      # Clean, rebuild, and test
 
-npm run test "filter1" "foo%-test > block name" # Run specific test (Lua patterns: escape - as %-)
+pnpm run test "filter1" "foo%-test > block name" # Run specific test (Lua patterns: escape - as %-)
 
-npm run format:fix        # Prettier
-npm run lint              # ESLint
-npm run check             # Full validation (format, lint, test, git tree clean)
+pnpm run format:fix        # Prettier
+pnpm run lint              # ESLint
+pnpm run check             # Full validation (format, lint, test, git tree clean)
 ```
 
 Run format and lint after changes.
@@ -23,9 +23,9 @@ Run format and lint after changes.
 
 These are run as part of full rebuild.
 
-- `npm run build:locale` - Generates `src/locale/index.d.ts` from `src/locale`
-- `npm run build:gui-specs` - Generates GUI specs for factoriojsx framework
-- `npm run build:tstlPlugin` - Builds custom TSTL plugin for function storage
+- `pnpm run build:locale` - Generates `src/locale/index.d.ts` from `src/locale`
+- `pnpm run build:gui-specs` - Generates GUI specs for factoriojsx framework
+- `pnpm run build:tstlPlugin` - Builds custom TSTL plugin for function storage
 
 ## Code Style
 
