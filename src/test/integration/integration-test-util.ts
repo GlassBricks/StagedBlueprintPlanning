@@ -2,15 +2,18 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { UnitNumber } from "factorio:runtime"
+import { BlueprintEntity, LuaEntity, LuaPlayer, LuaSurface, SurfaceCreateEntity, UnitNumber } from "factorio:runtime"
 import expect from "tstl-expect"
 import { oppositedirection } from "util"
 import { Prototypes } from "../../constants"
-import { ProjectEntity } from "../../entity/ProjectEntity"
+import { LuaEntityInfo } from "../../entity/Entity"
+import { ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { isPreviewEntity } from "../../entity/prototype-info"
 import { canBeAnyDirection, saveEntity } from "../../entity/save-load"
 import { assert } from "../../lib"
+import { Pos } from "../../lib/geometry"
 import { UserProject } from "../../project/ProjectDef"
+import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import {
   assertConfigChangedHighlightsCorrect,
   assertErrorHighlightsCorrect,
@@ -145,4 +148,103 @@ export function assertIsSettingsRemnant(project: UserProject, entity: ProjectEnt
   }
   expect(entity.hasAnyExtraEntities("errorOutline")).toBe(false)
   expect(entity.hasAnyExtraEntities("errorElsewhereIndicator")).toBe(false)
+}
+
+export interface EntityTestContext {
+  project: UserProject
+  surfaces: LuaSurface[]
+  player: LuaPlayer
+  assertEntityCorrect(entity: ProjectEntity, expectError: number | false): void
+  assertEntityNotPresent(entity: ProjectEntity): void
+  assertIsSettingsRemnant(entity: ProjectEntity): void
+  createEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>): LuaEntity
+  buildEntity<T extends BlueprintEntity = BlueprintEntity>(
+    stage: StageNumber,
+    args?: Partial<SurfaceCreateEntity>,
+  ): ProjectEntity<T>
+}
+
+export function setupEntityIntegrationTest(numStages = 6): EntityTestContext {
+  const pos = Pos(10.5, 10.5)
+  let defaultName = "inserter"
+
+  const ctx: EntityTestContext = {
+    project: nil!,
+    surfaces: nil!,
+    player: nil!,
+    assertEntityCorrect(entity: ProjectEntity, expectError: number | false) {
+      assertEntityCorrect(ctx.project, entity, expectError)
+    },
+    assertEntityNotPresent(entity: ProjectEntity) {
+      assertEntityNotPresent(ctx.project, entity)
+    },
+    assertIsSettingsRemnant(entity: ProjectEntity) {
+      assertIsSettingsRemnant(ctx.project, entity)
+    },
+    createEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>): LuaEntity {
+      const params = {
+        name: args?.name ?? defaultName ?? error("defaultName not set"),
+        position: pos,
+        force: "player",
+        direction: defines.direction.east,
+        ...args,
+      }
+      const entity = ctx.surfaces[stage - 1].create_entity(params)
+      assert(entity, "created entity")
+      const proto = prototypes.entity[params.name as string]
+      if (proto.type == "inserter") {
+        entity.inserter_stack_size_override = 1
+        entity.inserter_filter_mode = "whitelist"
+      }
+      return entity
+    },
+    buildEntity<T extends BlueprintEntity = BlueprintEntity>(
+      stage: StageNumber,
+      args?: Partial<SurfaceCreateEntity>,
+    ): ProjectEntity<T> {
+      const luaEntity = ctx.createEntity(stage, args)
+      const saved: LuaEntityInfo = {
+        name: luaEntity.name,
+        type: luaEntity.type,
+        position: luaEntity.position,
+        direction: luaEntity.direction,
+        belt_to_ground_type: luaEntity.type == "underground-belt" ? luaEntity.belt_to_ground_type : nil,
+        surface: luaEntity.surface,
+      }
+      ctx.project.actions.onEntityCreated(luaEntity, stage, ctx.player.index)
+      const queryEntity = luaEntity.valid ? luaEntity : saved
+      const entity = ctx.project.content.findCompatibleWithLuaEntity(queryEntity, nil, stage)! as ProjectEntity<T>
+      assert(entity)
+      expect(entity.firstStage).toBe(stage)
+      return entity
+    },
+  }
+
+  before_each(() => {
+    ctx.player?.cursor_stack?.clear()
+    ctx.surfaces?.forEach((surface) => {
+      surface.find_entities().forEach((e) => e.destroy())
+    })
+    _deleteAllProjects()
+  })
+
+  before_each(() => {
+    ctx.project = createUserProject("test", numStages)
+    ctx.surfaces = ctx.project.getAllStages().map((stage) => stage.surface)
+    ctx.player = game.players[1]
+  })
+
+  before_each(() => {
+    defaultName = "inserter"
+  })
+
+  return ctx
+}
+
+export function waitForPaste(useBplib: boolean, fn: () => void): void {
+  if (useBplib) {
+    after_ticks(1, fn)
+  } else {
+    fn()
+  }
 }

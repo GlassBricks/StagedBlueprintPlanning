@@ -89,14 +89,6 @@ before_each(() => {
 const TestUndo = UndoHandler("event listener test undo", (_, data: string) => undoFn(data))
 
 describe("add", () => {
-  test("tick buffer", () => {
-    after_ticks(60, () => {
-      // this is just so game has time to catch up with building tiles
-      mock.clear(project.actions)
-      expectedNumCalls = 0
-      expect(project.stagedTilesEnabled.get()).toBe(false)
-    })
-  })
   test("player built entity", () => {
     project.actions.onEntityCreated.invokes(
       (_a, _b, byPlayer) => byPlayer && TestUndo.createAction(byPlayer, "overbuild preview"),
