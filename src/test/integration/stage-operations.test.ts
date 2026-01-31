@@ -105,7 +105,7 @@ describe.skip("map gen settings", () => {
     ctx.surfaces[2].generate_with_lab_tiles = false
     syncMapGenSettings(ctx.project.getStage(3)!)
     ctx.project.insertStage(4)
-    expect(ctx.project.getSurface(4)).toMatchTable({
+    expect(ctx.project.surfaces.getSurface(4)).toMatchTable({
       map_gen_settings: { seed: 42 },
       generate_with_lab_tiles: false,
     })
@@ -277,7 +277,7 @@ describe("stage insertion", () => {
     expect(entityWithLastStage.lastStage).toBe(3)
 
     ctx.project.insertStage(3)
-    ctx.surfaces = ctx.project.getAllStages().map((stage) => stage.surface)
+    ctx.surfaces = ctx.project.getAllStages().map((stage) => stage.getSurface())
 
     expect(entityWithDiff.firstStage).toBe(2)
     expect(entityWithDiff.hasStageDiff(5)).toBe(true)
@@ -297,7 +297,7 @@ describe("stage insertion", () => {
     const entity = ctx.buildEntity(1, { position: pos })
 
     ctx.project.insertStage(1)
-    ctx.surfaces = ctx.project.getAllStages().map((stage) => stage.surface)
+    ctx.surfaces = ctx.project.getAllStages().map((stage) => stage.getSurface())
 
     expect(entity.firstStage).toBe(2)
     const preview = ctx.worldQueries.getWorldOrPreviewEntity(entity, 1)
@@ -312,7 +312,7 @@ describe("stage insertion", () => {
     expect(entity.lastStage).toBe(5)
 
     ctx.project.insertStage(ctx.project.settings.stageCount() + 1)
-    ctx.surfaces = ctx.project.getAllStages().map((stage) => stage.surface)
+    ctx.surfaces = ctx.project.getAllStages().map((stage) => stage.getSurface())
 
     expect(entity.lastStage).toBe(5)
     ctx.assertEntityCorrect(entity, false)

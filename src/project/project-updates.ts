@@ -806,7 +806,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     const tilesToUpdateSet = new LuaSet<ProjectTile>()
 
     for (const stage of $range(1, project.settings.stageCount())) {
-      const surface = project.getSurface(stage)!
+      const surface = project.surfaces.getSurface(stage)!
       const tiles = surface.find_tiles_filtered({
         area: bbox,
         name: Object.keys(getPrototypeInfo().blueprintableTiles),

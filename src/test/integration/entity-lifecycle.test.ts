@@ -230,7 +230,7 @@ describe.each([
   test("can upgrade at first stage via fast replace", () => {
     const dir = direction.east
     const entity = buildEntity(3)
-    ctx.player.teleport(ctx.player.position, ctx.project.getSurface(3))
+    ctx.player.teleport(ctx.player.position, ctx.project.surfaces.getSurface(3))
     ctx.player.cursor_stack!.set_stack(upgradeName)
     ctx.player.build_from_cursor({ position: pos, direction: dir })
 

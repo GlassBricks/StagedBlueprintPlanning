@@ -29,14 +29,14 @@ describe("Tiles integration tests", () => {
   test("place tile, modify at later stage, mine at that stage", () => {
     const pos = Pos(5, 5)
 
-    const stage2 = project.getSurface(2)!
+    const stage2 = project.surfaces.getSurface(2)!
     stage2.set_tiles([{ name: "concrete", position: pos }], nil, nil, nil, true)
 
     const tile = project.content.tiles.get(5, 5)!
     expect(tile.getTileAtStage(2)).toBe("concrete")
     expect(tile.getTileAtStage(3)).toBe("concrete")
 
-    const stage4 = project.getSurface(4)!
+    const stage4 = project.surfaces.getSurface(4)!
     stage4.set_tiles([{ name: "stone-path", position: pos }], nil, nil, nil, true)
 
     expect(tile.getTileAtStage(2)).toBe("concrete")
@@ -54,10 +54,10 @@ describe("Tiles integration tests", () => {
   test("mining at first stage with later values sets nil", () => {
     const pos = Pos(10, 10)
 
-    const stage1 = project.getSurface(1)!
+    const stage1 = project.surfaces.getSurface(1)!
     stage1.set_tiles([{ name: "concrete", position: pos }], nil, nil, nil, true)
 
-    const stage3 = project.getSurface(3)!
+    const stage3 = project.surfaces.getSurface(3)!
     stage3.set_tiles([{ name: "stone-path", position: pos }], nil, nil, nil, true)
 
     const tile = project.content.tiles.get(10, 10)!
@@ -74,7 +74,7 @@ describe("Tiles integration tests", () => {
   test("mining all entries deletes tile", () => {
     const pos = Pos(15, 15)
 
-    const stage2 = project.getSurface(2)!
+    const stage2 = project.surfaces.getSurface(2)!
     stage2.set_tiles([{ name: "concrete", position: pos }], nil, nil, nil, true)
 
     player.teleport(pos, stage2)
@@ -86,13 +86,13 @@ describe("Tiles integration tests", () => {
   test("building over nil entry works", () => {
     const pos = Pos(20, 20)
 
-    const stage2 = project.getSurface(2)!
+    const stage2 = project.surfaces.getSurface(2)!
     stage2.set_tiles([{ name: "concrete", position: pos }], nil, nil, nil, true)
 
     player.teleport(pos, stage2)
     player.mine_tile(stage2.get_tile(20, 20))
 
-    const stage3 = project.getSurface(3)!
+    const stage3 = project.surfaces.getSurface(3)!
     stage3.set_tiles([{ name: "stone-path", position: pos }], nil, nil, nil, true)
 
     const tile = project.content.tiles.get(20, 20)!
@@ -109,8 +109,8 @@ describe("Tiles integration tests", () => {
     expect(tile.getTileAtStage(1)).toBe("concrete")
     expect(tile.getTileAtStage(3)).toBe("concrete")
 
-    const stage1 = project.getSurface(1)!
-    const stage3 = project.getSurface(3)!
+    const stage1 = project.surfaces.getSurface(1)!
+    const stage3 = project.surfaces.getSurface(3)!
 
     expect(stage1.get_tile(pos).name).toBe("concrete")
     expect(stage3.get_tile(pos).name).toBe("concrete")
@@ -142,7 +142,7 @@ describe("Tiles integration tests", () => {
     expect(tile.getTileAtStage(3)).toBe("concrete")
     expect(tile.getTileAtStage(5)).toBe("stone-path")
 
-    const stage3 = project.getSurface(3)!
+    const stage3 = project.surfaces.getSurface(3)!
     stage3.create_entity({
       name: "iron-chest",
       position: { x: pos.x + 0.5, y: pos.y + 0.5 },
@@ -155,7 +155,7 @@ describe("Tiles integration tests", () => {
     expect(tile.getTileAtStage(3)).toBe("concrete")
     expect(tile.getTileAtStage(5)).toBe("stone-path")
 
-    const stage2 = project.getSurface(2)!
+    const stage2 = project.surfaces.getSurface(2)!
     expect(stage2.get_tile(pos).name).toBe("water")
     expect(stage3.get_tile(pos).name).toBe("concrete")
   })

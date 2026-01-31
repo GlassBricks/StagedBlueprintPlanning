@@ -310,7 +310,7 @@ export function setupEntityIntegrationTest(numStages = 6): EntityTestContext {
 
   before_each(() => {
     ctx.project = createUserProject("test", numStages)
-    ctx.surfaces = ctx.project.getAllStages().map((stage) => stage.surface)
+    ctx.surfaces = ctx.project.getAllStages().map((stage) => stage.getSurface())
     ctx.player = game.players[1]
     ctx.worldOps = {
       rebuildStage: (stage) => ctx.project.worldUpdates.rebuildStage(stage),

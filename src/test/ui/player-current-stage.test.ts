@@ -28,13 +28,13 @@ test("playerCurrentStage", () => {
   const currentStage = playerCurrentStage(1 as PlayerIndex)
   expect(currentStage.get()).toBeNil()
 
-  expect(player.surface_index).not.toBe(project.getStage(1)!.surface.index)
+  expect(player.surface_index).not.toBe(project.getStage(1)!.getSurface().index)
 
   on_tick((t) => {
     const stage = project.getStage(math.floor((t - 1) / 2) + 1)!
     if (stage != nil) {
       if (t % 2 == 1) {
-        player.teleport(player.position, stage.surface)
+        player.teleport(player.position, stage.getSurface())
       } else {
         expect(currentStage.get()).comment(`Player should be on stage ${stage.stageNumber}`).toBe(stage)
       }
@@ -43,7 +43,7 @@ test("playerCurrentStage", () => {
       after_ticks(1, () => {
         expect(currentStage.get()).toBeNil()
 
-        player.teleport(player.position, project.getStage(1)!.surface)
+        player.teleport(player.position, project.getStage(1)!.getSurface())
         after_ticks(2, () => {
           expect(currentStage.get()).toBe(project.getStage(1))
 

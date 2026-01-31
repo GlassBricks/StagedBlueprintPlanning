@@ -323,7 +323,7 @@ class ProjectSettings extends Component<{
   private setLabTiles() {
     const stage = playerCurrentStage(this.playerIndex).get()
     if (!stage || !stage.valid) return
-    setCheckerboard(stage.surface, stage.getBlueprintBBox())
+    setCheckerboard(stage.getSurface(), stage.getBlueprintBBox())
   }
 
   private setSelectedTile() {
@@ -542,7 +542,7 @@ class ProjectSettings extends Component<{
       player,
       settings,
       stageBpSettings,
-      takeSettingsStage.surface,
+      takeSettingsStage.getSurface(),
       takeSettingsStage.getBlueprintBBox(),
       name,
     )

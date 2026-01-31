@@ -84,11 +84,11 @@ export function teleportToStage(player: LuaPlayer, stage: Stage): void {
   const currentStage = getStageAtSurface(player.surface_index)
   if (currentStage?.project == stage.project) {
     if (currentStage != stage) {
-      teleportPlayer(player, stage.surface, player.position)
+      teleportPlayer(player, stage.getSurface(), player.position)
     }
   } else {
     const newPosition = getProjectPlayerData(player.index, stage.project)?.lastPosition ?? { x: 0, y: 0 }
-    teleportPlayer(player, stage.surface, newPosition)
+    teleportPlayer(player, stage.getSurface(), newPosition)
   }
 }
 
@@ -102,7 +102,7 @@ export function teleportToProject(player: LuaPlayer, project: UserProject): void
   const stageNum: StageNumber | nil = playerData?.lastStage
   const position = playerData?.lastPosition ?? { x: 0, y: 0 }
   const stage = (stageNum && project.getStage(stageNum)) || project.getStage(1)!
-  teleportPlayer(player, stage.surface, position)
+  teleportPlayer(player, stage.getSurface(), position)
 }
 
 export function recordPlayerLastPosition(player: LuaPlayer): void {

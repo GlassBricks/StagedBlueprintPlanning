@@ -27,7 +27,7 @@ export function createBlueprintWithStageInfo(player: LuaPlayer, stage: Stage, ar
   stack.set_stack("blueprint")
 
   const entityMapping = stack.create_blueprint({
-    surface: stage.surface,
+    surface: stage.getSurface(),
     force: player.force_index,
     area,
   })

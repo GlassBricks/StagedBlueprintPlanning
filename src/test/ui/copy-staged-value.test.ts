@@ -20,7 +20,7 @@ before_each(() => {
   project = createUserProject("test", 2)
   player = game.players[1]
   stage = project.getStage(1)!
-  surface = stage.surface
+  surface = stage.getSurface()
   player.mod_settings[Settings.CopyItemRequests] = { value: true } as any
 })
 

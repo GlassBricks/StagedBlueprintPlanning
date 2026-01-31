@@ -108,7 +108,7 @@ export function setTilesAndCheckerboard(
 
 export function setTilesForStage(stage: Stage): boolean {
   const tile = stage.project.settings.landfillTile.get()
-  return tile != nil && setTiles(stage.surface, stage.getBlueprintBBox(), tile)
+  return tile != nil && setTiles(stage.getSurface(), stage.getBlueprintBBox(), tile)
 }
 
 export function setTilesAndWaterForStage(stage: Stage): boolean {
@@ -131,7 +131,7 @@ function setTilesUnderEntities(
   const project = stage.project
   const tile = project.settings.landfillTile.get()
   if (tile == nil) return false
-  const [success, freeTiles] = fn(stage.surface, stage.getBlueprintBBox(), tile)
+  const [success, freeTiles] = fn(stage.getSurface(), stage.getBlueprintBBox(), tile)
   if (!success) return false
 
   if (freeTiles && project.settings.stagedTilesEnabled.get()) {
@@ -179,7 +179,7 @@ function syncStagedTiles(stage: Stage, bbox: BBox, optimized: LuaSet<string>, ti
 
 export function resetSpacePlatformTiles(stage: Stage): boolean {
   const project = stage.project
-  const surface = stage.surface
+  const surface = stage.getSurface()
   const area = stage.getBlueprintBBox()
   const bbox = BBox.load(area)
 

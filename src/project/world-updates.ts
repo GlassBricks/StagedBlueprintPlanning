@@ -113,7 +113,7 @@ class ResyncWithWorldTask extends LoopTask {
 
   private doReadStep(stage: StageNumber): void {
     if (stage == 1) worldUpdatesBlocked = true
-    const surface = this.project.getSurface(stage)
+    const surface = this.project.surfaces.getSurface(stage)
     if (!surface) return
     for (const entity of surface.find_entities()) {
       if (isWorldEntityProjectEntity(entity)) {
@@ -201,7 +201,12 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     if (existing && existing.name == previewName) {
       existing.direction = direction
     } else {
-      const previewEntity = createPreviewEntity(project.getSurface(stage)!, entity.position, direction, previewName)
+      const previewEntity = createPreviewEntity(
+        project.surfaces.getSurface(stage)!,
+        entity.position,
+        direction,
+        previewName,
+      )
       wp.replaceWorldOrPreviewEntity(entity, stage, previewEntity)
     }
   }
@@ -235,7 +240,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
 
     let lastUnstagedValue: UnstagedEntityProps | nil = nil
     for (const [stage, value, diffChanged] of entity.iterateValues(startStage, endStage)) {
-      const surface = project.getSurface(stage)!
+      const surface = project.surfaces.getSurface(stage)!
       const existing = wp.getWorldOrPreviewEntity(entity, stage)
       const wasPreviewEntity = existing && isPreviewEntity(existing)
       const existingNormalEntity = !wasPreviewEntity && existing
@@ -433,7 +438,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
   }
 
   function disableAllEntitiesInStage(stage: StageNumber): void {
-    const surface = project.getSurface(stage)
+    const surface = project.surfaces.getSurface(stage)
     if (!surface) return
     const arr = surface.find_entities()
     for (const i of $range(1, arr.length)) {
@@ -441,7 +446,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     }
   }
   function enableAllEntitiesInStage(stage: StageNumber): void {
-    const surface = project.getSurface(stage)
+    const surface = project.surfaces.getSurface(stage)
     if (!surface) return
     const arr = surface.find_entities()
     for (const i of $range(1, arr.length)) {
@@ -449,7 +454,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     }
   }
   function rebuildStage(stage: StageNumber): void {
-    const surface = project.getSurface(stage)
+    const surface = project.surfaces.getSurface(stage)
     if (!surface) return
     for (const entity of surface.find_entities()) {
       if (isWorldEntityProjectEntity(entity)) {
@@ -518,7 +523,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     withTileEventsDisabled(() => {
       for (let stage = fromStage; stage <= endStage; stage++) {
         const value = tile?.getTileAtStage(stage)
-        const surface = project.getSurface(stage)!
+        const surface = project.surfaces.getSurface(stage)!
         if (value != nil) {
           tileWrite.name = value
         } else {

@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2025 GlassBricks
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
-import { LuaEntity, LuaSurface, nil, SurfaceIndex } from "factorio:runtime"
+import { LuaSurface, nil, SurfaceIndex } from "factorio:runtime"
 import { remove_from_list } from "util"
 import { newProjectContent } from "../entity/ProjectContent"
 import { StageNumber } from "../entity/ProjectEntity"
@@ -14,13 +14,8 @@ import { getStageAtSurface } from "./project-refs"
 import { ProjectUpdates } from "./project-updates"
 import { GlobalProjectEvent, LocalProjectEvent, ProjectId, Stage, StageId, UserProject } from "./ProjectDef"
 import { ProjectSettings, StageSettingsData } from "./ProjectSettings"
-import {
-  createStageSurface,
-  destroySurface,
-  getDefaultSurfaceSettings,
-  SurfaceSettings,
-  updateStageSurfaceName,
-} from "./surfaces"
+import { ProjectSurfaces } from "./ProjectSurfaces"
+import { getDefaultSurfaceSettings, SurfaceSettings } from "./surfaces"
 import { UserActions } from "./user-actions"
 import { WorldUpdates } from "./world-updates"
 import { WorldPresentation } from "./WorldPresentation"
@@ -52,6 +47,7 @@ export interface UserProjectInternal extends UserProject {
 @RegisterClass("Assembly") // named differently for legacy reasons
 class UserProjectImpl implements UserProjectInternal {
   readonly settings: ProjectSettings
+  readonly surfaces: ProjectSurfaces
 
   content = newProjectContent()
   localEvents = new SimpleEvent<LocalProjectEvent>()
@@ -73,10 +69,13 @@ class UserProjectImpl implements UserProjectInternal {
     surfaceSettings: SurfaceSettings = getDefaultSurfaceSettings(),
   ) {
     this.settings = new ProjectSettings(name, surfaceSettings)
+    this.surfaces = new ProjectSurfaces(this.settings)
     for (const i of $range(1, initialNumStages)) {
       this.settings.insertStageSettings(i, `Stage ${i}`)
-      const [stage] = StageImpl.create(this, i)
+      const [surface] = this.surfaces.createSurface(i, this.content.computeBoundingBox())
+      const stage = new StageImpl(this, i)
       this.stages[i] = stage
+      this.registerStageInSurfaceMap(stage, surface)
     }
   }
 
@@ -98,20 +97,13 @@ class UserProjectImpl implements UserProjectInternal {
     this.subscription = new Subscription()
 
     this.settings.projectName.subscribe(this.subscription, ibind(this.onNameChange))
+    this.surfaces.registerEvents()
   }
 
   private onNameChange(newValue: string, oldValue: string): void {
     this.settings.blueprintBookTemplate.onProjectNameChanged(newValue, oldValue)
-
-    for (const [, stage] of pairs(this.stages)) {
-      updateStageSurfaceName(stage.surface, newValue, stage.getSettings().name.get())
-    }
   }
 
-  getSurface(stageNum: StageNumber): LuaSurface | nil {
-    const stage = this.stages[stageNum]
-    return stage && stage.surface
-  }
   getStage(stageNumber: StageNumber): Stage | nil {
     return this.stages[stageNumber]
   }
@@ -140,12 +132,16 @@ class UserProjectImpl implements UserProjectInternal {
 
     const name = this.settings.getNewStageName(stageNumber)
     this.settings.insertStageSettings(stageNumber, name)
-    const [newStage, hub] = StageImpl.create(this, stageNumber)
 
+    const [, hub] = this.surfaces.insertSurface(stageNumber, this.content.computeBoundingBox())
+
+    const newStage = new StageImpl(this, stageNumber)
     table.insert(this.stages as unknown as Stage[], stageNumber, newStage)
     for (const i of $range(stageNumber, luaLength(this.stages))) {
       this.stages[i].stageNumber = i
     }
+
+    this.rebuildSurfaceMap()
 
     this.settings.blueprintBookTemplate.onStageInserted(stageNumber, this)
     this.raiseEvent({ type: "stage-added", project: this, stage: newStage, spacePlatformHub: hub })
@@ -163,12 +159,17 @@ class UserProjectImpl implements UserProjectInternal {
 
     this.raiseEvent({ type: "pre-stage-deleted", project: this, stage })
 
-    stage._doDelete()
+    this.unregisterStageFromSurfaceMap(stage)
+    ;(stage as Mutable<Stage>).valid = false
+    this.surfaces.deleteSurface(index)
+
     table.remove(this.stages as unknown as Stage[], index)
     this.settings.removeStageSettings(index)
     for (const i of $range(index, this.settings.stageCount())) {
       this.stages[i].stageNumber = i
     }
+
+    this.rebuildSurfaceMap()
 
     this.worldPresentation.onStageDeleted(index)
     if (isMerge) {
@@ -209,12 +210,32 @@ class UserProjectImpl implements UserProjectInternal {
     this.settings.blueprintBookTemplate.destroy()
     this.valid = false
     for (const [, stage] of pairs(this.stages)) {
-      stage._doDelete()
+      this.unregisterStageFromSurfaceMap(stage)
+      ;(stage as Mutable<Stage>).valid = false
     }
+    this.surfaces.destroyAll()
     this.raiseEvent({ type: "project-deleted", project: this })
     this.localEvents.closeAll()
+    this.surfaces.close()
     this.subscription?.close()
     delete this.subscription
+  }
+
+  private registerStageInSurfaceMap(stage: StageImpl, surface: LuaSurface): void {
+    if (this.id != 0) storage.surfaceIndexToStage.set(surface.index, stage)
+  }
+
+  private unregisterStageFromSurfaceMap(stage: StageImpl): void {
+    const surface = this.surfaces.getSurface(stage.stageNumber)
+    if (surface) storage.surfaceIndexToStage.delete(surface.index)
+  }
+
+  private rebuildSurfaceMap(): void {
+    if (this.id == 0) return
+    for (const [, stage] of pairs(this.stages)) {
+      const surface = this.surfaces.getSurface(stage.stageNumber)
+      if (surface) storage.surfaceIndexToStage.set(surface.index, stage)
+    }
   }
 
   private raiseEvent(event: LocalProjectEvent): void {
@@ -299,47 +320,21 @@ export interface StageInternal extends Stage {
 class StageImpl implements StageInternal {
   readonly valid = true
 
-  readonly surfaceIndex: SurfaceIndex
-
   actions: UserActions
 
   id?: StageId
 
-  private subscription?: Subscription
-
   constructor(
     public project: UserProjectImpl,
-    readonly surface: LuaSurface,
     public stageNumber: StageNumber,
   ) {
-    this.surfaceIndex = surface.index
-    if (project.id != 0) storage.surfaceIndexToStage.set(this.surfaceIndex, this)
     this.actions = project.actions
   }
 
-  registerEvents(): void {
-    if (this.subscription) return
-    this.subscription = new Subscription()
+  registerEvents(): void {}
 
-    this.getSettings().name.subscribe(this.subscription, ibind(this.onNameChange))
-  }
-
-  private onNameChange(newName: string): void {
-    updateStageSurfaceName(this.surface, this.project.settings.projectName.get(), newName)
-  }
-
-  static create(project: UserProjectImpl, stageNumber: StageNumber): [StageImpl, entities?: LuaEntity] {
-    const area = project.content.computeBoundingBox()
-    const stageName = project.settings.getStageName(stageNumber) as string
-    const [surface, hub] = createStageSurface(
-      project.settings.surfaceSettings,
-      project.settings.projectName.get(),
-      stageName,
-      area,
-    )
-    const stage = new StageImpl(project, surface, stageNumber)
-    stage.registerEvents()
-    return [stage, hub]
+  getSurface(): LuaSurface {
+    return this.project.surfaces.getSurface(this.stageNumber)!
   }
 
   getSettings(): StageSettingsData {
@@ -370,14 +365,6 @@ class StageImpl implements StageInternal {
   discardInProject(): void {
     if (!this.valid) return
     this.project.discardStage(this.stageNumber)
-  }
-
-  _doDelete(): void {
-    if (!this.valid) return
-    ;(this as Mutable<Stage>).valid = false
-    storage.surfaceIndexToStage.delete(this.surfaceIndex)
-    if (this.surface.valid) destroySurface(this.surface)
-    this.subscription?.close()
   }
 
   __tostring(): string {

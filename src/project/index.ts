@@ -38,7 +38,7 @@ Migrations.to("2.2.0", () => {
       }
     }
     for (const stage of project.getAllStages()) {
-      stage.surface.ignore_surface_conditions = true
+      stage.getSurface().ignore_surface_conditions = true
     }
   }
 })
@@ -110,10 +110,10 @@ Migrations.to("2.8.0", () => {
     ;(project as UserProjectInternal).registerEvents()
     for (const stage of project.getAllStages()) {
       ;(stage as StageInternal).registerEvents()
-      updateStageSurfaceName(stage.surface, project.settings.projectName.get(), stage.getSettings().name.get())
+      updateStageSurfaceName(stage.getSurface(), project.settings.projectName.get(), stage.getSettings().name.get())
     }
 
-    const settings = readSurfaceSettings(project.getStage(1)!.surface)
+    const settings = readSurfaceSettings(project.getStage(1)!.getSurface())
     project.settings.surfaceSettings = { ...getDefaultSurfaceSettings(), ...settings }
 
     // Migrate tiles from old format to new sparse array format
@@ -151,7 +151,7 @@ Migrations.to("2.8.0", () => {
 Migrations.to("2.8.4", () => {
   for (const project of getAllProjects()) {
     for (const stage of project.getAllStages()) {
-      game.forces.player.set_surface_hidden(stage.surface, true)
+      game.forces.player.set_surface_hidden(stage.getSurface(), true)
     }
   }
 })

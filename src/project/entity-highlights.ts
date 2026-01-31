@@ -270,7 +270,7 @@ export function EntityHighlights(
     type: keyof HighlightEntities,
     value: boolean | nil,
   ): HighlightEntity | nil {
-    if (value) return createHighlight(entity, stage, project.getSurface(stage)!, type)
+    if (value) return createHighlight(entity, stage, project.surfaces.getSurface(stage)!, type)
     removeHighlight(entity, stage, type)
     return nil
   }
@@ -341,7 +341,7 @@ export function EntityHighlights(
     destroyAllExtraEntities(entity, "stageDeleteHighlight")
     if (entity.lastStage != nil && !entity.isMovable()) {
       const stage = entity.lastStage
-      const surface = project.getSurface(stage)!
+      const surface = project.surfaces.getSurface(stage)!
       createHighlight(entity, stage, surface, "stageDeleteHighlight")
     }
   }
@@ -369,11 +369,11 @@ export function EntityHighlights(
       worldEntities.getWorldEntity(entity, stage),
     )
     if (sampleItemName != nil) {
-      createHighlight(entity, stage, project.getSurface(stage)!, "itemRequestHighlight")
+      createHighlight(entity, stage, project.surfaces.getSurface(stage)!, "itemRequestHighlight")
       createHighlight(
         entity,
         stage,
-        project.getSurface(stage)!,
+        project.surfaces.getSurface(stage)!,
         "itemRequestHighlightOverlay",
         `item/${sampleItemName}`,
       )

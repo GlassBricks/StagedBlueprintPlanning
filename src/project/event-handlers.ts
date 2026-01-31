@@ -1286,14 +1286,14 @@ Events.on_chunk_generated((e) => {
   }
 
   const status = defines.chunk_generated_status.entities
-  for (const { surface } of project.getAllStages()) {
+  for (const stage of project.getAllStages()) {
     const position = e.position
-    if (!surface.is_chunk_generated(position)) {
-      if (surface.generate_with_lab_tiles) {
-        withTileEventsDisabled(surface.build_checkerboard, e.area)
-        surface.set_chunk_generated_status(position, status)
+    if (!stage.getSurface().is_chunk_generated(position)) {
+      if (stage.getSurface().generate_with_lab_tiles) {
+        withTileEventsDisabled(stage.getSurface().build_checkerboard, e.area)
+        stage.getSurface().set_chunk_generated_status(position, status)
       } else {
-        surface.request_to_generate_chunks(position, 1)
+        stage.getSurface().request_to_generate_chunks(position, 1)
       }
     }
   }

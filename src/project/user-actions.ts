@@ -722,7 +722,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     for (const entity of content.allEntities()) {
       clearWorldEntityAtStage(entity, stage)
     }
-    if (area) prepareArea(project.getSurface(stage)!, area)
+    if (area) prepareArea(project.surfaces.getSurface(stage)!, area)
   }
 
   function onTileBuilt(position: Position, name: string, stage: StageNumber): void {

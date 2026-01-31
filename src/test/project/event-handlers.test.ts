@@ -36,7 +36,7 @@ before_all(() => {
 
   project = createUserProject("Test", 2) as any
   fStub(project.actions)
-  surface = project.getStage(1)!.surface
+  surface = project.getStage(1)!.getSurface()
 
   player.teleport(pos, surface)
 })

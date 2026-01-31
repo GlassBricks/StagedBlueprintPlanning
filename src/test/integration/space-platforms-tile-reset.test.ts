@@ -30,7 +30,7 @@ describe("space platform foundation reset", () => {
     const project = createSpacePlatformProject()
     project.settings.stagedTilesEnabled.set(true)
     const stage = project.getStage(1)!
-    const surface = stage.surface
+    const surface = stage.getSurface()
     const bbox = stage.getBlueprintBBox()
 
     surface.create_entity({ name: "assembling-machine-1", position: { x: 5, y: 5 }, force: "player" })

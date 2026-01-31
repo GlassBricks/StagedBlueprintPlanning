@@ -314,10 +314,10 @@ Unit tests for `ProjectSurfaces`:
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] `pnpm run test` passes
-- [ ] `pnpm run lint` passes
-- [ ] `pnpm run format:fix` passes
-- [ ] New unit tests in `src/test/project/ProjectSurfaces.test.ts`
+- [x] `pnpm run test` passes
+- [x] `pnpm run lint` passes
+- [x] `pnpm run format:fix` passes
+- [x] New unit tests in `src/test/project/ProjectSurfaces.test.ts`
 
 ---
 

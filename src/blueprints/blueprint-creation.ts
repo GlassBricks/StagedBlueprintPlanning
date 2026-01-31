@@ -176,7 +176,7 @@ class TakeStageBlueprintStep implements BlueprintStep {
     const result = takeSingleBlueprint({
       stack: this.actualStack,
       settings: this.overrideableSettings satisfies BlueprintTakeSettings,
-      surface: stage.surface,
+      surface: stage.getSurface(),
       bbox,
       unitNumberFilter: this.stagePlan.unitNumberFilter,
       additionalSettings: this.stagePlan.additionalSettings,

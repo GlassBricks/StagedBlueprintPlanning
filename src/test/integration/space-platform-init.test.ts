@@ -20,7 +20,7 @@ before_each(() => {
 function getHub(project: UserProject, stageNumber: StageNumber): [LuaEntity, ProjectEntity] {
   const stage = project.getStage(stageNumber)
   assert(stage, "Invalid stage number")
-  const hubEntity = stage.surface.find_entities_filtered({ name: "space-platform-hub" })[0]
+  const hubEntity = stage.getSurface().find_entities_filtered({ name: "space-platform-hub" })[0]
   assert(hubEntity, "Could not find hub entity")
   const hubProjectEntity = project.content.findCompatibleWithLuaEntity(hubEntity, nil, stageNumber)
   assert(hubProjectEntity, "Could not find hub project entity")
@@ -84,7 +84,7 @@ describe("space platform tiles", () => {
     const project = createSpacePlatformProject()
     expect(project.settings.stagedTilesEnabled.get()).toBe(true)
 
-    const tiles = project.getStage(1)!.surface.find_tiles_filtered({ name: "space-platform-foundation" })
+    const tiles = project.getStage(1)!.getSurface().find_tiles_filtered({ name: "space-platform-foundation" })
     expect(tiles.length).toBeGreaterThan(0)
 
     const missingPositions: TilePosition[] = []
@@ -102,7 +102,7 @@ describe("space platform tiles", () => {
 
   test("default tiles removed when new stage added without them", () => {
     const project = createSpacePlatformProject()
-    const surface = project.getStage(1)!.surface
+    const surface = project.getStage(1)!.getSurface()
     const initialTiles = surface.find_tiles_filtered({ name: "space-platform-foundation" })
     expect(initialTiles.length).toBeGreaterThan(0)
 
@@ -121,7 +121,7 @@ describe("space platform tiles", () => {
     }
 
     const newStage = project.insertStage(project.settings.stageCount())
-    const newSurface = newStage.surface
+    const newSurface = newStage.getSurface()
     const newSurfaceTiles = newSurface.find_tiles_filtered({ name: "space-platform-foundation" })
 
     const incorrectPositions: TilePosition[] = []

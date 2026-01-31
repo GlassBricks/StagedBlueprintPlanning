@@ -61,10 +61,10 @@ test("syncMapGenSettings reads from stage and applies to all", () => {
   const project = createUserProject("Test", 3)
   const stage1 = project.getStage(1)!
 
-  stage1.surface.generate_with_lab_tiles = false
+  stage1.getSurface().generate_with_lab_tiles = false
   const mapGenSettings: Mutable<MapGenSettings> = asMutable(deepCopy(game.default_map_gen_settings))
   mapGenSettings.seed = 54321
-  stage1.surface.map_gen_settings = mapGenSettings
+  stage1.getSurface().map_gen_settings = mapGenSettings
 
   syncMapGenSettings(stage1)
 
@@ -75,8 +75,8 @@ test("syncMapGenSettings reads from stage and applies to all", () => {
     map_gen_settings: { seed: 54321 },
   })
 
-  expect(project.getStage(2)!.surface.map_gen_settings.seed).toBe(54321)
-  expect(project.getStage(3)!.surface.map_gen_settings.seed).toBe(54321)
+  expect(project.getStage(2)!.getSurface().map_gen_settings.seed).toBe(54321)
+  expect(project.getStage(3)!.getSurface().map_gen_settings.seed).toBe(54321)
 
   project.delete()
 })

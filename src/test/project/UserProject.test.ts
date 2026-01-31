@@ -38,8 +38,8 @@ test("getStageAtSurface", () => {
   const project = createUserProject("Mock", 2)
   const stage1 = project.getStage(1)!,
     stage2 = project.getStage(2)!
-  expect(getStageAtSurface(stage1.surface.index)).toBe(stage1)
-  expect(getStageAtSurface(stage2.surface.index)).toBe(stage2)
+  expect(getStageAtSurface(stage1.getSurface().index)).toBe(stage1)
+  expect(getStageAtSurface(stage2.getSurface().index)).toBe(stage2)
 })
 
 describe("deletion", () => {
@@ -95,13 +95,13 @@ test("insert stage", () => {
 
   const stage = project.insertStage(1)
 
-  expect(oldStage.surface.index).not.toEqual(stage.surface.index)
+  expect(oldStage.getSurface().index).not.toEqual(stage.getSurface().index)
 
   expect(stage.stageNumber).toEqual(1)
   expect(oldStage.stageNumber).toEqual(2)
 
-  expect(getStageAtSurface(stage.surface.index)).toBe(stage)
-  expect(getStageAtSurface(oldStage.surface.index)).toBe(oldStage)
+  expect(getStageAtSurface(stage.getSurface().index)).toBe(stage)
+  expect(getStageAtSurface(oldStage.getSurface().index)).toBe(oldStage)
 
   expect(stage.getSettings().name.get()).toEqual("Stage 0")
 
@@ -119,9 +119,9 @@ test("insert stage", () => {
 
   const anotherInserted = project.insertStage(1)
   expect(anotherInserted).not.toBe(stage)
-  expect(getStageAtSurface(anotherInserted.surface.index)).toEqual(anotherInserted)
-  expect(getStageAtSurface(stage.surface.index)).toEqual(stage)
-  expect(getStageAtSurface(oldStage.surface.index)).toEqual(oldStage)
+  expect(getStageAtSurface(anotherInserted.getSurface().index)).toEqual(anotherInserted)
+  expect(getStageAtSurface(stage.getSurface().index)).toEqual(stage)
+  expect(getStageAtSurface(oldStage.getSurface().index)).toEqual(oldStage)
   expect(anotherInserted.getSettings().name.get()).toEqual("New Stage")
 
   expect(anotherInserted.stageNumber).toEqual(1)
@@ -143,16 +143,16 @@ test("delete stage", () => {
   const stage2 = project.getStage(2)!
   const stage3 = project.getStage(3)!
 
+  const stage2Surface = stage2.getSurface().index
   project.mergeStage(2)
 
-  const stage2Surface = stage2.surface.index
   expect(stage2.valid).toBe(false)
 
   expect(stage1.stageNumber).toEqual(1)
   expect(stage3.stageNumber).toEqual(2)
 
-  expect(getStageAtSurface(stage1.surface.index)).toBe(stage1)
-  expect(getStageAtSurface(stage3.surface.index)).toBe(stage3)
+  expect(getStageAtSurface(stage1.getSurface().index)).toBe(stage1)
+  expect(getStageAtSurface(stage3.getSurface().index)).toBe(stage3)
   expect(getStageAtSurface(stage2Surface)).toBeNil()
 
   expect(project.getStage(1)!).toEqual(stage1)
@@ -170,7 +170,7 @@ test("delete stage", () => {
 test("delete stage by deleting surface", () => {
   const project = createUserProject("Test", 2)
   const stage = project.getStage(2)!
-  game.delete_surface(stage.surface)
+  game.delete_surface(stage.getSurface())
   async()
   after_ticks(1, () => {
     expect(stage.valid).toBe(false)

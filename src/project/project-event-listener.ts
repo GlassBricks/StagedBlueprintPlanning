@@ -9,14 +9,14 @@ import { ProjectEvents } from "./UserProject"
 
 function initSpacePlatform(project: UserProject) {
   for (const stage of project.getAllStages()) {
-    const surface = stage.surface
+    const surface = stage.getSurface()
     for (const hub of surface.find_entities_filtered({ type: "space-platform-hub" })) {
       project.actions.rebuildEntity(hub, stage.stageNumber)
     }
   }
 
   const firstStage = project.getStage(1)!
-  const tiles = firstStage.surface.find_tiles_filtered({ name: "space-platform-foundation" })
+  const tiles = firstStage.getSurface().find_tiles_filtered({ name: "space-platform-foundation" })
   for (const tile of tiles) {
     project.actions.onTileBuilt(tile.position, tile.name, 1)
   }

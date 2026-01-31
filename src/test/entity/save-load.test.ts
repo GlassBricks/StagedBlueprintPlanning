@@ -432,7 +432,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
   let project: UserProject
   before_each(() => {
     project = createUserProject("Test", 2)
-    surface = project.getSurface(1)!
+    surface = project.surfaces.getSurface(1)!
   })
   after_each(() => {
     _deleteAllProjects()

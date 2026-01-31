@@ -1,20 +1,33 @@
-// Copyright (c) 2022-2023 GlassBricks
+// Copyright (c) 2022-2026 GlassBricks
 // SPDX-FileCopyrightText: 2025 GlassBricks
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import { LuaSurface } from "factorio:runtime"
 import { newProjectContent } from "../../entity/ProjectContent"
+import { StageNumber } from "../../entity/ProjectEntity"
 import { getPlayer } from "../../lib/test/misc"
 import { Project } from "../../project/ProjectDef"
+import { ProjectSurfaces } from "../../project/ProjectSurfaces"
 import { createStageSurface, destroySurface, getDefaultSurfaceSettings } from "../../project/surfaces"
 import { WorldPresentation } from "../../project/WorldPresentation"
 
 export function createMockProject(stages: number | LuaSurface[]): Project {
   const surfaces: LuaSurface[] =
     typeof stages == "number" ? Array.from({ length: stages }, () => game.surfaces[1]) : stages
+  const mockSurfaces = {
+    getSurface(stage: StageNumber) {
+      return surfaces[stage - 1] ?? nil
+    },
+    getAllSurfaces() {
+      return surfaces
+    },
+    surfaceCount() {
+      return surfaces.length
+    },
+  } as unknown as ProjectSurfaces
   const project: Project = {
-    getSurface: (stage) => surfaces[stage - 1],
+    surfaces: mockSurfaces,
     settings: {
       stageCount() {
         return surfaces.length

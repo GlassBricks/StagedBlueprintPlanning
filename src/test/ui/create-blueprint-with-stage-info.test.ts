@@ -28,7 +28,7 @@ before_each(() => {
 })
 
 function addEntity<E extends Entity = Entity>(stage: StageNumber, args: SurfaceCreateEntity) {
-  const entity = project.getSurface(stage)!.create_entity(args)!
+  const entity = project.surfaces.getSurface(stage)!.create_entity(args)!
   assert(entity)
 
   return assert(project.updates.addNewEntity<E>(entity, stage, nil))

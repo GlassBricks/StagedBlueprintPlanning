@@ -12,6 +12,7 @@ import { SimpleSubscribable } from "../lib"
 import { BBox } from "../lib/geometry"
 import { ProjectUpdates } from "./project-updates"
 import type { ProjectSettings, StageSettingsData } from "./ProjectSettings"
+import type { ProjectSurfaces } from "./ProjectSurfaces"
 
 import { UserActions } from "./user-actions"
 import { WorldUpdates } from "./world-updates"
@@ -26,10 +27,10 @@ export type StageId = number & {
 
 export interface Project {
   readonly settings: ProjectSettings
+  readonly surfaces: ProjectSurfaces
 
   lastStageFor(entity: StagedValue<AnyNotNil, AnyNotNil>): StageNumber
 
-  getSurface(stage: StageNumber): LuaSurface | nil
   readonly content: MutableProjectContent
 
   readonly valid: boolean
@@ -43,6 +44,7 @@ export interface Project {
 export interface UserProject extends Project {
   readonly id: ProjectId
   readonly settings: ProjectSettings
+  readonly surfaces: ProjectSurfaces
 
   readonly content: MutableProjectContent
 
@@ -67,8 +69,9 @@ export interface StageSettings {
 export interface Stage {
   readonly stageNumber: StageNumber
 
-  readonly surface: LuaSurface
   readonly project: UserProject
+
+  getSurface(): LuaSurface
 
   getID(): StageId
 

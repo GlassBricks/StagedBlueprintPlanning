@@ -33,7 +33,7 @@ after_each(() => {
 
 function createEntity(stage: Stage, pos: MapPositionArray = [0.5, 0.5], name: string = "iron-chest"): LuaEntity {
   return assert(
-    stage.surface.create_entity({
+    stage.getSurface().create_entity({
       name,
       position: pos,
       force: "player",

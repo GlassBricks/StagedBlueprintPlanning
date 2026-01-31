@@ -134,7 +134,7 @@ describe("updateWorldEntities()", () => {
 
     test("can refresh a single entity", () => {
       const replaced = createEntity(
-        project.getSurface(2)!,
+        project.surfaces.getSurface(2)!,
         entity.position,
         entity.direction,
         {
@@ -206,7 +206,7 @@ describe("updateWorldEntities()", () => {
     entity.setFirstStageUnchecked(2)
     if (withExisting) {
       const luaEntity = createEntity(
-        project.getSurface(3)!,
+        project.surfaces.getSurface(3)!,
         entity.position,
         entity.direction,
         {
@@ -534,7 +534,7 @@ test("rebuildStage", () => {
   tile1.setTileAtStage(1, "concrete")
   project.content.setTile(pos1, tile1)
 
-  const surface = project.getSurface(2)!
+  const surface = project.surfaces.getSurface(2)!
   const chest = surface.create_entity({
     name: "iron-chest",
     position: Pos(0, 0),
@@ -674,7 +674,7 @@ describe("tiles", () => {
 
     before_each(() => {
       for (let stage = 1; stage <= 4; stage++) {
-        const surface = project.getSurface(stage)!
+        const surface = project.surfaces.getSurface(stage)!
         surface.set_tiles([{ position, name: "lab-white" }], true, false)
       }
     })
@@ -686,9 +686,9 @@ describe("tiles", () => {
 
       worldUpdates.updateTilesInRange(position, 2, nil)
 
-      expect(project.getSurface(1)!.get_tile(0, 0).name).toBe("lab-white")
-      expect(project.getSurface(2)!.get_tile(0, 0).name).toBe("concrete")
-      expect(project.getSurface(3)!.get_tile(0, 0).name).toBe("concrete")
+      expect(project.surfaces.getSurface(1)!.get_tile(0, 0).name).toBe("lab-white")
+      expect(project.surfaces.getSurface(2)!.get_tile(0, 0).name).toBe("concrete")
+      expect(project.surfaces.getSurface(3)!.get_tile(0, 0).name).toBe("concrete")
     })
 
     test("handles nil values by resetting to default", () => {
@@ -699,9 +699,9 @@ describe("tiles", () => {
 
       worldUpdates.updateTilesInRange(position, 1, nil)
 
-      expect(project.getSurface(2)!.get_tile(0, 0).name).toBe("concrete")
-      expect(project.getSurface(3)!.get_tile(0, 0).name).toBe("concrete")
-      expect(project.getSurface(4)!.get_tile(0, 0).name).not.toBe("concrete")
+      expect(project.surfaces.getSurface(2)!.get_tile(0, 0).name).toBe("concrete")
+      expect(project.surfaces.getSurface(3)!.get_tile(0, 0).name).toBe("concrete")
+      expect(project.surfaces.getSurface(4)!.get_tile(0, 0).name).not.toBe("concrete")
     })
 
     test("respects toStage parameter", () => {
@@ -711,9 +711,9 @@ describe("tiles", () => {
 
       worldUpdates.updateTilesInRange(position, 2, 3)
 
-      expect(project.getSurface(2)!.get_tile(0, 0).name).toBe("concrete")
-      expect(project.getSurface(3)!.get_tile(0, 0).name).toBe("concrete")
-      expect(project.getSurface(4)!.get_tile(0, 0).name).toBe("lab-white")
+      expect(project.surfaces.getSurface(2)!.get_tile(0, 0).name).toBe("concrete")
+      expect(project.surfaces.getSurface(3)!.get_tile(0, 0).name).toBe("concrete")
+      expect(project.surfaces.getSurface(4)!.get_tile(0, 0).name).toBe("lab-white")
     })
 
     test("returns collision info when tile can't be set due to entity", () => {
@@ -722,10 +722,10 @@ describe("tiles", () => {
       project.content.setTile(position, tile)
 
       for (let stage = 1; stage <= 4; stage++) {
-        project.getSurface(stage)!.set_tiles([{ position, name: "concrete" }], true, false)
+        project.surfaces.getSurface(stage)!.set_tiles([{ position, name: "concrete" }], true, false)
       }
 
-      const surface2 = project.getSurface(2)!
+      const surface2 = project.surfaces.getSurface(2)!
       surface2.create_entity({
         name: "iron-chest",
         position: { x: 0.5, y: 0.5 },
@@ -739,8 +739,8 @@ describe("tiles", () => {
       expect(collision!.stage).toBe(2)
       expect(collision!.actualValue).toBe("concrete")
 
-      expect(project.getSurface(1)!.get_tile(0, 0).name).toBe("water")
-      expect(project.getSurface(2)!.get_tile(0, 0).name).toBe("concrete")
+      expect(project.surfaces.getSurface(1)!.get_tile(0, 0).name).toBe("water")
+      expect(project.surfaces.getSurface(2)!.get_tile(0, 0).name).toBe("concrete")
     })
 
     test("returns nil when no collision occurs", () => {
