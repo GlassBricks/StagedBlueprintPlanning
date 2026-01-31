@@ -369,14 +369,14 @@ Stage insertion is not tested at integration level. Verify entities shift correc
 **Insert stage at end:**
 - Build entity at stage 1, set lastStage via stage deconstruct tool at stage 6
 - Call `project.insertStage(ctx.project.numStages() + 1)`
-- Verify entity's lastStage shifted to 7
+- Verify entity's lastStage unchanged (5)
 - `assertEntityCorrect`
 
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] Tests pass: `pnpm run test "stage%-operations"`
-- [ ] All existing tests pass: `pnpm run test`
+- [x] Tests pass: `pnpm run test "stage%-operations"`
+- [x] All existing tests pass: `pnpm run test`
 
 **Implementation Note**: Pause for manual confirmation before proceeding.
 

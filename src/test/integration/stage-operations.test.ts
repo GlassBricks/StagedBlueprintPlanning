@@ -5,14 +5,15 @@
 
 import { InserterBlueprintEntity } from "factorio:runtime"
 import expect from "tstl-expect"
+import { Prototypes } from "../../constants"
 import { isPreviewEntity } from "../../entity/prototype-info"
-import { assert } from "../../lib"
+import { assert, Events } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { runEntireCurrentTask } from "../../lib/task"
 import { checkForEntityUpdates } from "../../project/event-handlers"
 import { StageMoveResult } from "../../project/project-updates"
 import { NormalSurfaceSettings, syncMapGenSettings } from "../../project/surfaces"
-import { setupEntityIntegrationTest } from "./integration-test-util"
+import { applyDiffViaWorld, setupEntityIntegrationTest } from "./integration-test-util"
 import direction = defines.direction
 
 const ctx = setupEntityIntegrationTest()
@@ -230,6 +231,91 @@ describe("stage deletion", () => {
     ctx.assertEntityCorrect(entityWithLastStage, false)
 
     assertAllInsertersInProject()
+  })
+})
+
+describe("stage insertion", () => {
+  function assertAllInsertersInProject() {
+    for (const stage of $range(1, ctx.project.numStages())) {
+      const entitiesOnSurface = ctx.surfaces[stage - 1].find_entities_filtered({ type: "inserter" })
+      for (const worldEntity of entitiesOnSurface) {
+        if (isPreviewEntity(worldEntity)) continue
+        const projectEntity = ctx.project.content.findCompatibleWithLuaEntity(worldEntity, nil, stage)
+        expect(projectEntity)
+          .comment(
+            `Entity ${worldEntity.name} at ${worldEntity.position.x},${worldEntity.position.y} on stage ${stage}`,
+          )
+          .not.toBeNil()
+      }
+    }
+  }
+
+  function setLastStageViaDeconstructTool(
+    entity: import("../../entity/ProjectEntity").ProjectEntity,
+    atStage: import("../../entity/ProjectEntity").StageNumber,
+  ) {
+    Events.raiseFakeEventNamed("on_player_selected_area", {
+      player_index: ctx.player.index,
+      item: Prototypes.StageDeconstructTool,
+      entities: [ctx.worldQueries.getWorldEntity(entity, atStage)!],
+      tiles: [],
+      surface: ctx.surfaces[atStage - 1],
+      area: { left_top: pos, right_bottom: pos },
+    })
+  }
+
+  test("insert stage in the middle", () => {
+    const entityWithDiff = ctx.buildEntity(2, { position: pos })
+    applyDiffViaWorld(ctx.worldQueries, entityWithDiff, 4, (e) => {
+      e.inserter_stack_size_override = 2
+    })
+
+    const entityAtStage3 = ctx.buildEntity(3, { position: pos.add(1, 0) })
+
+    const entityWithLastStage = ctx.buildEntity(1, { position: pos.add(2, 0) })
+    setLastStageViaDeconstructTool(entityWithLastStage, 4)
+    expect(entityWithLastStage.lastStage).toBe(3)
+
+    ctx.project.insertStage(3)
+    ctx.surfaces = ctx.project.getAllStages().map((stage) => stage.surface)
+
+    expect(entityWithDiff.firstStage).toBe(2)
+    expect(entityWithDiff.hasStageDiff(5)).toBe(true)
+    expect(entityWithDiff.getStageDiff(5)).toEqual({ override_stack_size: 2 })
+
+    expect(entityAtStage3.firstStage).toBe(4)
+
+    expect(entityWithLastStage.lastStage).toBe(4)
+
+    ctx.assertEntityCorrect(entityWithDiff, false)
+    ctx.assertEntityCorrect(entityAtStage3, false)
+    ctx.assertEntityCorrect(entityWithLastStage, false)
+    assertAllInsertersInProject()
+  })
+
+  test("insert stage at beginning", () => {
+    const entity = ctx.buildEntity(1, { position: pos })
+
+    ctx.project.insertStage(1)
+    ctx.surfaces = ctx.project.getAllStages().map((stage) => stage.surface)
+
+    expect(entity.firstStage).toBe(2)
+    const preview = ctx.worldQueries.getWorldOrPreviewEntity(entity, 1)
+    expect(preview).toBeAny()
+    expect(isPreviewEntity(preview!)).toBe(true)
+    ctx.assertEntityCorrect(entity, false)
+  })
+
+  test("insert stage at end", () => {
+    const entity = ctx.buildEntity(1, { position: pos })
+    setLastStageViaDeconstructTool(entity, 6)
+    expect(entity.lastStage).toBe(5)
+
+    ctx.project.insertStage(ctx.project.numStages() + 1)
+    ctx.surfaces = ctx.project.getAllStages().map((stage) => stage.surface)
+
+    expect(entity.lastStage).toBe(5)
+    ctx.assertEntityCorrect(entity, false)
   })
 })
 
