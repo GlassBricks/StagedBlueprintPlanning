@@ -268,31 +268,31 @@ onStageDeleted(stageNumber: StageNumber): void {
 
 #### `src/project/entity-highlights.ts`
 
-EntityHighlights already reads world entities via `entity.getWorldOrPreviewEntity(stage)` and `entity.getWorldEntity(stage)`. These calls need to go through the new accessor. Two options:
+EntityHighlights already has a `project: Project` parameter. After Phase 2c wires `worldPresentation` onto `Project`, EntityHighlights reads world entities through `project.worldPresentation.getWorldOrPreviewEntity(entity, stage)` and `project.worldPresentation.getWorldEntity(entity, stage)`. No additional getter parameters needed.
 
-**Option A**: Pass a world entity getter to `EntityHighlights` factory.
-**Option B**: Have EntityHighlights receive the `EntityStorage` directly.
-
-Option A is cleaner — EntityHighlights doesn't need to know about `EntityStorage`:
+Additionally, pass `EntityStorage` for highlight read/write (merging what was previously planned for Phase 2d):
 
 ```typescript
 export function EntityHighlights(
   project: Project,
-  getWorldOrPreviewEntity: (entity: ProjectEntity, stage: StageNumber) => LuaEntity | nil,
-  getWorldEntity: (entity: ProjectEntity, stage: StageNumber) => LuaEntity | nil,
+  entityStorage: EntityStorage<WorldEntityTypes>,
 ): EntityHighlights
 ```
 
-WorldPresentation passes its own accessor methods when constructing EntityHighlights. Since WorldPresentation is constructed before the accessors are wired, use a late-binding approach — EntityHighlights calls `worldPresentation.getWorldEntity(...)` through a reference set after construction, or use a simple closure.
+Replace internal calls:
+- `entity.getWorldOrPreviewEntity(stage)` → `project.worldPresentation.getWorldOrPreviewEntity(entity, stage)`
+- `entity.getWorldEntity(stage)` → `project.worldPresentation.getWorldEntity(entity, stage)`
+- `entity.getExtraEntity(type, stage)` → `entityStorage.get(entity, type, stage)` with validity check
+- `entity.replaceExtraEntity(type, stage, value)` → destroy existing if different, then `entityStorage.set(...)`
+- `entity.destroyExtraEntity(type, stage)` → destroy entity at `entityStorage.get(...)`, then `entityStorage.delete(...)`
+- `entity.destroyAllExtraEntities(type)` → iterate `entityStorage.iterateType(entity, type)`, destroy each, then `entityStorage.deleteAllOfType(...)`
 
-Simplest approach: construct EntityHighlights after EntityStorage is ready, pass bound methods:
+#### `src/project/WorldPresentation.ts` — constructor
 
 ```typescript
 constructor(project: Project) {
   this.entityStorage = new EntityStorage()
-  const getWorldOrPreview = (e: ProjectEntity, s: StageNumber) => this.getWorldOrPreviewEntity(e, s)
-  const getWorld = (e: ProjectEntity, s: StageNumber) => this.getWorldEntity(e, s)
-  this.highlights = EntityHighlights(project, getWorldOrPreview, getWorld)
+  this.highlights = EntityHighlights(project, this.entityStorage)
   this.worldUpdates = WorldUpdates(project, this.highlights, this.entityStorage)
 }
 ```
@@ -408,8 +408,10 @@ If `ProjectContent` calls any world entity methods internally (e.g., in `findCom
 
 - `src/test/entity/ProjectEntity.test.ts` — Remove tests for world entity methods. These tests move to `EntityStorage.test.ts` and `WorldPresentation.test.ts`.
 - `src/test/project/world-updates.test.ts` — Update setup to provide `EntityStorage` to factory. Verify world entities stored in `EntityStorage`.
+- `src/test/project/entity-highlights.test.ts` — Update setup to provide `EntityStorage` to factory. Verify highlights stored in `EntityStorage`.
 - `src/test/project/project-updates.test.ts` — Update calls that previously read from `ProjectEntity` to read from `WorldPresentation`.
 - `src/test/entity/wires.test.ts` — Pass `getWorldEntity` parameter to functions.
+- `src/test/project/entity-highlight-test-util.ts` — Update to read from `EntityStorage`.
 
 #### Integration tests
 
@@ -441,43 +443,13 @@ No individual test files change.
 
 ---
 
-## Phase 2d: Migrate Highlight Storage
+## Phase 2d: Remove Extra Entity Methods from ProjectEntity
 
 ### Overview
 
-Move extra entity (highlight/render object) storage from `ProjectEntity.stageProperties` to `EntityStorage`. Remove `ExtraEntities` and related methods from `ProjectEntity`.
+Clean up `ProjectEntity` by removing the extra entity (highlight) methods and `ExtraEntities` declaration merging. The actual highlight storage migration to `EntityStorage` was done in Phase 2c.
 
 ### Changes
-
-#### `src/project/entity-highlights.ts`
-
-The factory already receives world entity getters from Phase 2c. Now also pass the `EntityStorage` for highlight read/write:
-
-```typescript
-export function EntityHighlights(
-  project: Project,
-  getWorldOrPreviewEntity: ...,
-  getWorldEntity: ...,
-  entityStorage: EntityStorage<WorldEntityTypes>,
-): EntityHighlights
-```
-
-Replace internal calls:
-- `entity.getExtraEntity(type, stage)` → `entityStorage.get(entity, type, stage)` with validity check
-- `entity.replaceExtraEntity(type, stage, value)` → destroy existing if different, then `entityStorage.set(entity, type, stage, value)`
-- `entity.destroyExtraEntity(type, stage)` → destroy entity at `entityStorage.get(...)`, then `entityStorage.delete(...)`
-- `entity.destroyAllExtraEntities(type)` → iterate `entityStorage.iterateType(entity, type)`, destroy each, then `entityStorage.deleteAllOfType(...)`
-- `entity.hasAnyExtraEntities(type)` — no direct equivalent needed; check `entityStorage.iterateType` or add a `hasAnyOfType` method to `EntityStorage`
-
-#### `src/project/WorldPresentation.ts`
-
-Pass `entityStorage` to `EntityHighlights`:
-
-```typescript
-this.highlights = EntityHighlights(project, getWorldOrPreview, getWorld, this.entityStorage)
-```
-
-Update `onStageInserted`/`onStageDeleted` — these already shift keys for all entity types since they operate on the whole `EntityStorage`. The highlight types are included in `WorldEntityTypes`, so key shifting is automatic.
 
 #### `src/project/entity-highlights.ts` — Remove declaration merging
 
@@ -488,7 +460,7 @@ declare module "../entity/ProjectEntity" {
 }
 ```
 
-The `HighlightEntities` type definitions move into `WorldEntityTypes` (already defined in Phase 2b).
+The `HighlightEntities` type definitions are already in `WorldEntityTypes` (defined in Phase 2b).
 
 #### `src/entity/ProjectEntity.ts` — Remove extra entity methods
 
@@ -518,10 +490,8 @@ The `insertStage`/`shiftKeysDown` methods on `ProjectEntity` that shift `stagePr
 
 ### Test Updates
 
-- `src/test/project/entity-highlights.test.ts` — Update setup to provide `EntityStorage` to factory. Verify highlights stored in `EntityStorage`.
 - `src/test/entity/ProjectEntity.test.ts` — Remove tests for extra entity methods.
-- `src/test/project/entity-highlight-test-util.ts` — Update to read from `EntityStorage`.
-- Integration tests that call `entity.getExtraEntity(...)` — update to use `entityStorage.get(...)` or `worldPresentation.entityStorage.get(...)`.
+- `src/test/project/entity-highlight-test-util.ts` — Update to read from `EntityStorage` (if not already done in 2c).
 
 ### Success Criteria
 
@@ -544,7 +514,7 @@ The `insertStage`/`shiftKeysDown` methods on `ProjectEntity` that shift `stagePr
 - `EntityStorage` — Full coverage of all methods (Phase 2a)
 - `WorldPresentation` accessor methods — get/set/delete world entities via EntityStorage (Phase 2c)
 - `WorldUpdates` — Updated setup passing EntityStorage, same behavioral tests (Phase 2c)
-- `EntityHighlights` — Updated setup passing EntityStorage, same behavioral tests (Phase 2d)
+- `EntityHighlights` — Updated setup passing EntityStorage, same behavioral tests (Phase 2c)
 
 ### Integration Tests
 - All existing integration tests updated to access world entities through `WorldPresentation`
