@@ -68,7 +68,7 @@ test("syncMapGenSettings reads from stage and applies to all", () => {
 
   syncMapGenSettings(stage1)
 
-  const projectSettings = project.surfaceSettings as NormalSurfaceSettings
+  const projectSettings = project.settings.surfaceSettings as NormalSurfaceSettings
   expect(projectSettings).toMatchTable({
     type: "normal",
     generate_with_lab_tiles: false,

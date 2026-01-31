@@ -120,7 +120,7 @@ test("setTilesAndCheckerboard", () => {
 test("setTilesAndWater with staged tiles enabled", () => {
   const project = createUserProject("test", 2)
   const updates = fStub(project.updates)
-  project.stagedTilesEnabled.set(true)
+  project.settings.stagedTilesEnabled.set(true)
 
   setTilesAndWaterForStage(project.getStage(1)!)
   expect(updates.setTileAtStage).toHaveBeenCalledWith(expect.anything(), 1)

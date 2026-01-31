@@ -146,7 +146,7 @@ class AllProjects extends Component {
       >
         <button
           style={project == currentProject ? Styles.FakeListBoxItemActive : Styles.FakeListBoxItem}
-          caption={project.displayName()}
+          caption={project.settings.displayName(project.id)}
           tooltip={[L_GuiProjectSelector.ButtonTooltip]}
           on_gui_click={bind(AllProjects.onButtonClick, project)}
         />
@@ -204,7 +204,7 @@ class AllProjects extends Component {
     showDialog(player, {
       title: [L_GuiProjectSettings.DeleteProject],
       message: [
-        [L_GuiProjectSettings.DeleteProjectConfirmation1, project.displayName().get()],
+        [L_GuiProjectSettings.DeleteProjectConfirmation1, project.settings.displayName(project.id).get()],
         [L_GuiProjectSettings.DeleteProjectConfirmation2],
       ],
       redConfirm: true,

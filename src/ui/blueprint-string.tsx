@@ -56,7 +56,12 @@ export function exportProjectToString(player: LuaPlayer, project: UserProject): 
   if (!result) {
     player.print("Encoding to bp string failed!!")
   } else {
-    showBlueprintString(player, L_GuiProjectSettings.ProjectStringFor, project.displayName().get(), result)
+    showBlueprintString(
+      player,
+      L_GuiProjectSettings.ProjectStringFor,
+      project.settings.displayName(project.id).get(),
+      result,
+    )
   }
 }
 

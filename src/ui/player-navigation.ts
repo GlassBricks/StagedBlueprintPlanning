@@ -66,7 +66,7 @@ Events.on(CustomInputs.GoToProjectLastStage, (e) => {
   const player = game.get_player(e.player_index)!
   const stage = playerCurrentStage(e.player_index).get()
   if (!stage) return
-  teleportToStage(player, stage.project.getStage(stage.project.numStages())!)
+  teleportToStage(player, stage.project.getStage(stage.project.settings.stageCount())!)
 })
 
 Events.on(CustomInputs.GoToEntityFirstStage, (e) => {

@@ -1,43 +1,20 @@
-// Copyright (c) 2022-2023 GlassBricks
+// Copyright (c) 2022-2026 GlassBricks
 // SPDX-FileCopyrightText: 2025 GlassBricks
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
-
-import { LocalisedString, LuaEntity, LuaInventory, LuaItemStack, LuaSurface, nil, SurfaceIndex } from "factorio:runtime"
+import { LuaEntity, LuaSurface, nil, SurfaceIndex } from "factorio:runtime"
 import { remove_from_list } from "util"
-import {
-  BlueprintSettingsOverrideTable,
-  BlueprintSettingsTable,
-  createBlueprintSettingsTable,
-  createStageBlueprintSettingsTable,
-  OverrideableBlueprintSettings,
-  StageBlueprintSettingsTable,
-} from "../blueprints/blueprint-settings"
-import { createStageReference, getReferencedStage } from "../blueprints/stage-reference"
-import { Prototypes } from "../constants"
 import { newProjectContent } from "../entity/ProjectContent"
 import { StageNumber } from "../entity/ProjectEntity"
 import { StagedValue } from "../entity/StagedValue"
-import {
-  bind,
-  Events,
-  globalEvent,
-  ibind,
-  Mutable,
-  MutableProperty,
-  property,
-  Property,
-  RegisterClass,
-  SimpleEvent,
-  Subscription,
-} from "../lib"
+import { Events, globalEvent, ibind, Mutable, MutableProperty, RegisterClass, SimpleEvent, Subscription } from "../lib"
 import { BBox } from "../lib/geometry"
 import { LazyLoadClass } from "../lib/LazyLoad"
-import { L_Bp100 } from "../locale"
-import { createdDiffedPropertyTableView, createEmptyPropertyOverrideTable } from "../utils/properties-obj"
+import { EntityHighlights } from "./entity-highlights"
 import { getStageAtSurface } from "./project-refs"
 import { ProjectUpdates } from "./project-updates"
 import { GlobalProjectEvent, LocalProjectEvent, ProjectId, Stage, StageId, UserProject } from "./ProjectDef"
+import { ProjectSettings, StageSettingsData } from "./ProjectSettings"
 import {
   createStageSurface,
   destroySurface,
@@ -52,7 +29,6 @@ import min = math.min
 
 declare const storage: {
   nextProjectId: ProjectId
-  // projects: LuaMap<ProjectId, UserProjectImpl>
   projects: UserProjectImpl[]
   surfaceIndexToStage: LuaMap<SurfaceIndex, StageImpl>
   nextStageId?: StageId
@@ -76,18 +52,10 @@ export interface UserProjectInternal extends UserProject {
 
 @RegisterClass("Assembly") // named differently for legacy reasons
 class UserProjectImpl implements UserProjectInternal {
-  name: MutableProperty<string>
+  readonly settings: ProjectSettings
 
   content = newProjectContent()
   localEvents = new SimpleEvent<LocalProjectEvent>()
-
-  defaultBlueprintSettings = createBlueprintSettingsTable()
-
-  landfillTile = property<string | nil>("landfill")
-  // disable tiles by default in tests, since its slow
-  // the appropriate tests will enable it
-  // force enabled for space platforms
-  stagedTilesEnabled = property(!("factorio-test" in script.active_mods))
 
   valid = true
   private readonly stages: Record<number, StageImpl> = {}
@@ -102,34 +70,18 @@ class UserProjectImpl implements UserProjectInternal {
     return this._worldPresentation.getWorldUpdates()
   }
 
-  private blueprintBookTemplateInv?: LuaInventory
-
   constructor(
     readonly id: ProjectId,
     name: string,
     initialNumStages: number,
-    readonly surfaceSettings: SurfaceSettings = getDefaultSurfaceSettings(),
+    surfaceSettings: SurfaceSettings = getDefaultSurfaceSettings(),
   ) {
-    this.name = property(name)
+    this.settings = new ProjectSettings(name, surfaceSettings)
     for (const i of $range(1, initialNumStages)) {
-      const [stage] = StageImpl.create(this, i, `Stage ${i}`)
+      this.settings.insertStageSettings(i, `Stage ${i}`)
+      const [stage] = StageImpl.create(this, i)
       this.stages[i] = stage
     }
-
-    if (this.isSpacePlatform()) {
-      this.stagedTilesEnabled.set(true)
-      this.landfillTile.set("space-platform-foundation")
-    }
-  }
-  private static getDisplayName(this: void, id: ProjectId, name: string): LocalisedString {
-    return name != "" ? name : [L_Bp100.UnnamedProject, id]
-  }
-  displayName(): Property<LocalisedString> {
-    return this.name.map(bind(UserProjectImpl.getDisplayName, this.id))
-  }
-
-  isSpacePlatform(): boolean {
-    return this.surfaceSettings.type == "spacePlatform"
   }
 
   static create(
@@ -145,18 +97,15 @@ class UserProjectImpl implements UserProjectInternal {
   }
 
   private subscription?: Subscription
-  registerEvents() {
+  registerEvents(): void {
     if (this.subscription) return
     this.subscription = new Subscription()
 
-    this.name.subscribe(this.subscription, ibind(this.onNameChange))
+    this.settings.projectName.subscribe(this.subscription, ibind(this.onNameChange))
   }
 
-  private onNameChange(newValue: string, oldValue: string) {
-    const template = this.getBlueprintBookTemplate()
-    if (template != nil && template.label == oldValue) {
-      template.label = newValue
-    }
+  private onNameChange(newValue: string, oldValue: string): void {
+    this.settings.blueprintBookTemplate.onProjectNameChanged(newValue, oldValue)
 
     for (const [, stage] of pairs(this.stages)) {
       updateStageSurfaceName(stage.surface, newValue, stage.name.get())
@@ -170,19 +119,14 @@ class UserProjectImpl implements UserProjectInternal {
   getStage(stageNumber: StageNumber): Stage | nil {
     return this.stages[stageNumber]
   }
-  numStages(): StageNumber {
-    return luaLength(this.stages)
-  }
   lastStageFor(value: StagedValue<any, any>): StageNumber {
-    if (value.lastStage != nil) return min(value.lastStage, this.numStages())
-    return this.numStages()
+    const numStages = this.settings.stageCount()
+    if (value.lastStage != nil) return min(value.lastStage, numStages)
+    return numStages
   }
 
   getAllStages(): readonly StageImpl[] {
     return this.stages as unknown as readonly StageImpl[]
-  }
-  getStageName(stageNumber: StageNumber): LocalisedString {
-    return this.stages[stageNumber].name.get()
   }
   getStageById(stageId: StageId): Stage | nil {
     for (const [, stage] of pairs(this.stages)) {
@@ -191,25 +135,22 @@ class UserProjectImpl implements UserProjectInternal {
     return nil
   }
 
-  insertStage(stage: StageNumber): Stage {
+  insertStage(stageNumber: StageNumber): Stage {
     this.assertValid()
-    assert(stage >= 1 && stage <= this.numStages() + 1, "Invalid new stage number")
+    assert(stageNumber >= 1 && stageNumber <= this.settings.stageCount() + 1, "Invalid new stage number")
 
-    this.content.insertStage(stage)
+    this.content.insertStage(stageNumber)
 
-    const name = this._getNewStageName(stage)
-    const [newStage, hub] = StageImpl.create(this, stage, name)
+    const name = this.settings.getNewStageName(stageNumber)
+    this.settings.insertStageSettings(stageNumber, name)
+    const [newStage, hub] = StageImpl.create(this, stageNumber)
 
-    table.insert(this.stages as unknown as Stage[], stage, newStage)
-    // update stages
-    for (const i of $range(stage, luaLength(this.stages))) {
+    table.insert(this.stages as unknown as Stage[], stageNumber, newStage)
+    for (const i of $range(stageNumber, luaLength(this.stages))) {
       this.stages[i].stageNumber = i
     }
 
-    const template = this.getBlueprintBookTemplate()
-    if (template) {
-      this.addStageToBlueprintBookTemplate(stage, template)
-    }
+    this.settings.blueprintBookTemplate.onStageInserted(stageNumber, this)
     this.raiseEvent({ type: "stage-added", project: this, stage: newStage, spacePlatformHub: hub })
     return newStage
   }
@@ -218,7 +159,7 @@ class UserProjectImpl implements UserProjectInternal {
     this.assertValid()
     const stage = this.stages[index]
     assert(stage != nil, "invalid stage number")
-    if (this.numStages() == 1) {
+    if (this.settings.stageCount() == 1) {
       this.delete()
       return
     }
@@ -227,7 +168,8 @@ class UserProjectImpl implements UserProjectInternal {
 
     stage._doDelete()
     table.remove(this.stages as unknown as Stage[], index)
-    for (const i of $range(index, this.numStages())) {
+    this.settings.removeStageSettings(index)
+    for (const i of $range(index, this.settings.stageCount())) {
       this.stages[i].stageNumber = i
     }
 
@@ -263,87 +205,10 @@ class UserProjectImpl implements UserProjectInternal {
     this.deleteStage(index, false)
   }
 
-  getBlueprintBookTemplate(): LuaItemStack | nil {
-    if (!this.blueprintBookTemplateInv?.valid) {
-      return nil
-    }
-    const stack = this.blueprintBookTemplateInv[0]
-    if (stack.valid_for_read && stack.is_blueprint_book) return stack
-  }
-
-  getOrCreateBlueprintBookTemplate(): LuaItemStack {
-    if (this.blueprintBookTemplateInv == nil) {
-      this.blueprintBookTemplateInv = game.create_inventory(1)
-    }
-    const stack = this.blueprintBookTemplateInv[0]
-    if (!stack.valid_for_read || !stack.is_blueprint_book) {
-      this.setInitialBlueprintBookTemplate(stack)
-    }
-    return stack
-  }
-
-  resetBlueprintBookTemplate(): void {
-    this.blueprintBookTemplateInv?.destroy()
-    this.blueprintBookTemplateInv = nil
-  }
-
-  private setInitialBlueprintBookTemplate(stack: LuaItemStack): void {
-    stack.set_stack("blueprint-book")
-    const inventory = stack.get_inventory(defines.inventory.item_main)!
-    for (const stage of this.getAllStages()) {
-      inventory.insert(Prototypes.StageReference)
-      const bpStack = inventory[inventory.length - 1]
-      createStageReference(bpStack, stage)
-    }
-    stack.label = this.name.get()
-  }
-
-  private addStageToBlueprintBookTemplate(newStage: StageNumber, stack: LuaItemStack): void {
-    if (!stack.valid || !stack.valid_for_read || !stack.is_blueprint_book) return
-    const inventory = stack.get_inventory(defines.inventory.item_main)!
-    let prevStageIndex = -1
-    for (const i of $range(inventory.length, 1, -1)) {
-      const bookStack = inventory[i - 1]
-      const stage = getReferencedStage(bookStack)
-      if (stage != nil && stage.project == this && stage.stageNumber <= newStage) {
-        prevStageIndex = i - 1
-        break
-      }
-    }
-
-    this.pushBpBookInventory(inventory, prevStageIndex + 1)
-    createStageReference(inventory[prevStageIndex + 1], this.stages[newStage])
-  }
-  private pushBpBookInventory(inventory: LuaInventory, index: number): void {
-    // while there is a stack at index, moves it to the next index
-    let nextFreeSlot: number | nil = index
-    while (nextFreeSlot < inventory.length && inventory[nextFreeSlot].valid_for_read) nextFreeSlot++
-    const needsExpansion = nextFreeSlot == inventory.length
-    if (needsExpansion) {
-      // do some finagling to expand the book inventory
-      const freeSlots = inventory.get_insertable_count(Prototypes.StageReference)
-      inventory.insert({
-        name: Prototypes.StageReference,
-        count: freeSlots + 1,
-      })
-    }
-    for (let i = nextFreeSlot - 1; i >= index; i--) {
-      assert(inventory[i].swap_stack(inventory[i + 1]))
-    }
-    if (needsExpansion) {
-      for (const i of $range(1, inventory.length - 1)) {
-        const stack = inventory[i - 1]
-        if (stack.valid_for_read && stack.name == Prototypes.StageReference && !stack.is_blueprint_setup()) {
-          stack.clear()
-        }
-      }
-    }
-  }
-
-  delete() {
+  delete(): void {
     if (!this.valid) return
     remove_from_list(storage.projects, this)
-    this.blueprintBookTemplateInv?.destroy()
+    this.settings.blueprintBookTemplate.destroy()
     this.valid = false
     for (const [, stage] of pairs(this.stages)) {
       stage._doDelete()
@@ -354,37 +219,7 @@ class UserProjectImpl implements UserProjectInternal {
     delete this.subscription
   }
 
-  _getNewStageName(stage: StageNumber): string {
-    // try to detect naming convention:
-    // (Anything)(number)
-
-    const otherStageNum = stage == 1 ? 1 : stage - 1
-    const otherStage = this.stages[otherStageNum]
-    const previousName = otherStage.name.get()
-    const [name, numStr] = string.match(previousName, "^(.-)(%d+)$")
-    const num = tonumber(numStr)
-
-    const foundNumber = name != nil && num != nil
-    if (foundNumber) {
-      // see if there is a previous number and separator, before the last number
-      // follow naming convention
-      const newNum = num + (stage == 1 ? -1 : 1)
-      if (newNum >= 0) {
-        const candidateName = name + newNum
-        const nextName = this.stages[stage]?.name.get()
-        if (candidateName != nextName) {
-          return candidateName
-        }
-      }
-    }
-
-    if (stage == 1) return "New Stage"
-    const sep = string.match(previousName, "^.*%d+([^%d]+)%d+$")[0] ?? (foundNumber ? "." : " ")
-    return previousName + sep + "1"
-  }
-
   private raiseEvent(event: LocalProjectEvent): void {
-    // local first, more useful event order
     this.localEvents.raise(event)
     GlobalProjectEvents.raise(event)
   }
@@ -393,7 +228,7 @@ class UserProjectImpl implements UserProjectInternal {
   }
 
   __tostring(): string {
-    return `<Project ${this.id} "${this.name.get()}">`
+    return `<Project ${this.id} "${this.settings.projectName.get()}">`
   }
 
   static onProjectCreated(project: UserProjectImpl): void {
@@ -445,7 +280,6 @@ function swapProjects(index1: number, index2: number): void {
   })
 }
 export function moveProjectUp(project: UserProject): boolean {
-  // up means lower index
   const index = storage.projects.indexOf(project as UserProjectImpl)
   if (index <= 0) return false
   swapProjects(index - 1, index)
@@ -453,15 +287,10 @@ export function moveProjectUp(project: UserProject): boolean {
 }
 
 export function moveProjectDown(project: UserProject): boolean {
-  // down means higher index
   const index = storage.projects.indexOf(project as UserProjectImpl)
   if (index < 0 || index >= storage.projects.length - 1) return false
   swapProjects(index, index + 1)
   return true
-}
-
-function createEmptyBlueprintOverrideSettings(): BlueprintSettingsOverrideTable {
-  return createEmptyPropertyOverrideTable<OverrideableBlueprintSettings>(keys<OverrideableBlueprintSettings>())
 }
 
 export interface StageInternal extends Stage {
@@ -475,11 +304,6 @@ class StageImpl implements StageInternal {
 
   readonly surfaceIndex: SurfaceIndex
 
-  // should be named blueprintOverrideSettings, kept this way for compatibility reasons
-  blueprintOverrideSettings: BlueprintSettingsOverrideTable = createEmptyBlueprintOverrideSettings()
-
-  stageBlueprintSettings: StageBlueprintSettingsTable = createStageBlueprintSettingsTable()
-
   actions: UserActions
 
   id?: StageId
@@ -490,9 +314,8 @@ class StageImpl implements StageInternal {
     public project: UserProjectImpl,
     readonly surface: LuaSurface,
     public stageNumber: StageNumber,
-    name: string,
   ) {
-    this.name = property(name)
+    this.name = project.settings.getStageNameProperty(stageNumber)
     this.surfaceIndex = surface.index
     if (project.id != 0) storage.surfaceIndexToStage.set(this.surfaceIndex, this)
     this.actions = project.actions
@@ -506,23 +329,29 @@ class StageImpl implements StageInternal {
   }
 
   private onNameChange(newName: string): void {
-    updateStageSurfaceName(this.surface, this.project.name.get(), newName)
+    updateStageSurfaceName(this.surface, this.project.settings.projectName.get(), newName)
   }
 
-  static create(project: UserProjectImpl, stageNumber: StageNumber, name: string): [StageImpl, entities?: LuaEntity] {
+  static create(project: UserProjectImpl, stageNumber: StageNumber): [StageImpl, entities?: LuaEntity] {
     const area = project.content.computeBoundingBox()
-    const [surface, hub] = createStageSurface(project.surfaceSettings, project.name.get(), name, area)
-    const stage = new StageImpl(project, surface, stageNumber, name)
+    const stageName = project.settings.getStageName(stageNumber) as string
+    const [surface, hub] = createStageSurface(
+      project.settings.surfaceSettings,
+      project.settings.projectName.get(),
+      stageName,
+      area,
+    )
+    const stage = new StageImpl(project, surface, stageNumber)
     stage.registerEvents()
     return [stage, hub]
   }
 
-  getBlueprintSettingsView(): BlueprintSettingsTable {
-    const result = createdDiffedPropertyTableView(
-      this.project.defaultBlueprintSettings,
-      this.blueprintOverrideSettings,
-    ) as BlueprintSettingsTable
-    return result
+  getSettings(): StageSettingsData {
+    return this.project.settings.getStageSettings(this.stageNumber)
+  }
+
+  getBlueprintSettingsView(): import("../blueprints/blueprint-settings").BlueprintSettingsTable {
+    return this.project.settings.getBlueprintSettingsView(this.stageNumber)
   }
 
   getBlueprintBBox(): BBox {
@@ -555,8 +384,8 @@ class StageImpl implements StageInternal {
     this.subscription?.close()
   }
 
-  __tostring() {
-    return `<Stage ${this.stageNumber} "${this.name.get()}" of "${this.project.name.get()}">`
+  __tostring(): string {
+    return `<Stage ${this.stageNumber} "${this.name.get()}" of "${this.project.settings.projectName.get()}">`
   }
 }
 

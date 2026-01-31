@@ -75,7 +75,7 @@ export interface WorldUpdates {
 @RegisterClass("RebuildAllStagesTask")
 class RebuildAllStagesTask extends LoopTask {
   constructor(private project: Project) {
-    super(project.numStages())
+    super(project.settings.stageCount())
   }
   override getTitle(): LocalisedString {
     return [L_GuiTasks.RebuildAllStages]
@@ -84,7 +84,7 @@ class RebuildAllStagesTask extends LoopTask {
     this.project.worldUpdates.rebuildStage(i + 1)
   }
   protected getTitleForStep(step: number): LocalisedString {
-    return [L_GuiTasks.RebuildingStage, this.project.getStageName(step + 1)]
+    return [L_GuiTasks.RebuildingStage, this.project.settings.getStageName(step + 1)]
   }
 }
 
@@ -93,7 +93,7 @@ let worldUpdatesBlocked = false
 @RegisterClass("ResyncWithWorldTask")
 class ResyncWithWorldTask extends LoopTask {
   constructor(private project: Project) {
-    super(project.numStages() * 2)
+    super(project.settings.stageCount() * 2)
   }
 
   override getTitle(): LocalisedString {
@@ -101,7 +101,7 @@ class ResyncWithWorldTask extends LoopTask {
   }
 
   protected override doStep(i: number): void {
-    const numStages = this.project.numStages()
+    const numStages = this.project.settings.stageCount()
     if (i < numStages) {
       this.doReadStep(i + 1)
     } else {
@@ -123,11 +123,11 @@ class ResyncWithWorldTask extends LoopTask {
   }
 
   protected getTitleForStep(step: number): LocalisedString {
-    const numStages = this.project.numStages()
+    const numStages = this.project.settings.stageCount()
     if (step < numStages) {
-      return [L_GuiTasks.ReadingStage, this.project.getStageName(step + 1)]
+      return [L_GuiTasks.ReadingStage, this.project.settings.getStageName(step + 1)]
     }
-    return [L_GuiTasks.RebuildingStage, this.project.getStageName(step - numStages + 1)]
+    return [L_GuiTasks.RebuildingStage, this.project.settings.getStageName(step - numStages + 1)]
   }
 
   override cancel(): void {
@@ -370,7 +370,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     if (worldUpdatesBlocked) return
     const movedDown = entity.lastStage != nil && (oldLastStage == nil || entity.lastStage < oldLastStage)
     if (movedDown) {
-      for (const stage of $range(entity.lastStage + 1, oldLastStage ?? project.numStages())) {
+      for (const stage of $range(entity.lastStage + 1, oldLastStage ?? project.settings.stageCount())) {
         entity.destroyWorldOrPreviewEntity(stage)
       }
     } else if (oldLastStage) {
@@ -505,7 +505,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
   function updateTilesInRange(
     position: Position,
     fromStage: StageNumber,
-    endStage: StageNumber = project.numStages(),
+    endStage: StageNumber = project.settings.stageCount(),
   ): TileCollision | nil {
     const tile = content.tiles.get(position.x, position.y)
 
@@ -521,7 +521,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
         if (value != nil) {
           tileWrite.name = value
         } else {
-          const defaultTile: string = project.isSpacePlatform?.()
+          const defaultTile: string = project.settings.isSpacePlatform()
             ? "empty-space"
             : (surface.get_hidden_tile(position) ?? ((position.x + position.y) % 2 == 0 ? "lab-dark-1" : "lab-dark-2"))
           tileWrite.name = defaultTile

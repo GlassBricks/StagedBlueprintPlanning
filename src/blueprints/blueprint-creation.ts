@@ -68,7 +68,7 @@ function getCurrentOverridableBpSettings(stage: Stage): OverrideableBlueprintSet
 }
 
 function getCurrentBpStageSettings(stage: Stage): StageBlueprintSettings {
-  return getCurrentValues(stage.stageBlueprintSettings)
+  return getCurrentValues(stage.getSettings().stageBlueprintSettings)
 }
 
 interface BlueprintStep {
@@ -83,7 +83,7 @@ class ComputeChangedEntitiesStep implements BlueprintStep {
     const project = this.projectPlan.project
     const changedEntities = new LuaMap<StageNumber, LuaSet<ProjectEntity>>()
     const firstStageEntities = new LuaMap<StageNumber, LuaSet<ProjectEntity>>()
-    for (const i of $range(1, project.numStages())) {
+    for (const i of $range(1, project.settings.stageCount())) {
       changedEntities.set(i, new LuaSet())
       firstStageEntities.set(i, new LuaSet())
     }
@@ -112,7 +112,10 @@ class ComputeChangedEntitiesStep implements BlueprintStep {
   }
 
   title(): LocalisedString {
-    return [L_GuiBlueprintBookTask.PreparingProject, this.projectPlan.project.displayName().get()]
+    return [
+      L_GuiBlueprintBookTask.PreparingProject,
+      this.projectPlan.project.settings.displayName(this.projectPlan.project.id).get(),
+    ]
   }
 }
 
@@ -461,7 +464,7 @@ export function takeStageBlueprint(stage: Stage, stack: LuaItemStack): boolean {
 
 function addCreateDefaultBookTasks(builder: BlueprintingTaskBuilder, project: UserProject, stack: LuaItemStack) {
   stack.set_stack("blueprint-book")
-  stack.label = project.name.get()
+  stack.label = project.settings.projectName.get()
   const bookInventory = stack.get_inventory(defines.inventory.item_main)!
 
   for (const stage of project.getAllStages()) {
@@ -502,7 +505,7 @@ function addCompileBookTemplateTasks(
 }
 
 function addBlueprintBookTasks(project: UserProject, builder: BlueprintingTaskBuilder, stack: LuaItemStack): void {
-  const template = project.getBlueprintBookTemplate()
+  const template = project.settings.blueprintBookTemplate.get()
   if (template) {
     addCompileBookTemplateTasks(builder, template, stack)
   } else {
@@ -523,7 +526,7 @@ export function exportBlueprintBookToFile(project: UserProject, player: LuaPlaye
 
   addBlueprintBookTasks(project, builder, stack)
 
-  let name = project.name.get()
+  let name = project.settings.projectName.get()
   if (name == "") name = `Unnamed-project-${project.id}`
   name = string.gsub(name, "[^%w%-%_%.]", "_")[0]
   name = `staged-blueprints/${name}`

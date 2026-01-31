@@ -14,10 +14,19 @@ export function createMockProject(stages: number | LuaSurface[]): Project {
     typeof stages == "number" ? Array.from({ length: stages }, () => game.surfaces[1]) : stages
   return {
     getSurface: (stage) => surfaces[stage - 1],
-    numStages: () => surfaces.length,
+    settings: {
+      stageCount() {
+        return surfaces.length
+      },
+      getStageName(n: number) {
+        return "mock stage " + n
+      },
+      isSpacePlatform() {
+        return false
+      },
+    } as any,
     lastStageFor: (entity) => (entity.lastStage ? math.min(entity.lastStage, surfaces.length) : surfaces.length),
     content: newProjectContent(),
-    getStageName: (n) => "mock stage " + n,
     valid: true,
     actions: "actions not mocked" as any,
     updates: "updates not mocked" as any,

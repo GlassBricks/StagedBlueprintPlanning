@@ -121,7 +121,7 @@ class CompactProjectSettings extends Component<{
       <frame direction="vertical">
         <TitleBar>
           <label
-            caption={project.displayName()}
+            caption={project.settings.displayName(project.id)}
             style="caption_label"
             styleMod={{ maximal_width: StageListBoxWidth - 50 }}
             ignored_by_interaction
@@ -163,8 +163,8 @@ class ProjectSettings extends Component<{
             ignored_by_interaction
           />
           <ItemRename
-            name={this.project.name}
-            displayName={this.project.displayName()}
+            name={this.project.settings.projectName}
+            displayName={this.project.settings.displayName(this.project.id)}
             renameTooltip={[L_GuiProjectSettings.RenameProject]}
             maximalWidth={240}
           />
@@ -199,7 +199,7 @@ class ProjectSettings extends Component<{
   }
 
   private EditorTab() {
-    const selectedTile = this.project.landfillTile
+    const selectedTile = this.project.settings.landfillTile
     const valueRaw = selectedTile.get()
     const selectedTileValue = valueRaw && valueRaw in prototypes.tile ? valueRaw : nil
     const tileIsNotBlueprintable = selectedTileValue && !prototypes.tile[selectedTileValue]?.items_to_place_this
@@ -250,7 +250,7 @@ class ProjectSettings extends Component<{
           >
             <label
               caption={
-                this.project.isSpacePlatform()
+                this.project.settings.isSpacePlatform()
                   ? [L_GuiProjectSettings.PlatformTile]
                   : [L_GuiProjectSettings.SelectedTile]
               }
@@ -265,7 +265,7 @@ class ProjectSettings extends Component<{
           </flow>
           <checkbox state={allowNonBlueprintable} caption={[L_GuiProjectSettings.AllowNonBlueprintableTiles]} />
         </flow>
-        {this.project.isSpacePlatform() ? (
+        {this.project.settings.isSpacePlatform() ? (
           <button
             caption={[L_GuiProjectSettings.ResetSpacePlatformFoundations]}
             tooltip={[L_GuiProjectSettings.ResetSpacePlatformFoundationsTooltip]}
@@ -443,7 +443,7 @@ class ProjectSettings extends Component<{
 
   private BpSettings(stage: Stage | nil): Element {
     const settings: BlueprintSettingsTable =
-      stage == nil ? this.project.defaultBlueprintSettings : stage.getBlueprintSettingsView()
+      stage == nil ? this.project.settings.defaultBlueprintSettings : stage.getBlueprintSettingsView()
 
     return (
       <flow direction="vertical" styleMod={{ padding: 10, bottom_padding: 20 }}>
@@ -535,12 +535,13 @@ class ProjectSettings extends Component<{
   private editGridSettingsAndDescription(settings: BlueprintSettingsTable, stage: Stage | nil) {
     const player = game.get_player(this.playerIndex)
     if (!player) return
-    const takeSettingsStage = stage ?? this.project.getStage(this.project.numStages())!
+    const takeSettingsStage = stage ?? this.project.getStage(this.project.settings.stageCount())!
     const name = stage?.name.get() ?? "Defaults"
+    const stageBpSettings = stage ? stage.getSettings().stageBlueprintSettings : nil
     const successful = editInItemBlueprintSettings(
       player,
       settings,
-      stage?.stageBlueprintSettings,
+      stageBpSettings,
       takeSettingsStage.surface,
       takeSettingsStage.getBlueprintBBox(),
       name,
@@ -568,23 +569,23 @@ class ProjectSettings extends Component<{
   }
 
   private anyGridSettingsChanged(stage: Stage): Property<unknown> {
-    const stageSettings = stage.blueprintOverrideSettings
+    const overrideSettings = stage.getSettings().blueprintOverrideSettings
     return multiMap(
       funcRef(ProjectSettings.anyNotNil),
-      stageSettings.snapToGrid,
-      stageSettings.positionOffset,
-      stageSettings.absoluteSnapping,
-      stageSettings.positionRelativeToGrid,
+      overrideSettings.snapToGrid,
+      overrideSettings.positionOffset,
+      overrideSettings.absoluteSnapping,
+      overrideSettings.positionRelativeToGrid,
     )
   }
   private revertAllGridSettings() {
     const stage = playerCurrentStage(this.playerIndex).get()
     if (!stage) return
-    const stageSettings = stage.blueprintOverrideSettings
-    stageSettings.snapToGrid.set(nil)
-    stageSettings.positionOffset.set(nil)
-    stageSettings.absoluteSnapping.set(nil)
-    stageSettings.positionRelativeToGrid.set(nil)
+    const overrideSettings = stage.getSettings().blueprintOverrideSettings
+    overrideSettings.snapToGrid.set(nil)
+    overrideSettings.positionOffset.set(nil)
+    overrideSettings.absoluteSnapping.set(nil)
+    overrideSettings.positionRelativeToGrid.set(nil)
   }
 
   private static anyNotNil(this: void, a: unknown, b: unknown, c: unknown, d: unknown) {
@@ -662,7 +663,10 @@ class ProjectSettings extends Component<{
     const player = game.get_player(this.playerIndex)
     if (!player) return
     renderStageReferencePanel(player, this.project)
-    const stack = this.project.getOrCreateBlueprintBookTemplate()
+    const stack = this.project.settings.blueprintBookTemplate.getOrCreate(
+      this.project,
+      this.project.settings.projectName.get(),
+    )
     correctStageReferenceRecursive(stack)
     player.opened = stack
   }
@@ -681,7 +685,7 @@ class ProjectSettings extends Component<{
   }
 
   private resetBlueprintBookTemplate() {
-    this.project.resetBlueprintBookTemplate()
+    this.project.settings.blueprintBookTemplate.reset()
   }
 
   private exportBookToString() {
@@ -759,7 +763,7 @@ class ProjectSettings extends Component<{
             <button
               style="red_button"
               caption={[L_GuiProjectSettings.DiscardStage]}
-              enabled={stage.project.numStages() > 1}
+              enabled={stage.project.settings.stageCount() > 1}
               on_gui_click={ibind(this.beginDiscard)}
             />
             <button
@@ -785,7 +789,7 @@ class ProjectSettings extends Component<{
           <label caption={[L_GuiProjectSettings.Tiles]} style="caption_label" />
           <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
             <checkbox
-              state={this.project.stagedTilesEnabled}
+              state={this.project.settings.stagedTilesEnabled}
               caption={[L_GuiProjectSettings.EnableStagedTiles]}
               tooltip={[L_GuiProjectSettings.EnableStagedTilesTooltip]}
             />
@@ -794,7 +798,7 @@ class ProjectSettings extends Component<{
               styleMod={{ width: StageSettingsButtonWidth }}
               caption={[L_GuiProjectSettings.ScanExistingTiles]}
               tooltip={[L_GuiProjectSettings.ScanExistingTilesTooltip]}
-              enabled={this.project.stagedTilesEnabled}
+              enabled={this.project.settings.stagedTilesEnabled}
               on_gui_click={ibind(this.scanExistingTiles)}
             />
           </flow>
@@ -861,7 +865,7 @@ class ProjectSettings extends Component<{
     if (newStage) {
       teleportToStage(player, newStage)
     } else {
-      const lastStage = stage.project.getStage(stage.project.numStages())
+      const lastStage = stage.project.getStage(stage.project.settings.stageCount())
       if (lastStage) teleportToStage(player, lastStage)
     }
   }

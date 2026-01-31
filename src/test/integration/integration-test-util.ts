@@ -148,14 +148,14 @@ export function assertEntityCorrect(
 
   expect(hasError).toBe(expectError)
 
-  for (const stage of $range(project.lastStageFor(entity) + 1, project.numStages())) {
+  for (const stage of $range(project.lastStageFor(entity) + 1, project.settings.stageCount())) {
     expect(wq.getWorldOrPreviewEntity(entity, stage)).toBeNil()
   }
 
   assertErrorHighlightsCorrect(entity, project.lastStageFor(entity), wq)
   assertConfigChangedHighlightsCorrect(entity, project.lastStageFor(entity), wq)
   assertLastStageHighlightCorrect(entity, wq)
-  assertNoHighlightsAfterLastStage(entity, project.numStages(), wq)
+  assertNoHighlightsAfterLastStage(entity, project.settings.stageCount(), wq)
   assertItemRequestHighlightsCorrect(entity, project.lastStageFor(entity), wq)
 
   const wireConnections = entity.wireConnections

@@ -804,7 +804,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     const tilesToUpdateArray: Array<[Position, ProjectTile]> = []
     const tilesToUpdateSet = new LuaSet<ProjectTile>()
 
-    for (const stage of $range(1, project.numStages())) {
+    for (const stage of $range(1, project.settings.stageCount())) {
       const surface = project.getSurface(stage)!
       const tiles = surface.find_tiles_filtered({
         area: bbox,

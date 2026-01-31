@@ -107,7 +107,7 @@ export function setTilesAndCheckerboard(
 }
 
 export function setTilesForStage(stage: Stage): boolean {
-  const tile = stage.project.landfillTile.get()
+  const tile = stage.project.settings.landfillTile.get()
   return tile != nil && setTiles(stage.surface, stage.getBlueprintBBox(), tile)
 }
 
@@ -129,12 +129,12 @@ function setTilesUnderEntities(
   ) => LuaMultiReturn<[boolean, freeTiles?: Mutable<Tile>[]]>,
 ): boolean {
   const project = stage.project
-  const tile = project.landfillTile.get()
+  const tile = project.settings.landfillTile.get()
   if (tile == nil) return false
   const [success, freeTiles] = fn(stage.surface, stage.getBlueprintBBox(), tile)
   if (!success) return false
 
-  if (freeTiles && project.stagedTilesEnabled.get()) {
+  if (freeTiles && project.settings.stagedTilesEnabled.get()) {
     for (const { position } of freeTiles) {
       project.updates.setTileAtStage(position, stage.stageNumber, nil)
     }
@@ -183,7 +183,7 @@ export function resetSpacePlatformTiles(stage: Stage): boolean {
   const area = stage.getBlueprintBBox()
   const bbox = BBox.load(area)
 
-  const tileName = project.landfillTile.get()
+  const tileName = project.settings.landfillTile.get()
   if (!tileName) return false
 
   const tiles = getTiles(area, tileName)
@@ -214,7 +214,7 @@ export function resetSpacePlatformTiles(stage: Stage): boolean {
     applyOptimizedTiles(surface, bbox, optimized, tileName)
   })
 
-  if (project.stagedTilesEnabled.get()) {
+  if (project.settings.stagedTilesEnabled.get()) {
     syncStagedTiles(stage, bbox, optimized, tileName)
   }
 

@@ -84,15 +84,15 @@ export function readSurfaceSettings(surface: LuaSurface): Partial<NormalSurfaceS
 
 export function syncMapGenSettings(stage: Stage): void {
   const project = stage.project
-  if (project.surfaceSettings.type != "normal") return
+  if (project.settings.surfaceSettings.type != "normal") return
   const settings = readSurfaceSettings(stage.surface)
 
-  project.surfaceSettings = { ...project.surfaceSettings, ...settings }
+  project.settings.surfaceSettings = { ...project.settings.surfaceSettings, ...settings }
   applySurfaceSettingsAndClear(project)
 }
 
 export function applySurfaceSettingsAndClear(project: UserProject): void {
-  const settings = project.surfaceSettings
+  const settings = project.settings.surfaceSettings
   if (settings.type != "normal") return
   for (const stage of project.getAllStages()) {
     applySurfaceSettings(settings, stage.surface)

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { ItemInventoryPositions, SignalID } from "factorio:runtime"
+import { SignalID } from "factorio:runtime"
 import {
   BlueprintSettingsOverrideTable,
   BlueprintSettingsTable,
@@ -11,9 +11,8 @@ import {
   createStageBlueprintSettingsTable,
   iconNumbers,
 } from "../blueprints/blueprint-settings"
-import { mergeInventoryPositions } from "../entity/item-requests"
 import { newMap2d } from "../entity/map2d"
-import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
+import { StageNumber } from "../entity/ProjectEntity"
 import { createProjectTile } from "../tiles/ProjectTile"
 import { Mutable, PRecord, property } from "../lib"
 import { WorldPresentation } from "./WorldPresentation"
@@ -22,7 +21,6 @@ import { Migrations } from "../lib/migration"
 import { getNilPlaceholder } from "../utils/diff-value"
 import "./event-handlers"
 import "./project-event-listener"
-import { Stage } from "./ProjectDef"
 import { getDefaultSurfaceSettings, readSurfaceSettings, updateStageSurfaceName } from "./surfaces"
 import "./UserProject"
 import { getAllProjects, StageInternal, UserProjectInternal } from "./UserProject"
@@ -52,10 +50,11 @@ Migrations.to("2.4.0", () => {
   for (const project of getAllProjects()) {
     for (const stage of project.getAllStages()) {
       const oldStage = stage as unknown as OldStage
-      assume<Mutable<Stage>>(stage)
-      stage.blueprintOverrideSettings = oldStage.stageBlueprintSettings!
+      const stageSettings = stage.getSettings()
+      assume<Mutable<typeof stageSettings>>(stageSettings)
+      stageSettings.blueprintOverrideSettings = oldStage.stageBlueprintSettings!
       delete oldStage.stageBlueprintSettings
-      stage.stageBlueprintSettings = createStageBlueprintSettingsTable()
+      stageSettings.stageBlueprintSettings = createStageBlueprintSettingsTable()
     }
   }
 })
@@ -68,7 +67,7 @@ interface OldBlueprintSettings {
 }
 Migrations.to("2.5.2", () => {
   for (const project of getAllProjects()) {
-    const projectBpSettings = project.defaultBlueprintSettings
+    const projectBpSettings = project.settings.defaultBlueprintSettings
     function migrateIconNumbers(table: Record<keyof BlueprintTakeSettings, unknown>) {
       assume<Mutable<OldBlueprintSettings>>(table)
       for (const number of iconNumbers) {
@@ -77,13 +76,13 @@ Migrations.to("2.5.2", () => {
     }
     migrateIconNumbers(projectBpSettings)
     for (const stage of project.getAllStages()) {
-      migrateIconNumbers(stage.blueprintOverrideSettings)
+      migrateIconNumbers(stage.getSettings().blueprintOverrideSettings)
     }
   }
 })
 Migrations.to("2.6.4", () => {
   for (const project of getAllProjects()) {
-    const projectBpSettings = project.defaultBlueprintSettings
+    const projectBpSettings = project.settings.defaultBlueprintSettings
     function deleteOldNumberKeys(table: Record<string, unknown>) {
       assume<Mutable<OldBlueprintSettings>>(table)
       for (const number of iconNumbers) {
@@ -93,31 +92,7 @@ Migrations.to("2.6.4", () => {
     }
     deleteOldNumberKeys(projectBpSettings)
     for (const stage of project.getAllStages()) {
-      deleteOldNumberKeys(stage.blueprintOverrideSettings)
-    }
-  }
-})
-
-Migrations.to("2.7.1", () => {
-  for (const project of getAllProjects()) {
-    const changed = new LuaSet<ProjectEntity>()
-    for (const entity of project.content.allEntities()) {
-      const unstagedValue = entity.getPropertyAllStages("unstagedValue")
-      if (!unstagedValue) continue
-      for (const [, value] of pairs(unstagedValue)) {
-        const items = value.items
-        if (!items) continue
-        for (const item of items) {
-          const in_inventory = item.items.in_inventory
-          if (!in_inventory) continue
-          assume<Mutable<ItemInventoryPositions>>(item.items)
-          item.items.in_inventory = mergeInventoryPositions(in_inventory)
-          changed.add(entity)
-        }
-      }
-    }
-    for (const entity of changed) {
-      project.worldUpdates.refreshAllWorldEntities(entity)
+      deleteOldNumberKeys(stage.getSettings().blueprintOverrideSettings)
     }
   }
 })
@@ -135,11 +110,11 @@ Migrations.to("2.8.0", () => {
     ;(project as UserProjectInternal).registerEvents()
     for (const stage of project.getAllStages()) {
       ;(stage as StageInternal).registerEvents()
-      updateStageSurfaceName(stage.surface, project.name.get(), stage.name.get())
+      updateStageSurfaceName(stage.surface, project.settings.projectName.get(), stage.name.get())
     }
 
     const settings = readSurfaceSettings(project.getStage(1)!.surface)
-    ;(project as any).surfaceSettings = { ...getDefaultSurfaceSettings(), ...settings }
+    project.settings.surfaceSettings = { ...getDefaultSurfaceSettings(), ...settings }
 
     // Migrate tiles from old format to new sparse array format
     const tilesToMigrate: OldProjectTile[] = []
@@ -183,12 +158,13 @@ Migrations.to("2.8.4", () => {
 
 Migrations.to("2.12.0", () => {
   for (const project of getAllProjects()) {
-    assume<Mutable<BlueprintSettingsTable>>(project.defaultBlueprintSettings)
-    project.defaultBlueprintSettings.customBlueprintName = property(nil)
+    assume<Mutable<BlueprintSettingsTable>>(project.settings.defaultBlueprintSettings)
+    project.settings.defaultBlueprintSettings.customBlueprintName = property(nil)
 
     for (const stage of project.getAllStages()) {
-      assume<Mutable<BlueprintSettingsOverrideTable>>(stage.blueprintOverrideSettings)
-      stage.blueprintOverrideSettings.customBlueprintName = property(nil)
+      const overrideSettings = stage.getSettings().blueprintOverrideSettings
+      assume<Mutable<BlueprintSettingsOverrideTable>>(overrideSettings)
+      overrideSettings.customBlueprintName = property(nil)
     }
   }
 })

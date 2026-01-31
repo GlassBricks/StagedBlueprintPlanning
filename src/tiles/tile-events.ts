@@ -37,7 +37,7 @@ export function withTileEventsDisabled<A extends any[], R>(f: (this: void, ...ar
 
 function onTileBuilt(e: OnPlayerBuiltTileEvent | OnRobotBuiltTileEvent | OnSpacePlatformBuiltTileEvent): void {
   const stage = getStageAtSurface(e.surface_index)
-  if (!stage || !stage.project.stagedTilesEnabled.get()) return
+  if (!stage || !stage.project.settings.stagedTilesEnabled.get()) return
   const { stageNumber } = stage
   const name = e.tile.name
   const onTileBuilt = stage.actions.onTileBuilt
@@ -50,7 +50,7 @@ Events.on_robot_built_tile(onTileBuilt)
 Events.script_raised_set_tiles((e) => {
   if (e.mod_name == script.mod_name) return
   const stage = getStageAtSurface(e.surface_index)
-  if (!stage || !stage.project.stagedTilesEnabled.get()) return
+  if (!stage || !stage.project.settings.stagedTilesEnabled.get()) return
   const { stageNumber } = stage
   const onTileBuilt = stage.actions.onTileBuilt
   for (const posData of e.tiles) {
@@ -64,7 +64,7 @@ export function handleTileMined(
   tiles: readonly { readonly position: MapPosition }[],
 ): void {
   const stage = getStageAtSurface(surface_index)
-  if (!stage || !stage.project.stagedTilesEnabled.get()) return
+  if (!stage || !stage.project.settings.stagedTilesEnabled.get()) return
   const { stageNumber } = stage
   const onTileMined = stage.actions.onTileMined
   for (const posData of tiles) {

@@ -1286,10 +1286,10 @@ describe("tiles", () => {
   const pos = Pos(1, 2)
   describe("if tiles enabled", () => {
     before_each(() => {
-      project.stagedTilesEnabled.set(true)
+      project.settings.stagedTilesEnabled.set(true)
     })
     after_each(() => {
-      project.stagedTilesEnabled.set(false)
+      project.settings.stagedTilesEnabled.set(false)
     })
 
     test("player built tile", () => {
@@ -1361,7 +1361,7 @@ describe("tiles", () => {
   })
   describe("if tiles disabled", () => {
     before_each(() => {
-      project.stagedTilesEnabled.set(false)
+      project.settings.stagedTilesEnabled.set(false)
     })
     after_each(() => {
       expectedNumCalls = 0

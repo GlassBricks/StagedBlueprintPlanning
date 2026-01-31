@@ -17,7 +17,7 @@ describe("Tiles integration tests", () => {
 
   before_each(() => {
     project = createUserProject("Test", 6)
-    project.stagedTilesEnabled.set(true)
+    project.settings.stagedTilesEnabled.set(true)
     player = game.players[1]
     projectOps = createOldPipelineProjectOps(project)
   })

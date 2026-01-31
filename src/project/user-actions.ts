@@ -230,7 +230,12 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
       return
     }
 
-    createNotification(entity, byPlayer, [L_Interaction.EntityMovedFromStage, project.getStageName(oldStage)], false)
+    createNotification(
+      entity,
+      byPlayer,
+      [L_Interaction.EntityMovedFromStage, project.settings.getStageName(oldStage)],
+      false,
+    )
     return byPlayer && undoManualStageMove.createAction(byPlayer, { project, entity, oldStage })
   }
 
@@ -521,12 +526,17 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     const result = trySetFirstStage(entity, stage)
     if (result == "updated") {
       if (returned) {
-        createNotification(entity, byPlayer, [L_Interaction.EntityMovedBackToStage, project.getStageName(stage)], false)
+        createNotification(
+          entity,
+          byPlayer,
+          [L_Interaction.EntityMovedBackToStage, project.settings.getStageName(stage)],
+          false,
+        )
       } else {
         createNotification(
           entity,
           byPlayer,
-          [L_Interaction.EntityMovedFromStage, project.getStageName(oldStage)],
+          [L_Interaction.EntityMovedFromStage, project.settings.getStageName(oldStage)],
           false,
         )
       }

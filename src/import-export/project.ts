@@ -4,51 +4,50 @@
 
 import { OverrideableBlueprintSettings, StageBlueprintSettings } from "../blueprints/blueprint-settings"
 import { ProjectEntity } from "../entity/ProjectEntity"
-import {
-  NestedProjectSettings,
-  NestedStageSettings,
-  ProjectSettings,
-  Stage,
-  StageSettings,
-  UserProject,
-} from "../project/ProjectDef"
+import { Stage, StageSettings, UserProject } from "../project/ProjectDef"
 import { type SurfaceSettings } from "../project/surfaces"
 import { createUserProject } from "../project/UserProject"
 import { getCurrentValues, getCurrentValuesOf, OverrideTable, setCurrentValuesOf } from "../utils/properties-obj"
 import { EntityExport, exportAllEntities, importAllEntities } from "./entity"
 
-type NestedPartial<T> = {
-  [K in keyof T]?: Partial<T[K]>
-}
-
-export interface ProjectExport extends Partial<ProjectSettings>, NestedPartial<NestedProjectSettings> {
+export interface ProjectExport {
+  name?: string
   stages?: StageExport[]
   entities?: EntitiesExport
   surfaceSettings?: SurfaceSettings
+  defaultBlueprintSettings?: Partial<OverrideableBlueprintSettings>
+  landfillTile?: string | nil
+  stagedTilesEnabled?: boolean
 }
 
 export type EntitiesExport = EntityExport[]
 
-export interface StageExport extends Partial<StageSettings>, NestedPartial<NestedStageSettings> {}
+export interface StageExport extends Partial<StageSettings> {
+  blueprintOverrideSettings?: Partial<OverrideTable<OverrideableBlueprintSettings>>
+  stageBlueprintSettings?: Partial<StageBlueprintSettings>
+}
 
 export function exportProject(project: UserProject): ProjectExport {
   return {
-    defaultBlueprintSettings: getCurrentValues(project.defaultBlueprintSettings),
-    surfaceSettings: project.surfaceSettings,
+    name: project.settings.projectName.get(),
+    defaultBlueprintSettings: getCurrentValues(project.settings.defaultBlueprintSettings),
+    surfaceSettings: project.settings.surfaceSettings,
     stages: project.getAllStages().map(exportStage),
     entities: exportAllEntities(project.content.allEntities()),
-    ...getCurrentValuesOf<ProjectSettings>(project, keys<ProjectSettings>()),
+    landfillTile: project.settings.landfillTile.get(),
+    stagedTilesEnabled: project.settings.stagedTilesEnabled.get(),
   }
 }
 
 export function exportStage(this: unknown, stage: Stage): StageExport {
+  const settings = stage.getSettings()
   return {
     blueprintOverrideSettings: getCurrentValuesOf<OverrideTable<OverrideableBlueprintSettings>>(
-      stage.blueprintOverrideSettings,
+      settings.blueprintOverrideSettings,
       keys<OverrideableBlueprintSettings>(),
     ),
     stageBlueprintSettings: getCurrentValuesOf<StageBlueprintSettings>(
-      stage.stageBlueprintSettings,
+      settings.stageBlueprintSettings,
       keys<StageBlueprintSettings>(),
     ),
     ...getCurrentValuesOf<StageSettings>(stage, keys<StageSettings>()),
@@ -58,10 +57,17 @@ export function exportStage(this: unknown, stage: Stage): StageExport {
 export function importProjectDataOnly(project: ProjectExport): UserProject {
   const stages = project.stages
   const result = createUserProject(project.name ?? "", stages?.length ?? 3, project?.surfaceSettings)
-  setCurrentValuesOf<ProjectSettings>(result, project, keys<ProjectSettings>())
+
+  if (project.landfillTile != nil) {
+    result.settings.landfillTile.set(project.landfillTile)
+  }
+  if (project.stagedTilesEnabled != nil) {
+    result.settings.stagedTilesEnabled.set(project.stagedTilesEnabled)
+  }
+
   if (project.defaultBlueprintSettings != nil) {
     setCurrentValuesOf<OverrideableBlueprintSettings>(
-      result.defaultBlueprintSettings,
+      result.settings.defaultBlueprintSettings,
       project.defaultBlueprintSettings,
       keys<OverrideableBlueprintSettings>(),
     )
@@ -72,7 +78,7 @@ export function importProjectDataOnly(project: ProjectExport): UserProject {
       importStage(stage, result.getStage(i)!)
     }
   }
-  if (result.isSpacePlatform()) {
+  if (result.settings.isSpacePlatform()) {
     const hub = next(result.content.allEntities())[0] as ProjectEntity | nil
     if (hub) {
       result.updates.forceDeleteEntity(hub)
@@ -85,16 +91,17 @@ export function importProjectDataOnly(project: ProjectExport): UserProject {
 }
 
 function importStage(importedStage: StageExport, result: Stage): void {
+  const settings = result.getSettings()
   if (importedStage.blueprintOverrideSettings != nil) {
     setCurrentValuesOf<OverrideTable<OverrideableBlueprintSettings>>(
-      result.blueprintOverrideSettings,
+      settings.blueprintOverrideSettings,
       importedStage.blueprintOverrideSettings,
       keys<OverrideableBlueprintSettings>(),
     )
   }
   if (importedStage.stageBlueprintSettings != nil) {
     setCurrentValuesOf<StageBlueprintSettings>(
-      result.stageBlueprintSettings,
+      settings.stageBlueprintSettings,
       importedStage.stageBlueprintSettings,
       keys<StageBlueprintSettings>(),
     )

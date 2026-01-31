@@ -21,14 +21,14 @@ const fromId = 2
 const toId = 4
 function createSampleProject() {
   const project = createUserProject("name", 2)
-  project.defaultBlueprintSettings.snapToGrid.set({ x: 4, y: 5 })
+  project.settings.defaultBlueprintSettings.snapToGrid.set({ x: 4, y: 5 })
 
   const [stage1, stage2] = project.getAllStages()
   stage1.name.set("foo")
   stage2.name.set("bar")
 
-  stage1.blueprintOverrideSettings.snapToGrid.set({ x: 4, y: 5 })
-  stage2.stageBlueprintSettings.description.set("Foo")
+  stage1.getSettings().blueprintOverrideSettings.snapToGrid.set({ x: 4, y: 5 })
+  stage2.getSettings().stageBlueprintSettings.description.set("Foo")
 
   const entity1 = newProjectEntity(
     {
@@ -173,13 +173,13 @@ test("exports and imports surface settings", () => {
     has_global_electric_network: false,
   }
 
-  project.surfaceSettings = settings
+  project.settings.surfaceSettings = settings
 
   const exported = exportProject(project)
   expect(exported.surfaceSettings).toEqual(settings)
 
   const imported = importProjectDataOnly(exported)
-  expect(imported.surfaceSettings).toEqual({ ...getDefaultSurfaceSettings(), ...settings })
+  expect(imported.settings.surfaceSettings).toEqual({ ...getDefaultSurfaceSettings(), ...settings })
 })
 
 test("imports project without surface settings (backward compatibility)", () => {
@@ -191,7 +191,7 @@ test("imports project without surface settings (backward compatibility)", () => 
 
   const imported = importProjectDataOnly(exported)
 
-  const settings = imported.surfaceSettings as NormalSurfaceSettings
+  const settings = imported.settings.surfaceSettings as NormalSurfaceSettings
   expect(settings.map_gen_settings).toEqual(game.default_map_gen_settings)
   expect(settings.generate_with_lab_tiles).toBe(true)
   expect(settings.ignore_surface_conditions).toBe(true)

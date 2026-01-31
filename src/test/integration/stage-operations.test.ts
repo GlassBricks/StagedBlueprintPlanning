@@ -86,14 +86,14 @@ describe.skip("map gen settings", () => {
   })
   test("rebuild stage after sync map gen settings", () => {
     const entity = ctx.buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
-    assert(ctx.project.surfaceSettings.type == "normal")
-    ctx.project.surfaceSettings = { ...ctx.project.surfaceSettings, planet: "vulcanus" }
+    assert(ctx.project.settings.surfaceSettings.type == "normal")
+    ctx.project.settings.surfaceSettings = { ...ctx.project.settings.surfaceSettings, planet: "vulcanus" }
     ctx.assertEntityCorrect(entity, false)
     ctx.surfaces[0].generate_with_lab_tiles = false
     ctx.player.teleport(pos, ctx.surfaces[0])
     syncMapGenSettings(ctx.project.getStage(1)!)
     after_ticks(60, () => {
-      expect((ctx.project.surfaceSettings as NormalSurfaceSettings).planet).toBe("vulcanus")
+      expect((ctx.project.settings.surfaceSettings as NormalSurfaceSettings).planet).toBe("vulcanus")
       ctx.assertEntityCorrect(entity, false)
     })
   })
@@ -158,7 +158,7 @@ describe("stage deletion", () => {
   }
 
   function assertAllInsertersInProject() {
-    for (const stage of $range(1, ctx.project.numStages())) {
+    for (const stage of $range(1, ctx.project.settings.stageCount())) {
       const entitiesOnSurface = ctx.surfaces[stage - 1].find_entities_filtered({ type: "inserter" })
       for (const worldEntity of entitiesOnSurface) {
         if (isPreviewEntity(worldEntity)) continue
@@ -236,7 +236,7 @@ describe("stage deletion", () => {
 
 describe("stage insertion", () => {
   function assertAllInsertersInProject() {
-    for (const stage of $range(1, ctx.project.numStages())) {
+    for (const stage of $range(1, ctx.project.settings.stageCount())) {
       const entitiesOnSurface = ctx.surfaces[stage - 1].find_entities_filtered({ type: "inserter" })
       for (const worldEntity of entitiesOnSurface) {
         if (isPreviewEntity(worldEntity)) continue
@@ -311,7 +311,7 @@ describe("stage insertion", () => {
     setLastStageViaDeconstructTool(entity, 6)
     expect(entity.lastStage).toBe(5)
 
-    ctx.project.insertStage(ctx.project.numStages() + 1)
+    ctx.project.insertStage(ctx.project.settings.stageCount() + 1)
     ctx.surfaces = ctx.project.getAllStages().map((stage) => stage.surface)
 
     expect(entity.lastStage).toBe(5)

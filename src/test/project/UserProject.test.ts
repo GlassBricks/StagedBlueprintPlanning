@@ -293,62 +293,62 @@ describe("new stage name", () => {
 describe("blueprintBookTemplate", () => {
   test("initially nil", () => {
     const project = createUserProject("Test", 0)
-    expect(project.getBlueprintBookTemplate()).toBeNil()
+    expect(project.settings.blueprintBookTemplate.get()).toBeNil()
   })
 
   test("can be set", () => {
     const project = createUserProject("Test", 0)
-    const book = project.getOrCreateBlueprintBookTemplate()
-    expect(project.getBlueprintBookTemplate()).toEqual(book)
+    const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
+    expect(project.settings.blueprintBookTemplate.get()).toEqual(book)
 
     assert(book.is_blueprint_book)
-    expect(book.label).toEqual(project.name.get())
+    expect(book.label).toEqual(project.settings.projectName.get())
     const inv = book.get_inventory(defines.inventory.item_main)!
-    expect(inv.length).toEqual(project.numStages())
-    for (const i of $range(1, project.numStages())) {
+    expect(inv.length).toEqual(project.settings.stageCount())
+    for (const i of $range(1, project.settings.stageCount())) {
       const referencedStage = getReferencedStage(inv[i - 1])
       expect(referencedStage).toBe(project.getStage(i))
     }
   })
   test("can be reset", () => {
     const project = createUserProject("Test", 0)
-    const book = project.getOrCreateBlueprintBookTemplate()
-    project.resetBlueprintBookTemplate()
-    expect(project.getBlueprintBookTemplate()).toBeNil()
+    const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
+    project.settings.blueprintBookTemplate.reset()
+    expect(project.settings.blueprintBookTemplate.get()).toBeNil()
     expect(book.valid).toBe(false)
   })
 
   test("can be fixed if deleted", () => {
     const project = createUserProject("Test", 0)
-    const book = project.getOrCreateBlueprintBookTemplate()
+    const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
     book.clear()
-    expect(project.getBlueprintBookTemplate()).toBe(nil)
-    const newBook = project.getOrCreateBlueprintBookTemplate()
+    expect(project.settings.blueprintBookTemplate.get()).toBe(nil)
+    const newBook = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
     assert(newBook.is_blueprint_book)
   })
 
   test("changing project name changes book label", () => {
     const project = createUserProject("Test", 0)
-    const book = project.getOrCreateBlueprintBookTemplate()
-    project.name.set("New Name")
+    const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
+    project.settings.projectName.set("New Name")
     expect(book.label).toEqual("New Name")
   })
 
   test("changing project name does not change book label if book label is different", () => {
     const project = createUserProject("Test", 0)
-    const book = project.getOrCreateBlueprintBookTemplate()
+    const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
     book.label = "Different"
-    project.name.set("New Name")
+    project.settings.projectName.set("New Name")
     expect(book.label).toEqual("Different")
   })
 
   describe("inserting stage", () => {
     test("inserts template into new stage in middle", () => {
       const project = createUserProject("Test", 3)
-      const book = project.getOrCreateBlueprintBookTemplate()
+      const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
       for (const insertStage of [2, 4, 1, 7]) {
         project.insertStage(insertStage)
-        for (const stage of $range(1, project.numStages())) {
+        for (const stage of $range(1, project.settings.stageCount())) {
           const referencedStage = getReferencedStage(book.get_inventory(defines.inventory.item_main)![stage - 1])
           expect(referencedStage).toBe(project.getStage(stage))
         }
@@ -357,7 +357,7 @@ describe("blueprintBookTemplate", () => {
 
     test("inserts template into empty space if exists", () => {
       const project = createUserProject("Test", 3)
-      const book = project.getOrCreateBlueprintBookTemplate()
+      const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
       const inventory = book.get_inventory(defines.inventory.item_main)!
       inventory[2 - 1].clear()
       project.insertStage(2)
@@ -367,7 +367,7 @@ describe("blueprintBookTemplate", () => {
 
     test("only pushes in template until the next empty space", () => {
       const project = createUserProject("Test", 5)
-      const book = project.getOrCreateBlueprintBookTemplate()
+      const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
       const inventory = book.get_inventory(defines.inventory.item_main)!
       inventory[4 - 1].clear()
       project.insertStage(2)
@@ -378,7 +378,7 @@ describe("blueprintBookTemplate", () => {
 
     test("can push past last stage with empty slots", () => {
       const project = createUserProject("Test", 5)
-      const book = project.getOrCreateBlueprintBookTemplate()
+      const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
       const inventory = book.get_inventory(defines.inventory.item_main)!
       inventory[2 - 1].clear()
       inventory[3 - 1].clear()

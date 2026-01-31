@@ -43,11 +43,11 @@ function createEntity(stage: Stage, pos: MapPositionArray = [0.5, 0.5], name: st
 }
 
 test("can take single blueprint using stage settings", () => {
-  project.defaultBlueprintSettings.snapToGrid.set(Pos(2, 3))
-  project.defaultBlueprintSettings.positionRelativeToGrid.set(Pos(4, 5))
-  project.defaultBlueprintSettings.appendStageNumbersToIcons.set(true)
+  project.settings.defaultBlueprintSettings.snapToGrid.set(Pos(2, 3))
+  project.settings.defaultBlueprintSettings.positionRelativeToGrid.set(Pos(4, 5))
+  project.settings.defaultBlueprintSettings.appendStageNumbersToIcons.set(true)
   const stage = project.getStage(1)!
-  stage.stageBlueprintSettings.description.set("Test")
+  stage.getSettings().stageBlueprintSettings.description.set("Test")
 
   const stack = player.cursor_stack!
   const ret = takeStageBlueprint(stage, stack)
@@ -61,7 +61,7 @@ test("can take single blueprint using stage settings", () => {
 
   expect(stack.blueprint_snap_to_grid).toEqual(Pos(2, 3))
   expect(stack.blueprint_position_relative_to_grid).toEqual(Pos(4, 5))
-  expect(stack.label).toEqual(stage.name.get())
+  expect(stack.label).toEqual(project.settings.getStageName(1))
   expect(stack.blueprint_description).toEqual("Test")
 
   const entities = stack.get_blueprint_entities()!
@@ -78,14 +78,14 @@ describe("customBlueprintName()", () => {
 
     const stack = player.cursor_stack!
     takeStageBlueprint(stage, stack)
-    expect(stack.label).toEqual(stage.name.get())
+    expect(stack.label).toEqual(project.settings.getStageName(1))
 
-    stage.blueprintOverrideSettings.customBlueprintName.set("")
+    stage.getSettings().blueprintOverrideSettings.customBlueprintName.set("")
     takeStageBlueprint(stage, stack)
     // Factorio treats empty string label as nil
     expect(stack.label).toBeNil()
 
-    stage.blueprintOverrideSettings.customBlueprintName.set("My Custom Name")
+    stage.getSettings().blueprintOverrideSettings.customBlueprintName.set("My Custom Name")
     takeStageBlueprint(stage, stack)
     expect(stack.label).toEqual("My Custom Name")
   })
@@ -128,11 +128,11 @@ test("includes only entities present in last x stages or in additionalWhitelist 
   const includedEntities = [e1, e2, e3, e4, e5, pole1, pole2]
 
   const stack = player.cursor_stack!
-  const stageBlueprintSettings = stage3.blueprintOverrideSettings
-  stageBlueprintSettings.stageLimit.set(2)
-  stageBlueprintSettings.snapToGrid.set(Pos(2, 2))
-  stageBlueprintSettings.positionOffset.set(Pos(0, 0))
-  stageBlueprintSettings.additionalWhitelist.set(newLuaSet("steel-chest"))
+  const overrideSettings = stage3.getSettings().blueprintOverrideSettings
+  overrideSettings.stageLimit.set(2)
+  overrideSettings.snapToGrid.set(Pos(2, 2))
+  overrideSettings.positionOffset.set(Pos(0, 0))
+  overrideSettings.additionalWhitelist.set(newLuaSet("steel-chest"))
 
   const ret = takeStageBlueprint(stage3, stack)
   expect(ret).toBe(true)
@@ -147,7 +147,7 @@ test("includes only entities present in last x stages or in additionalWhitelist 
 test("excludes entities from future blueprints when excludeFromFutureBlueprints is set", () => {
   const [stage1, stage2, stage3] = project.getAllStages()
   const e1 = createEntity(stage1) // should be excluded
-  stage1.blueprintOverrideSettings.excludeFromFutureBlueprints.set(true)
+  stage1.getSettings().blueprintOverrideSettings.excludeFromFutureBlueprints.set(true)
   const e2 = createEntity(stage2, [1.5, 1.5]) // should be included
   const e3 = createEntity(stage3, [2.5, 2.5]) // should be included
 
@@ -171,7 +171,7 @@ test("excludes entities from future blueprints when excludeFromFutureBlueprints 
 })
 
 test("creates blueprint book with all stages", () => {
-  for (const i of $range(1, project.numStages())) {
+  for (const i of $range(1, project.settings.stageCount())) {
     createEntity(project.getStage(i)!, [i + 0.5, i + 0.5])
   }
 
@@ -181,12 +181,12 @@ test("creates blueprint book with all stages", () => {
     if (isTaskRunning()) return
 
     expect(stack.is_blueprint_book).toBe(true)
-    expect(stack.label).toBe(project.name.get())
+    expect(stack.label).toBe(project.settings.projectName.get())
     const inventory = stack.get_inventory(defines.inventory.item_main)!
     expect(inventory).toHaveLength(4)
-    for (const i of $range(1, project.numStages())) {
+    for (const i of $range(1, project.settings.stageCount())) {
       expect(inventory[i - 1].is_blueprint).toBe(true)
-      expect(inventory[i - 1].label).toBe(project.getStage(i)!.name.get())
+      expect(inventory[i - 1].label).toBe(project.settings.getStageName(i))
       const entities = inventory[i - 1].get_blueprint_entities()!
       expect(entities).toHaveLength(i)
       expect(entities[0].name).toBe("iron-chest")
@@ -204,10 +204,12 @@ test("exports blueprint book to file", () => {
 })
 
 test("creates blueprint book using template", () => {
-  for (const i of $range(1, project.numStages())) {
+  for (const i of $range(1, project.settings.stageCount())) {
     createEntity(project.getStage(i)!, [i + 0.5, i + 0.5])
   }
-  const templateInv = project.getOrCreateBlueprintBookTemplate().get_inventory(defines.inventory.item_main)!
+  const templateInv = project.settings.blueprintBookTemplate
+    .getOrCreate(project, project.settings.projectName.get())
+    .get_inventory(defines.inventory.item_main)!
   const stageMapping = [3, 2, 1, 2, 3]
   for (let i = 0; i < stageMapping.length; i++) {
     if (i >= templateInv.length) templateInv.insert("blueprint")
@@ -223,15 +225,14 @@ test("creates blueprint book using template", () => {
   expect(getReferencedStage(templateInv[0])).toBe(project.getStage(3))
 
   expect(stack.is_blueprint_book).toBe(true)
-  expect(stack.label).toBe(project.name.get())
+  expect(stack.label).toBe(project.settings.projectName.get())
   const inventory = stack.get_inventory(defines.inventory.item_main)!
   expect(inventory).toHaveLength(stageMapping.length + 1)
   for (const i of $range(1, stageMapping.length)) {
     const stageNum = stageMapping[i - 1]
-    const stage = project.getStage(stageNum)!
     const stack = inventory[i - 1]
     expect(stack.is_blueprint).comment(`Stage ${i}`).toBe(true)
-    expect(stack.label).toBe(stage.name.get())
+    expect(stack.label).toBe(project.settings.getStageName(stageNum))
     const entities = stack.get_blueprint_entities()!
     expect(entities).comment(`Stage ${i}`).toHaveLength(stageNum)
     expect(entities[0].name).toBe("iron-chest")
@@ -267,10 +268,10 @@ test("blueprint with unstaged values includes item requests", () => {
 test("does not error when taking empty blueprint", () => {
   const [stage1, stage2] = project.getAllStages()
   createEntity(stage1) // create entity only in stage 1
-  stage1.blueprintOverrideSettings.excludeFromFutureBlueprints.set(true)
+  stage1.getSettings().blueprintOverrideSettings.excludeFromFutureBlueprints.set(true)
 
   const stack = player.cursor_stack!
-  stage2.stageBlueprintSettings.description.set("Test description")
+  stage2.getSettings().stageBlueprintSettings.description.set("Test description")
 
   const ret = takeStageBlueprint(stage2, stack)
 

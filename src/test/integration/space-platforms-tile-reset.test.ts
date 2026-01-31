@@ -28,7 +28,7 @@ function createSpacePlatformProject(quality: string = "normal"): UserProject {
 describe("space platform foundation reset", () => {
   test("resets platform with scattered entities - full integration", () => {
     const project = createSpacePlatformProject()
-    project.stagedTilesEnabled.set(true)
+    project.settings.stagedTilesEnabled.set(true)
     const stage = project.getStage(1)!
     const surface = stage.surface
     const bbox = stage.getBlueprintBBox()
@@ -41,7 +41,7 @@ describe("space platform foundation reset", () => {
 
     surface.create_entity({ name: "assembling-machine-1", position: { x: 15, y: 15 }, force: "player" })
 
-    const tileName = project.landfillTile.get()!
+    const tileName = project.settings.landfillTile.get()!
 
     const allTiles: Mutable<TileWrite>[] = []
     for (const [x, y] of BBox.iterateTiles(BBox.load(bbox))) {

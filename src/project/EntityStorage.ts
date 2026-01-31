@@ -49,7 +49,7 @@ export class EntityStorage<T extends object> {
   iterateType<K extends keyof T & string>(entity: ProjectEntity, type: K): LuaPairsIterable<StageNumber, T[K]> {
     const byType = this.data.get(entity)?.get(type)
     if (!byType) return new LuaMap()
-    return byType as LuaMap<number, T[K]>
+    return byType as LuaMap<StageNumber, T[K]>
   }
 
   hasAnyOfType<K extends keyof T & string>(entity: ProjectEntity, type: K): boolean {

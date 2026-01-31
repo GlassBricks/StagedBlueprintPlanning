@@ -214,7 +214,7 @@ export class MapGenSettingsSelect extends Component<Props> {
 
   render({ stage, initialSettings }: Props): Element {
     this.stage = stage
-    assert(!this.stage.project.isSpacePlatform())
+    assert(!this.stage.project.settings.isSpacePlatform())
 
     return (
       <frame
@@ -255,7 +255,7 @@ export class MapGenSettingsSelect extends Component<Props> {
 
     const project = this.stage.project
     const values = this.formComponent.getSettings()
-    project.surfaceSettings = values
+    project.settings.surfaceSettings = values
     applySurfaceSettingsAndClear(project)
     this.close()
   }
@@ -266,7 +266,7 @@ export class MapGenSettingsSelect extends Component<Props> {
 }
 
 export function openMapGenSettingsSelect(player: LuaPlayer, stage: Stage): void {
-  const initialSettings = stage.project.surfaceSettings
+  const initialSettings = stage.project.settings.surfaceSettings
   if (initialSettings.type == "normal") {
     renderNamed(<MapGenSettingsSelect stage={stage} initialSettings={initialSettings} />, player.gui.screen, name)
   }

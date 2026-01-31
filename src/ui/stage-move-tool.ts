@@ -42,7 +42,7 @@ export function updateMoveToolInCursor(player: LuaPlayer): LuaPlayer | nil {
   const projectPlayerData = getProjectPlayerData(player.index, project)
   if (!projectPlayerData) return
   let selectedStage = projectPlayerData.moveTargetStage
-  if (!selectedStage || selectedStage < 1 || selectedStage > project.numStages()) {
+  if (!selectedStage || selectedStage < 1 || selectedStage > project.settings.stageCount()) {
     selectedStage = stage.stageNumber
   }
 
@@ -94,7 +94,7 @@ function changeSelectedStage(player: LuaPlayer, delta: number) {
   let selectedStage = projectPlayerData.moveTargetStage ?? stage.stageNumber
   selectedStage += delta
   if (selectedStage < 1) selectedStage = 1
-  const maxStage = stage.project.numStages()
+  const maxStage = stage.project.settings.stageCount()
   if (selectedStage > maxStage) selectedStage = maxStage
 
   projectPlayerData.moveTargetStage = selectedStage

@@ -42,7 +42,7 @@ describe("space platform hub", () => {
     "hub automatically added to all stages when creating space platform project, with quality %s",
     (quality) => {
       const project = createSpacePlatformProject(quality)
-      expect(project.isSpacePlatform()).toBe(true)
+      expect(project.settings.isSpacePlatform()).toBe(true)
       const [, hubEntity] = getHub(project, 1)
 
       expect(hubEntity.isPersistent()).toBe(true)
@@ -50,7 +50,7 @@ describe("space platform hub", () => {
       expect(hubEntity.lastStage).toBeNil()
 
       const wq = createOldPipelineWorldQueries()
-      for (const stage of $range(1, project.numStages())) {
+      for (const stage of $range(1, project.settings.stageCount())) {
         const worldEntity = wq.getWorldEntity(hubEntity, stage)
         expect(worldEntity).toBeAny()
         expect(worldEntity!.name).toBe("space-platform-hub")
@@ -82,7 +82,7 @@ describe("space platform hub", () => {
 describe("space platform tiles", () => {
   test("default tiles added when project created", () => {
     const project = createSpacePlatformProject()
-    expect(project.stagedTilesEnabled.get()).toBe(true)
+    expect(project.settings.stagedTilesEnabled.get()).toBe(true)
 
     const tiles = project.getStage(1)!.surface.find_tiles_filtered({ name: "space-platform-foundation" })
     expect(tiles.length).toBeGreaterThan(0)
@@ -120,7 +120,7 @@ describe("space platform tiles", () => {
       projectOps.deleteTile(position)
     }
 
-    const newStage = project.insertStage(project.numStages())
+    const newStage = project.insertStage(project.settings.stageCount())
     const newSurface = newStage.surface
     const newSurfaceTiles = newSurface.find_tiles_filtered({ name: "space-platform-foundation" })
 

@@ -39,7 +39,7 @@ ProjectEvents.addListener((e) => {
     }
     case "project-created": {
       const project = e.project
-      if (project.isSpacePlatform()) {
+      if (project.settings.isSpacePlatform()) {
         initSpacePlatform(project)
       }
       return
