@@ -173,12 +173,13 @@ Migrations.to($CURRENT_VERSION, () => {
   for (const project of getAllProjects()) {
     interface OldUserProject extends Omit<UserProjectInternal, "worldUpdates"> {
       worldUpdates?: unknown
-      _worldPresentation?: WorldPresentation
     }
     const old = project as unknown as OldUserProject
     delete old.worldUpdates
-    if (!old._worldPresentation) {
-      old._worldPresentation = new WorldPresentation(project)
+    if (!project.worldPresentation) {
+      ;(project as unknown as { worldPresentation: WorldPresentation }).worldPresentation = new WorldPresentation(
+        project,
+      )
     }
     interface OldProjectEntity {
       [stage: StageNumber]: LuaEntity | nil
@@ -188,7 +189,7 @@ Migrations.to($CURRENT_VERSION, () => {
       const old = entity as unknown as OldProjectEntity
       for (const [k, v] of pairs(old)) {
         if (typeof k == "number") {
-          es.set(entity, "worldOrPreviewEntity", k, v!)
+          es.set(entity, "worldOrPreviewEntity", k, v)
           delete old[k]
         }
       }

@@ -61,12 +61,9 @@ class UserProjectImpl implements UserProjectInternal {
 
   actions = UserActionsClass({ project: this })
   updates = ProjectUpdatesClass({ project: this })
-  private _worldPresentation = new WorldPresentation(this)
-  get worldPresentation(): WorldPresentation {
-    return this._worldPresentation
-  }
+  worldPresentation: WorldPresentation = new WorldPresentation(this)
   get worldUpdates(): WorldUpdates {
-    return this._worldPresentation.getWorldUpdates()
+    return this.worldPresentation.getWorldUpdates()
   }
 
   constructor(
