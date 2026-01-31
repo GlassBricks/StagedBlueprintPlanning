@@ -33,7 +33,7 @@ These are run as part of full rebuild.
 - Explicit member accessibility required (`accessibility: "no-public"`)
 - Explicit module boundary types
 - Test files end with `.test.ts`
-- Avoid casting to `any` in new code. Prefer casting to an explicit type; creating types if it does not exist yet.
+- Never cast to `any` or `Record<..., unknown>` or the like in new code if a more specific type is possible. Always create an explicit type; derive from existing types if applicable, add new type definition if needed.
 
 ### Lua
 
