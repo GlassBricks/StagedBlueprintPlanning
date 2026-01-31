@@ -96,9 +96,9 @@ Unit tests:
 ### Success Criteria
 
 #### Automated
-- [ ] `pnpm run test "EntityStorage"` — all new tests pass
-- [ ] `pnpm run test` — all existing tests still pass
-- [ ] `pnpm run lint && pnpm run format:fix` — clean
+- [x] `pnpm run test "EntityStorage"` — all new tests pass
+- [x] `pnpm run test` — all existing tests still pass
+- [x] `pnpm run lint && pnpm run format:fix` — clean
 
 ---
 
