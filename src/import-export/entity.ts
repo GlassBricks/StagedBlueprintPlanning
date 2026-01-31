@@ -6,7 +6,7 @@
 import { BlueprintWire, MapPosition } from "factorio:runtime"
 import { Entity, UnstagedEntityProps } from "../entity/Entity"
 import { MutableProjectContent } from "../entity/ProjectContent"
-import { addWireConnection, newProjectEntity, ProjectEntity, StageDiffs, StageNumber } from "../entity/ProjectEntity"
+import { newProjectEntity, ProjectEntity, StageDiffs, StageNumber } from "../entity/ProjectEntity"
 import { getDirectionalInfo } from "../entity/wire-connection"
 import { deepCopy, Events, Mutable, PRRecord } from "../lib"
 import { getNilPlaceholder, NilPlaceholder } from "../utils/diff-value"
@@ -168,7 +168,7 @@ export function importAllEntities(content: MutableProjectContent, entities: Enti
       const fromEntity = entityNumberToResult.get(fromEntityNumber)
       const toEntity = entityNumberToResult.get(toEntityNumber)
       if (!fromEntity || !toEntity) continue
-      addWireConnection({ fromEntity, toEntity, fromId, toId })
+      content.addWireConnection({ fromEntity, toEntity, fromId, toId })
     }
   }
 }

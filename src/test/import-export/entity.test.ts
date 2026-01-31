@@ -4,7 +4,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import expect from "tstl-expect"
-import { addWireConnection, newProjectEntity, ProjectEntity, StageDiffs } from "../../entity/ProjectEntity"
+import { newProjectEntity, ProjectEntity, StageDiffs } from "../../entity/ProjectEntity"
+import { newProjectContent } from "../../entity/ProjectContent"
 import {
   EntityExport,
   exportAllEntities,
@@ -125,11 +126,14 @@ describe("exportEntity and importEntity", () => {
 })
 
 test("exportAllEntities", () => {
+  const content = newProjectContent()
   const entity1 = newProjectEntity({ name: "foo" }, { x: 1, y: 2 }, 4, 1)
   const entity2 = newProjectEntity({ name: "bar" }, { x: 3, y: 4 }, 6, 2)
+  content.addEntity(entity1)
+  content.addEntity(entity2)
   const fromId = 2
   const toId = 4
-  addWireConnection({
+  content.addWireConnection({
     fromEntity: entity1,
     toEntity: entity2,
     fromId,

@@ -7,13 +7,7 @@ import { BlueprintInsertPlan, EventData, LuaEntity, LuaSurface } from "factorio:
 import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { Entity, UndergroundBeltEntity } from "../../entity/Entity"
-import {
-  addWireConnection,
-  newProjectEntity,
-  ProjectEntity,
-  StageNumber,
-  UndergroundBeltProjectEntity,
-} from "../../entity/ProjectEntity"
+import { newProjectEntity, ProjectEntity, StageNumber, UndergroundBeltProjectEntity } from "../../entity/ProjectEntity"
 import { createEntity, createPreviewEntity, saveEntity } from "../../entity/save-load"
 import { Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
@@ -602,7 +596,7 @@ describe("circuit wires", () => {
   }
 
   function addWireToProject() {
-    addWireConnection({
+    project.content.addWireConnection({
       fromEntity: entity1,
       toEntity: entity2,
       // wire: defines.wire_type.red,

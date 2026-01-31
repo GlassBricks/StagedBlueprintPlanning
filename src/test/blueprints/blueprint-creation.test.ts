@@ -11,7 +11,6 @@ import {
   takeStageBlueprint,
 } from "../../blueprints/blueprint-creation"
 import { createStageReference, getReferencedStage } from "../../blueprints/stage-reference"
-import { addWireConnection } from "../../entity/ProjectEntity"
 import { Pos } from "../../lib/geometry"
 import { cancelCurrentTask, isTaskRunning, runEntireCurrentTask } from "../../lib/task"
 import { checkForCircuitWireUpdates, checkForEntityUpdates } from "../../project/event-handlers"
@@ -120,7 +119,7 @@ test("includes only entities present in last x stages or in additionalWhitelist 
   const pole2 = createEntity(stage1, [8.5, 8.5], "small-electric-pole") // included, has connection with pole1
   const pole1Project = project.content.findCompatibleWithLuaEntity(pole1, nil, 1)!
   const pole2Project = project.content.findCompatibleWithLuaEntity(pole2, nil, 1)!
-  addWireConnection({
+  project.content.addWireConnection({
     fromEntity: pole1Project,
     toEntity: pole2Project,
     fromId: defines.wire_connector_id.pole_copper,

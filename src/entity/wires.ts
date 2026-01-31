@@ -7,7 +7,7 @@ import { LuaEntity, LuaWireConnector } from "factorio:runtime"
 import { isEmpty } from "../lib"
 import { WorldEntityLookup } from "../project/WorldPresentation"
 import { MutableProjectContent, ProjectContent } from "./ProjectContent"
-import { addWireConnection, ProjectEntity, removeWireConnection, StageNumber, WireConnections } from "./ProjectEntity"
+import { ProjectEntity, StageNumber, WireConnections } from "./ProjectEntity"
 import { getDirectionalInfo, ProjectWireConnection, wireConnectionMatches } from "./wire-connection"
 
 interface WireSourceAndTarget {
@@ -74,7 +74,7 @@ function saveWireConnections(
       if (!otherLuaEntity) continue
       for (const connection of connections) {
         if (!matchingConnections.has(connection)) {
-          removeWireConnection(connection)
+          content.removeWireConnection(connection)
           hasDiff = true
         }
       }
@@ -82,7 +82,7 @@ function saveWireConnections(
   }
 
   for (const [definition, otherEntity] of extraConnections) {
-    addWireConnection({
+    content.addWireConnection({
       fromEntity: entity,
       toEntity: otherEntity,
       fromId: definition.sourceId,
@@ -100,7 +100,7 @@ function saveWireConnections(
         higherStageForMerging,
       )
       for (const [definition, otherEntity] of extraConnectionsHigher) {
-        addWireConnection({
+        content.addWireConnection({
           fromEntity: entity,
           toEntity: otherEntity,
           fromId: definition.sourceId,

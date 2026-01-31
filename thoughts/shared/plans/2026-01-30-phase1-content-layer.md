@@ -378,9 +378,9 @@ The existing `changeEntityPosition` already handles the spatial index update. It
 ### Success Criteria
 
 #### Automated Verification
-- [ ] `pnpm run build:test` compiles cleanly
-- [ ] `pnpm run test` — all existing tests pass
-- [ ] `pnpm run lint` passes
+- [x] `pnpm run build:test` compiles cleanly
+- [x] `pnpm run test` — all existing tests pass
+- [x] `pnpm run lint` passes
 
 ---
 

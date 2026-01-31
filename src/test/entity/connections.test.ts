@@ -5,7 +5,7 @@
 
 import expect from "tstl-expect"
 import { MutableProjectContent, newProjectContent, _assertCorrect } from "../../entity/ProjectContent"
-import { addWireConnection, newProjectEntity, ProjectEntity, removeWireConnection } from "../../entity/ProjectEntity"
+import { newProjectEntity, ProjectEntity } from "../../entity/ProjectEntity"
 import { ProjectWireConnection } from "../../entity/wire-connection"
 
 let content: MutableProjectContent
@@ -53,11 +53,11 @@ describe("connections", () => {
 
     test("addwireConnection shows up in getwireConnections", () => {
       const connection = createwireConnection(entity1, entity2)
-      addWireConnection(connection)
+      content.addWireConnection(connection)
       expect(entity1.wireConnections!.get(entity2)).toEqual(newLuaSet(connection))
       expect(entity2.wireConnections!.get(entity1)).toEqual(newLuaSet(connection))
       const connection2 = createwireConnection(entity1, entity2, defines.wire_type.green)
-      addWireConnection(connection2)
+      content.addWireConnection(connection2)
       expect(entity1.wireConnections!.get(entity2)).toEqual(newLuaSet(connection, connection2))
       expect(entity2.wireConnections!.get(entity1)).toEqual(newLuaSet(connection, connection2))
     })
@@ -65,16 +65,16 @@ describe("connections", () => {
     test("does not add if identical connection is already present", () => {
       const connection = createwireConnection(entity1, entity2)
       const connection2 = createwireConnection(entity2, entity1)
-      addWireConnection(connection)
-      addWireConnection(connection2)
+      content.addWireConnection(connection)
+      content.addWireConnection(connection2)
       expect(entity1.wireConnections!.get(entity2)).toEqual(newLuaSet(connection))
       expect(entity2.wireConnections!.get(entity1)).toEqual(newLuaSet(connection))
     })
 
     test("removewireConnection removes connection", () => {
       const connection = createwireConnection(entity1, entity2)
-      addWireConnection(connection)
-      removeWireConnection(connection)
+      content.addWireConnection(connection)
+      content.removeWireConnection(connection)
 
       expect(entity1.wireConnections).toBeNil()
       expect(entity2.wireConnections).toBeNil()
@@ -82,7 +82,7 @@ describe("connections", () => {
 
     test("deleting entity removes ingoing connections only", () => {
       const connection = createwireConnection(entity1, entity2)
-      addWireConnection(connection)
+      content.addWireConnection(connection)
       content.deleteEntity(entity1)
       expect(entity2.wireConnections).toEqual(nil)
       expect(entity1.wireConnections!.get(entity2)).toEqual(newLuaSet(connection))
@@ -90,7 +90,7 @@ describe("connections", () => {
 
     test("adding back a deleted entity restores connections", () => {
       const connection = createwireConnection(entity1, entity2)
-      addWireConnection(connection)
+      content.addWireConnection(connection)
       content.deleteEntity(entity1)
       content.addEntity(entity1)
       expect(entity1.wireConnections!.get(entity2)).toEqual(newLuaSet(connection))
@@ -106,7 +106,7 @@ describe("connections", () => {
 
     test("won't restore connection to deleted entity", () => {
       const connection = createwireConnection(entity1, entity2)
-      addWireConnection(connection)
+      content.addWireConnection(connection)
       content.deleteEntity(entity1)
       content.deleteEntity(entity2)
       content.addEntity(entity1)

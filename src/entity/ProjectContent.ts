@@ -9,9 +9,17 @@ import { oppositedirection } from "util"
 import { Prototypes } from "../constants"
 import { isEmpty, PRecord, RegisterClass } from "../lib"
 import { BBox, Position } from "../lib/geometry"
-import { EntityIdentification } from "./Entity"
+import { Entity, EntityIdentification, UnstagedEntityProps } from "./Entity"
 import { LinkedMap2D, newLinkedMap2d, newMap2d, ReadonlyMap2D } from "./map2d"
-import { ProjectEntity, StageNumber, UndergroundBeltProjectEntity } from "./ProjectEntity"
+import {
+  InserterProjectEntity,
+  NameAndQuality,
+  ProjectEntity,
+  StageDiffs,
+  StageNumber,
+  UndergroundBeltProjectEntity,
+} from "./ProjectEntity"
+import { ProjectWireConnection } from "./wire-connection"
 import { ProjectTile } from "../tiles/ProjectTile"
 import {
   isMovableEntity,
@@ -79,6 +87,42 @@ export interface MutableProjectContent extends ProjectContent {
   discardStage(
     stageNumber: StageNumber,
   ): LuaMultiReturn<[deleted: ProjectEntity[], updated: ProjectEntity[], updatedTiles: MapPosition[]]>
+
+  setEntityDirection(entity: ProjectEntity, direction: defines.direction): void
+
+  setEntityFirstStage(entity: ProjectEntity, stage: StageNumber): void
+  setEntityLastStage(entity: ProjectEntity, stage: StageNumber | nil): void
+
+  adjustEntityValue(entity: ProjectEntity, stage: StageNumber, value: Entity): boolean
+  setEntityProp<T extends Entity, K extends keyof T>(
+    entity: ProjectEntity<T>,
+    stage: StageNumber,
+    prop: K,
+    value: T[K],
+  ): boolean
+  applyEntityUpgrade(entity: ProjectEntity, stage: StageNumber, upgrade: NameAndQuality): boolean
+  resetEntityValue(entity: ProjectEntity, stage: StageNumber): boolean
+  resetEntityProp<T extends Entity, K extends keyof T>(entity: ProjectEntity<T>, stage: StageNumber, prop: K): boolean
+  moveEntityValueDown(entity: ProjectEntity, stage: StageNumber): StageNumber | nil
+  moveEntityPropDown<T extends Entity, K extends keyof T>(
+    entity: ProjectEntity<T>,
+    stage: StageNumber,
+    prop: K,
+  ): StageNumber | nil
+
+  setEntityValue(entity: ProjectEntity, firstValue: Entity, stageDiffs: StageDiffs | nil): void
+
+  setEntityUnstagedValue(entity: ProjectEntity, stage: StageNumber, value: UnstagedEntityProps | nil): boolean
+  clearEntityUnstagedValues(entity: ProjectEntity): void
+
+  makeEntitySettingsRemnant(entity: ProjectEntity): void
+  reviveEntity(entity: ProjectEntity, stage: StageNumber): void
+
+  addWireConnection(connection: ProjectWireConnection): void
+  removeWireConnection(connection: ProjectWireConnection): void
+
+  setUndergroundBeltType(entity: UndergroundBeltProjectEntity, type: "input" | "output"): void
+  setInserterPositions(entity: InserterProjectEntity, pickup: Position | nil, drop: Position | nil): void
 }
 
 let nameToType: PrototypeInfo["nameToType"]
@@ -346,6 +390,99 @@ class ProjectContentImpl implements MutableProjectContent {
       this.deleteTile(pos)
     }
     return $multi(deleted, updated, updatedTiles)
+  }
+
+  setEntityDirection(entity: ProjectEntity, direction: defines.direction): void {
+    entity._asMut().direction = direction
+  }
+
+  setEntityFirstStage(entity: ProjectEntity, stage: StageNumber): void {
+    entity._asMut().setFirstStageUnchecked(stage)
+  }
+
+  setEntityLastStage(entity: ProjectEntity, stage: StageNumber | nil): void {
+    entity._asMut().setLastStageUnchecked(stage)
+  }
+
+  adjustEntityValue(entity: ProjectEntity, stage: StageNumber, value: Entity): boolean {
+    return entity._asMut().adjustValueAtStage(stage, value)
+  }
+
+  setEntityProp<T extends Entity, K extends keyof T>(
+    entity: ProjectEntity<T>,
+    stage: StageNumber,
+    prop: K,
+    value: T[K],
+  ): boolean {
+    return entity._asMut().setPropAtStage(stage, prop, value)
+  }
+
+  applyEntityUpgrade(entity: ProjectEntity, stage: StageNumber, upgrade: NameAndQuality): boolean {
+    return entity._asMut().applyUpgradeAtStage(stage, upgrade)
+  }
+
+  resetEntityValue(entity: ProjectEntity, stage: StageNumber): boolean {
+    return entity._asMut().resetValue(stage)
+  }
+
+  resetEntityProp<T extends Entity, K extends keyof T>(entity: ProjectEntity<T>, stage: StageNumber, prop: K): boolean {
+    return entity._asMut().resetProp(stage, prop)
+  }
+
+  moveEntityValueDown(entity: ProjectEntity, stage: StageNumber): StageNumber | nil {
+    return entity._asMut().moveValueDown(stage)
+  }
+
+  moveEntityPropDown<T extends Entity, K extends keyof T>(
+    entity: ProjectEntity<T>,
+    stage: StageNumber,
+    prop: K,
+  ): StageNumber | nil {
+    return entity._asMut().movePropDown(stage, prop)
+  }
+
+  setEntityValue(entity: ProjectEntity, firstValue: Entity, stageDiffs: StageDiffs | nil): void {
+    const internal = entity._asMut()
+    internal.setFirstValueDirectly(firstValue)
+    internal.setStageDiffsDirectly(stageDiffs)
+  }
+
+  setEntityUnstagedValue(entity: ProjectEntity, stage: StageNumber, value: UnstagedEntityProps | nil): boolean {
+    return entity._asMut().setUnstagedValue(stage, value)
+  }
+
+  clearEntityUnstagedValues(entity: ProjectEntity): void {
+    entity._asMut().clearPropertyInAllStages("unstagedValue")
+  }
+
+  makeEntitySettingsRemnant(entity: ProjectEntity): void {
+    entity._asMut().isSettingsRemnant = true
+  }
+
+  reviveEntity(entity: ProjectEntity, stage: StageNumber): void {
+    const internal = entity._asMut()
+    internal.isSettingsRemnant = nil
+    internal.setFirstStageUnchecked(stage)
+  }
+
+  addWireConnection(connection: ProjectWireConnection): void {
+    connection.fromEntity._asMut().addOneWayWireConnection(connection)
+    connection.toEntity._asMut().addOneWayWireConnection(connection)
+  }
+
+  removeWireConnection(connection: ProjectWireConnection): void {
+    connection.fromEntity._asMut().removeOneWayWireConnection(connection)
+    connection.toEntity._asMut().removeOneWayWireConnection(connection)
+  }
+
+  setUndergroundBeltType(entity: UndergroundBeltProjectEntity, type: "input" | "output"): void {
+    entity._asMut().setTypeProperty(type)
+  }
+
+  setInserterPositions(entity: InserterProjectEntity, pickup: Position | nil, drop: Position | nil): void {
+    const internal = entity._asMut()
+    internal.setPickupPosition(pickup)
+    internal.setDropPosition(drop)
   }
 
   __tostring(): string {

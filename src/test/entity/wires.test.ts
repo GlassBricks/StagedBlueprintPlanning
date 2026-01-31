@@ -6,7 +6,7 @@
 import { LuaEntity, LuaSurface } from "factorio:runtime"
 import expect from "tstl-expect"
 import { MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
-import { addWireConnection, newProjectEntity, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
+import { newProjectEntity, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { ProjectWireConnection, wireConnectionEquals } from "../../entity/wire-connection"
 import { WorldEntityLookup } from "../../project/WorldPresentation"
 import { shallowCompare } from "../../lib"
@@ -115,14 +115,14 @@ describe("circuit wires", () => {
       ).toEqual(luaEntity2.get_wire_connector(defines.wire_connector_id.combinator_output_red, true))
     }
     test("can add wires", () => {
-      addWireConnection(getExpectedWire1())
+      content.addWireConnection(getExpectedWire1())
       Wires.updateWireConnectionsAtStage(content, entity1, 1, mockWorldEntityLookup)
       assertWire1Matches()
     })
     test("can update wires", () => {
       addWire1()
       addWire2()
-      addWireConnection(getExpectedWire1())
+      content.addWireConnection(getExpectedWire1())
       Wires.updateWireConnectionsAtStage(content, entity1, 1, mockWorldEntityLookup)
       assertWire1Matches()
     })
@@ -141,7 +141,7 @@ describe("circuit wires", () => {
         fromId: defines.wire_connector_id.combinator_input_red,
         toId: defines.wire_connector_id.combinator_output_red,
       }
-      addWireConnection(wire1)
+      content.addWireConnection(wire1)
       Wires.updateWireConnectionsAtStage(content, entity1, 1, mockWorldEntityLookup)
 
       expect(
@@ -162,7 +162,7 @@ describe("circuit wires", () => {
       [[1, 2], [1, 3], "mixed"],
     ])("diff: %s -> %s: %s", (existing, world) => {
       const wires = [getExpectedWire1(), getExpectedWire2(), getExpectedWire3()]
-      for (const number of existing) addWireConnection(wires[number - 1])
+      for (const number of existing) content.addWireConnection(wires[number - 1])
       for (const number of world) [addWire1, addWire2, addWire3][number - 1]()
 
       const hasDiff = Wires.saveWireConnections(content, entity1, 1, nil, mockWorldEntityLookup)
@@ -216,7 +216,7 @@ describe("power switch connections", () => {
     })
 
     test("can add wires", () => {
-      addWireConnection({
+      content.addWireConnection({
         fromEntity: poleEntity,
         toEntity: powerSwitchEntity,
         fromId: defines.wire_connector_id.pole_copper,
@@ -239,7 +239,7 @@ describe("power switch connections", () => {
         .get_wire_connector(defines.wire_connector_id.pole_copper, true)
         .connect_to(powerSwitch.get_wire_connector(defines.wire_connector_id.power_switch_left_copper, true))
 
-      addWireConnection({
+      content.addWireConnection({
         fromEntity: powerSwitchEntity,
         toEntity: poleEntity,
         fromId: defines.wire_connector_id.power_switch_right_copper,
@@ -297,7 +297,7 @@ describe("power switch connections", () => {
       .get_wire_connector(defines.wire_connector_id.pole_copper, true)
       .connect_to(powerSwitch.get_wire_connector(defines.wire_connector_id.power_switch_right_copper, true))
 
-    addWireConnection({
+    content.addWireConnection({
       fromEntity: poleEntity,
       toEntity: powerSwitchEntity,
       fromId: defines.wire_connector_id.pole_copper,

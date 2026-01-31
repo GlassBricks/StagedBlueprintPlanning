@@ -6,7 +6,7 @@
 import { MapGenSettings } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Entity } from "../../entity/Entity"
-import { addWireConnection, newProjectEntity } from "../../entity/ProjectEntity"
+import { newProjectEntity } from "../../entity/ProjectEntity"
 import { exportProject, importProjectDataOnly, ProjectExport } from "../../import-export/project"
 import { asMutable, deepCopy, Mutable } from "../../lib"
 import { getDefaultSurfaceSettings, NormalSurfaceSettings } from "../../project/surfaces"
@@ -50,7 +50,7 @@ function createSampleProject() {
   project.content.addEntity(entity1)
   project.content.addEntity(entity2)
 
-  addWireConnection({
+  project.content.addWireConnection({
     fromEntity: entity1,
     toEntity: entity2,
     fromId,

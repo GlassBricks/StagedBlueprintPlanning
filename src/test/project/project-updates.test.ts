@@ -16,7 +16,6 @@ import {
 import expect, { mock } from "tstl-expect"
 import { Entity, InserterEntity, UndergroundBeltEntity } from "../../entity/Entity"
 import {
-  addWireConnection,
   MovableProjectEntity,
   newProjectEntity,
   ProjectEntity,
@@ -324,7 +323,7 @@ describe("deleteEntityOrCreateSettingsRemnant()", () => {
     const { entity } = addEntity(1)
     const otherEntity = newProjectEntity({ name: "fast-inserter" }, Pos(0, 0), 0, 1)
     project.content.addEntity(otherEntity)
-    addWireConnection({
+    project.content.addWireConnection({
       fromEntity: otherEntity,
       toEntity: entity,
       fromId: defines.wire_connector_id.circuit_green,
@@ -341,12 +340,9 @@ describe("deleteEntityOrCreateSettingsRemnant()", () => {
     const { entity } = addEntity(1)
     const otherEntity = newProjectEntity({ name: "fast-inserter" }, Pos(0, 0), 0, 1)
     project.content.addEntity(otherEntity)
-    addWireConnection({
+    project.content.addWireConnection({
       fromEntity: otherEntity,
       toEntity: entity,
-      // fromId: 1,
-      // toId: 1,
-      // wire: wire_type.green,
       fromId: defines.wire_connector_id.circuit_green,
       toId: defines.wire_connector_id.circuit_green,
     })
@@ -592,7 +588,7 @@ describe("updateWiresFromWorld()", () => {
     const { entity: entity2, luaEntity: luaEntity2 } = addEntity(1, {
       position: pos.plus({ x: 1, y: 0 }),
     })
-    addWireConnection({
+    project.content.addWireConnection({
       fromEntity: entity1,
       toEntity: entity2,
       fromId: defines.wire_connector_id.circuit_green,

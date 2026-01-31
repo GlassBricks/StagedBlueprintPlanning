@@ -596,19 +596,6 @@ class ProjectEntityImpl<T extends Entity = Entity>
 }
 ProjectEntityImpl.prototype.applyDiff = applyDiffToEntity
 
-export function addWireConnection(connection: ProjectWireConnection): void {
-  const from = connection.fromEntity._asMut()
-  const to = connection.toEntity._asMut()
-  from.addOneWayWireConnection(connection)
-  to.addOneWayWireConnection(connection)
-}
-export function removeWireConnection(connection: ProjectWireConnection): void {
-  const from = connection.fromEntity._asMut()
-  const to = connection.toEntity._asMut()
-  from.removeOneWayWireConnection(connection)
-  to.removeOneWayWireConnection(connection)
-}
-
 export function newProjectEntity<E extends Entity>(
   entity: E,
   position: Position,

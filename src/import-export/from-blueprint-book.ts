@@ -5,7 +5,7 @@
 import { BaseBlueprintEntity, LuaItemStack } from "factorio:runtime"
 import { updateBasicBlueprintSettings } from "../blueprints/edit-blueprint-settings"
 import { Entity } from "../entity/Entity"
-import { addWireConnection, newProjectEntity, ProjectEntity } from "../entity/ProjectEntity"
+import { newProjectEntity, ProjectEntity } from "../entity/ProjectEntity"
 import { UserProject } from "../project/ProjectDef"
 import { createUserProject } from "../project/UserProject"
 
@@ -72,7 +72,7 @@ export function convertBookToProjectDataOnly(stack: LuaItemStack): UserProject {
         const fromEntity = entityNumToProjectEntity.get(fromNumber)
         const toEntity = entityNumToProjectEntity.get(toNumber)
         if (fromEntity && toEntity) {
-          addWireConnection({ fromEntity, toEntity, fromId, toId })
+          project.content.addWireConnection({ fromEntity, toEntity, fromId, toId })
         }
       }
     }
