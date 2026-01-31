@@ -40,7 +40,7 @@ import {
 import { Migrations } from "../lib/migration"
 import { L_GuiProjectSettings, L_Interaction } from "../locale"
 import { syncMapGenSettings } from "../project/surfaces"
-import { Stage, UserProject } from "../project/ProjectDef"
+import { Stage, Project } from "../project/Project"
 import {
   resetSpacePlatformTiles,
   setCheckerboard,
@@ -102,7 +102,7 @@ function EditButton(props: ElemProps<"button">) {
   )
 }
 
-function StageListBox(project: UserProject) {
+function StageListBox(project: Project) {
   return (
     <StageSelector
       uses="list-box"
@@ -113,10 +113,10 @@ function StageListBox(project: UserProject) {
 }
 @RegisterClass("gui:CompactProjectSettings")
 class CompactProjectSettings extends Component<{
-  project: UserProject
+  project: Project
 }> {
-  project!: UserProject
-  override render({ project }: { project: UserProject }): Element {
+  project!: Project
+  override render({ project }: { project: Project }): Element {
     return (
       <frame direction="vertical">
         <TitleBar>
@@ -137,14 +137,14 @@ class CompactProjectSettings extends Component<{
 
 @RegisterClass("gui:ProjectSettings")
 class ProjectSettings extends Component<{
-  project: UserProject
+  project: Project
 }> {
-  project!: UserProject
+  project!: Project
   playerIndex!: PlayerIndex
 
   override render(
     props: {
-      project: UserProject
+      project: Project
     },
     context: RenderContext,
   ): Element {
@@ -916,15 +916,15 @@ function renderPlaceholder(player: LuaPlayer) {
   )
 }
 
-function renderCompactSettings(player: LuaPlayer, project: UserProject) {
+function renderCompactSettings(player: LuaPlayer, project: Project) {
   renderAtProjectSettingsLoc(player, <CompactProjectSettings project={project} />)
 }
 
-function renderFullSettings(player: LuaPlayer, project: UserProject) {
+function renderFullSettings(player: LuaPlayer, project: Project) {
   renderAtProjectSettingsLoc(player, <ProjectSettings project={project} />)
 }
 
-function renderGuiForProject(player: LuaPlayer, currentProject: UserProject | nil): void {
+function renderGuiForProject(player: LuaPlayer, currentProject: Project | nil): void {
   if (!currentProject) {
     return renderPlaceholder(player)
   }

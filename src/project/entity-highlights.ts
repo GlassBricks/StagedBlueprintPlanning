@@ -23,7 +23,7 @@ import { assertNever } from "../lib"
 import { BBox, Position } from "../lib/geometry"
 import { createHighlightBox, createSprite } from "./create-highlight"
 import { EntityStorage } from "./EntityStorage"
-import { Project } from "./ProjectDef"
+import { ProjectBase } from "./Project"
 import { WorldEntityLookup, WorldEntityTypes } from "./WorldPresentation"
 
 export type HighlightEntity = HighlightBoxEntity | LuaRenderObject
@@ -149,7 +149,7 @@ export interface EntityHighlights {
   updateHighlightsOnReviveSettingsRemnant(entity: ProjectEntity): void
 }
 export function EntityHighlights(
-  project: Project,
+  project: ProjectBase,
   worldEntities: WorldEntityLookup,
   entityStorage: EntityStorage<WorldEntityTypes>,
 ): EntityHighlights {

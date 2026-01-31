@@ -7,7 +7,7 @@ import { BlueprintEntity, BoundingBox, LuaInventory, LuaItemStack, LuaPlayer } f
 import { Entity } from "../entity/Entity"
 import { exportUnstagedValues, StageInfoExport, toExportStageDiffs } from "../import-export/entity"
 import { isEmpty, Mutable } from "../lib"
-import { Stage } from "../project/ProjectDef"
+import { Stage } from "../project/Project"
 
 declare global {
   interface PlayerData {

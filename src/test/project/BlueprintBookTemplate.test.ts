@@ -1,7 +1,7 @@
 import expect from "tstl-expect"
 import { getReferencedStage } from "../../blueprints/stage-reference"
 import { BlueprintBookTemplate } from "../../project/BlueprintBookTemplate"
-import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { _deleteAllProjects, createProject } from "../../project/Project"
 
 after_each(() => {
   _deleteAllProjects()
@@ -13,7 +13,7 @@ test("get() returns nil initially", () => {
 })
 
 test("getOrCreate() creates book with correct stage references", () => {
-  const project = createUserProject("Test", 3)
+  const project = createProject("Test", 3)
   const template = project.settings.blueprintBookTemplate
   const book = template.getOrCreate(project, project.settings.projectName.get())
 
@@ -28,7 +28,7 @@ test("getOrCreate() creates book with correct stage references", () => {
 })
 
 test("reset() destroys inventory, subsequent get() returns nil", () => {
-  const project = createUserProject("Test", 2)
+  const project = createProject("Test", 2)
   const template = project.settings.blueprintBookTemplate
   const book = template.getOrCreate(project, project.settings.projectName.get())
   template.reset()
@@ -37,7 +37,7 @@ test("reset() destroys inventory, subsequent get() returns nil", () => {
 })
 
 test("onProjectNameChanged() updates label when label matches old name", () => {
-  const project = createUserProject("Test", 2)
+  const project = createProject("Test", 2)
   const template = project.settings.blueprintBookTemplate
   const book = template.getOrCreate(project, "Test")
   template.onProjectNameChanged("New Name", "Test")
@@ -45,7 +45,7 @@ test("onProjectNameChanged() updates label when label matches old name", () => {
 })
 
 test("onProjectNameChanged() does not update label when label differs", () => {
-  const project = createUserProject("Test", 2)
+  const project = createProject("Test", 2)
   const template = project.settings.blueprintBookTemplate
   const book = template.getOrCreate(project, "Test")
   book.label = "Custom Label"
@@ -55,7 +55,7 @@ test("onProjectNameChanged() does not update label when label differs", () => {
 
 describe("onStageInserted()", () => {
   test("inserts reference at correct position in middle", () => {
-    const project = createUserProject("Test", 3)
+    const project = createProject("Test", 3)
     const template = project.settings.blueprintBookTemplate
     const book = template.getOrCreate(project, "Test")
     project.insertStage(2)
@@ -66,7 +66,7 @@ describe("onStageInserted()", () => {
   })
 
   test("handles empty slots", () => {
-    const project = createUserProject("Test", 3)
+    const project = createProject("Test", 3)
     const template = project.settings.blueprintBookTemplate
     const book = template.getOrCreate(project, "Test")
     const inventory = book.get_inventory(defines.inventory.item_main)!

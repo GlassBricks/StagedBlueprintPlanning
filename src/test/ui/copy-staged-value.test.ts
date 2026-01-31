@@ -7,17 +7,17 @@ import expect from "tstl-expect"
 import { Settings } from "../../constants"
 import { Events } from "../../lib"
 import { BBox } from "../../lib/geometry"
-import { Stage, UserProject } from "../../project/ProjectDef"
-import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { Stage, Project } from "../../project/Project"
+import { _deleteAllProjects, createProject } from "../../project/Project"
 import { simpleInsertPlan } from "../entity/entity-util"
 
-let project: UserProject
+let project: Project
 let player: LuaPlayer
 let surface: LuaSurface
 let stage: Stage
 
 before_each(() => {
-  project = createUserProject("test", 2)
+  project = createProject("test", 2)
   player = game.players[1]
   stage = project.getStage(1)!
   surface = stage.getSurface()

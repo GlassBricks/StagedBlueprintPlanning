@@ -12,7 +12,7 @@ import { createEntity, createPreviewEntity, saveEntity } from "../../entity/save
 import { Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
 import { EntityHighlights } from "../../project/entity-highlights"
-import { Project } from "../../project/ProjectDef"
+import { ProjectBase } from "../../project/Project"
 import { WorldUpdates } from "../../project/world-updates"
 import { createProjectTile } from "../../tiles/ProjectTile"
 import { createRollingStock } from "../entity/createRollingStock"
@@ -27,7 +27,7 @@ interface TestEntity extends Entity {
   recipe?: string
   items?: BlueprintInsertPlan[]
 }
-let project: Project
+let project: ProjectBase
 let entity: ProjectEntity<TestEntity>
 
 import _wireHandler = require("../../entity/wires")

@@ -1,5 +1,5 @@
 import expect, { mock, MockNoSelf } from "tstl-expect"
-import { UserProject } from "../../project/ProjectDef"
+import { Project } from "../../project/Project"
 import {
   getAllProjects,
   getProjectById,
@@ -10,7 +10,7 @@ import {
   projectDeleted,
   projectsReordered,
 } from "../../project/ProjectList"
-import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { _deleteAllProjects, createProject } from "../../project/Project"
 
 after_each(() => {
   _deleteAllProjects()
@@ -18,10 +18,10 @@ after_each(() => {
 
 describe("addProject()", () => {
   test("appends to list and fires projectCreated", () => {
-    const listener: MockNoSelf<(project: UserProject) => void> = mock.fnNoSelf()
+    const listener: MockNoSelf<(project: Project) => void> = mock.fnNoSelf()
     projectCreated.addListener(listener)
 
-    const project = createUserProject("Test", 1)
+    const project = createProject("Test", 1)
 
     expect(listener).toHaveBeenCalledWith(project)
     expect(getAllProjects()).toContain(project)
@@ -32,10 +32,10 @@ describe("addProject()", () => {
 
 describe("removeProject()", () => {
   test("removes from list and fires projectDeleted", () => {
-    const listener: MockNoSelf<(project: UserProject) => void> = mock.fnNoSelf()
+    const listener: MockNoSelf<(project: Project) => void> = mock.fnNoSelf()
     projectDeleted.addListener(listener)
 
-    const project = createUserProject("Test", 1)
+    const project = createProject("Test", 1)
     project.delete()
 
     expect(listener).toHaveBeenCalledWith(project)
@@ -47,9 +47,9 @@ describe("removeProject()", () => {
 
 describe("getAllProjects()", () => {
   test("returns projects in insertion order", () => {
-    const p1 = createUserProject("A", 1)
-    const p2 = createUserProject("B", 1)
-    const p3 = createUserProject("C", 1)
+    const p1 = createProject("A", 1)
+    const p2 = createProject("B", 1)
+    const p3 = createProject("C", 1)
 
     const all = getAllProjects()
     expect(all[0]).toBe(p1)
@@ -61,32 +61,32 @@ describe("getAllProjects()", () => {
 describe("getProjectCount()", () => {
   test("returns correct count", () => {
     expect(getProjectCount()).toBe(0)
-    createUserProject("A", 1)
+    createProject("A", 1)
     expect(getProjectCount()).toBe(1)
-    createUserProject("B", 1)
+    createProject("B", 1)
     expect(getProjectCount()).toBe(2)
   })
 })
 
 describe("getProjectById()", () => {
   test("returns project by id", () => {
-    const project = createUserProject("Test", 1)
+    const project = createProject("Test", 1)
     expect(getProjectById(project.id)).toBe(project)
   })
 
   test("returns nil for missing id", () => {
-    createUserProject("Test", 1)
+    createProject("Test", 1)
     expect(getProjectById(999 as any)).toBeNil()
   })
 })
 
 describe("moveProjectUp()", () => {
   test("swaps with previous and fires projectsReordered", () => {
-    const listener: MockNoSelf<(p1: UserProject, p2: UserProject) => void> = mock.fnNoSelf()
+    const listener: MockNoSelf<(p1: Project, p2: Project) => void> = mock.fnNoSelf()
     projectsReordered.addListener(listener)
 
-    const p1 = createUserProject("A", 1)
-    const p2 = createUserProject("B", 1)
+    const p1 = createProject("A", 1)
+    const p2 = createProject("B", 1)
 
     const result = moveProjectUp(p2)
 
@@ -99,8 +99,8 @@ describe("moveProjectUp()", () => {
   })
 
   test("returns false at start of list", () => {
-    const p1 = createUserProject("A", 1)
-    createUserProject("B", 1)
+    const p1 = createProject("A", 1)
+    createProject("B", 1)
 
     expect(moveProjectUp(p1)).toBe(false)
   })
@@ -108,11 +108,11 @@ describe("moveProjectUp()", () => {
 
 describe("moveProjectDown()", () => {
   test("swaps with next and fires projectsReordered", () => {
-    const listener: MockNoSelf<(p1: UserProject, p2: UserProject) => void> = mock.fnNoSelf()
+    const listener: MockNoSelf<(p1: Project, p2: Project) => void> = mock.fnNoSelf()
     projectsReordered.addListener(listener)
 
-    const p1 = createUserProject("A", 1)
-    const p2 = createUserProject("B", 1)
+    const p1 = createProject("A", 1)
+    const p2 = createProject("B", 1)
 
     const result = moveProjectDown(p1)
 
@@ -125,8 +125,8 @@ describe("moveProjectDown()", () => {
   })
 
   test("returns false at end of list", () => {
-    createUserProject("A", 1)
-    const p2 = createUserProject("B", 1)
+    createProject("A", 1)
+    const p2 = createProject("B", 1)
 
     expect(moveProjectDown(p2)).toBe(false)
   })

@@ -13,17 +13,17 @@ import { Events, Mutable } from "../../lib"
 import { BBox, Pos, Position, PositionClass } from "../../lib/geometry"
 import { _assertInValidState } from "../../project/event-handlers"
 import { getProjectPlayerData } from "../../project/player-project-data"
-import { UserProject } from "../../project/ProjectDef"
+import { Project } from "../../project/Project"
 import { UndoHandler, _simulateUndo } from "../../project/undo"
 import { UserActions } from "../../project/user-actions"
-import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { _deleteAllProjects, createProject } from "../../project/Project"
 import * as _createBpWithStageInfo from "../../ui/create-blueprint-with-stage-info"
 import { fStub } from "../f-mock"
 import { moduleMock } from "../module-mock"
 import { reviveGhost } from "../test-util"
 import direction = defines.direction
 
-let project: UserProject & {
+let project: Project & {
   actions: mock.MockedObjectNoSelf<UserActions>
 }
 const CreateBpWithStageInfo = moduleMock(_createBpWithStageInfo, false)
@@ -34,7 +34,7 @@ const pos = Pos(0.5, 0.5)
 before_all(() => {
   player = game.players[1]
 
-  project = createUserProject("Test", 2) as any
+  project = createProject("Test", 2) as any
   fStub(project.actions)
   surface = project.getStage(1)!.getSurface()
 

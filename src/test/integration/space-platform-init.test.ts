@@ -7,9 +7,9 @@ import expect from "tstl-expect"
 import { ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { assert } from "../../lib"
 import { BBox } from "../../lib/geometry"
-import { UserProject } from "../../project/ProjectDef"
+import { Project } from "../../project/Project"
 import { SpacePlatformSettings } from "../../project/surfaces"
-import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { _deleteAllProjects, createProject } from "../../project/Project"
 import { assertEntityCorrect, createOldPipelineProjectOps } from "./integration-test-util"
 import { createWorldPresentationQueries } from "./test-world-queries"
 
@@ -17,7 +17,7 @@ before_each(() => {
   _deleteAllProjects()
 })
 
-function getHub(project: UserProject, stageNumber: StageNumber): [LuaEntity, ProjectEntity] {
+function getHub(project: Project, stageNumber: StageNumber): [LuaEntity, ProjectEntity] {
   const stage = project.getStage(stageNumber)
   assert(stage, "Invalid stage number")
   const hubEntity = stage.getSurface().find_entities_filtered({ name: "space-platform-hub" })[0]
@@ -27,13 +27,13 @@ function getHub(project: UserProject, stageNumber: StageNumber): [LuaEntity, Pro
   return [hubEntity, hubProjectEntity]
 }
 
-function createSpacePlatformProject(quality: string = "normal"): UserProject {
+function createSpacePlatformProject(quality: string = "normal"): Project {
   const settings: SpacePlatformSettings = {
     type: "spacePlatform",
     starterPack: { name: "space-platform-starter-pack", quality },
     initialPlanet: "nauvis",
   }
-  return createUserProject("test", 3, settings)
+  return createProject("test", 3, settings)
 }
 
 describe("space platform hub", () => {

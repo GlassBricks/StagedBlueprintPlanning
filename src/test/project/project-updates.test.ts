@@ -26,7 +26,7 @@ import { findUndergroundPair } from "../../entity/underground-belt"
 import { StageInfoExport } from "../../import-export/entity"
 import { Pos } from "../../lib/geometry"
 import { EntityUpdateResult, ProjectUpdates, StageMoveResult } from "../../project/project-updates"
-import { Project } from "../../project/ProjectDef"
+import { ProjectBase } from "../../project/Project"
 import { WorldUpdates } from "../../project/world-updates"
 import { createRollingStock, createRollingStocks } from "../entity/createRollingStock"
 import { fMock } from "../f-mock"
@@ -37,7 +37,7 @@ import direction = defines.direction
 
 const pos = Pos(10.5, 10.5)
 
-let project: Project
+let project: ProjectBase
 const surfaces: LuaSurface[] = setupTestSurfaces(6)
 function wp() {
   return project.worldPresentation

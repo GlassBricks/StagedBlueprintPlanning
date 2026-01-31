@@ -24,7 +24,7 @@ import { Migrations } from "../lib/migration"
 import { L_GuiEntityInfo } from "../locale"
 import { checkForEntityUpdates, getCurrentlyOpenedModdedGui } from "../project/event-handlers"
 import { ProjectUpdates } from "../project/project-updates"
-import { Stage } from "../project/ProjectDef"
+import { Stage } from "../project/Project"
 import { UserActions } from "../project/user-actions"
 
 import { getProjectEntityOfEntity } from "./entity-util"

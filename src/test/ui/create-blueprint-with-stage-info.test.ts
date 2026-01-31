@@ -11,20 +11,20 @@ import { StageNumber } from "../../entity/ProjectEntity"
 import { StageInfoExport } from "../../import-export/entity"
 import { Pos } from "../../lib/geometry"
 import { getPlayer } from "../../lib/test/misc"
-import { UserProject } from "../../project/ProjectDef"
-import { createUserProject } from "../../project/UserProject"
+import { Project } from "../../project/Project"
+import { createProject } from "../../project/Project"
 import { BpStagedInfoTags, createBlueprintWithStageInfo } from "../../ui/create-blueprint-with-stage-info"
 import { getNilPlaceholder } from "../../utils/diff-value"
 
 let player: LuaPlayer
-let project: UserProject
+let project: Project
 before_all(() => {
   player = getPlayer()
   player.teleport(Pos(0, 0), 1 as SurfaceIndex)
 })
 before_each(() => {
   player.cursor_stack!.clear()
-  project = createUserProject("test", 3)
+  project = createProject("test", 3)
 })
 
 function addEntity<E extends Entity = Entity>(stage: StageNumber, args: SurfaceCreateEntity) {

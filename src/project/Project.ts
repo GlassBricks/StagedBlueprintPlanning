@@ -3,16 +3,16 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 import { LuaSurface, nil, SurfaceIndex } from "factorio:runtime"
-import { newProjectContent } from "../entity/ProjectContent"
+import { BlueprintSettingsTable } from "../blueprints/blueprint-settings"
+import { MutableProjectContent, newProjectContent } from "../entity/ProjectContent"
 import { StageNumber } from "../entity/ProjectEntity"
 import { ReadonlyStagedValue } from "../entity/StagedValue"
-import { Events, ibind, Mutable, RegisterClass, SimpleEvent, Subscription } from "../lib"
+import { Events, ibind, Mutable, RegisterClass, SimpleEvent, SimpleSubscribable, Subscription } from "../lib"
 import { BBox } from "../lib/geometry"
 import { LazyLoadClass } from "../lib/LazyLoad"
 import { getStageAtSurface } from "./project-refs"
 import { ProjectUpdates } from "./project-updates"
-import { ProjectId, Stage, StageId, UserProject } from "./ProjectDef"
-import { addProject, removeProject, stageDeleted as globalStageDeleted } from "./ProjectList"
+import { addProject, stageDeleted as globalStageDeleted, removeProject } from "./ProjectList"
 import { ProjectSettings, StageSettingsData } from "./ProjectSettings"
 import { ProjectSurfaces } from "./ProjectSurfaces"
 import { getDefaultSurfaceSettings, SurfaceSettings } from "./surfaces"
@@ -21,9 +21,76 @@ import { WorldUpdates } from "./world-updates"
 import { WorldPresentation } from "./WorldPresentation"
 import min = math.min
 
+export type ProjectId = number & {
+  _projectIdBrand: never
+}
+export type StageId = number & {
+  _stageIdBrand: never
+}
+
+export interface ProjectBase {
+  readonly settings: ProjectSettings
+  readonly surfaces: ProjectSurfaces
+
+  lastStageFor(entity: ReadonlyStagedValue<AnyNotNil, AnyNotNil>): StageNumber
+
+  readonly content: MutableProjectContent
+
+  readonly valid: boolean
+
+  actions: UserActions
+  updates: ProjectUpdates
+  worldUpdates: WorldUpdates
+  worldPresentation: WorldPresentation
+}
+
+export interface Project extends ProjectBase {
+  readonly id: ProjectId
+
+  readonly content: MutableProjectContent
+
+  readonly stageAdded: SimpleSubscribable<Stage>
+  readonly preStageDeleted: SimpleSubscribable<Stage>
+  readonly stageDeleted: SimpleSubscribable<Stage>
+
+  getStage(stageNumber: StageNumber): Stage | nil
+  getAllStages(): readonly Stage[]
+  getStageById(stageId: StageId): Stage | nil
+
+  insertStage(index: StageNumber): Stage
+  mergeStage(index: StageNumber): void
+  discardStage(index: StageNumber): void
+
+  readonly valid: boolean
+  delete(): void
+}
+
+export interface StageSettings {
+  name: string
+}
+
+export interface Stage {
+  readonly stageNumber: StageNumber
+
+  readonly project: Project
+
+  getSurface(): LuaSurface
+
+  getID(): StageId
+
+  readonly actions: UserActions
+
+  getSettings(): StageSettingsData
+  getBlueprintSettingsView(): BlueprintSettingsTable
+  getBlueprintBBox(): BBox
+  readonly valid: boolean
+  deleteByMerging(): void
+  discardInProject(): void
+}
+
 declare const storage: {
   nextProjectId: ProjectId
-  projects: UserProjectImpl[]
+  projects: ProjectImpl[]
   surfaceIndexToStage: LuaMap<SurfaceIndex, StageImpl>
   nextStageId?: StageId
 
@@ -35,12 +102,12 @@ Events.on_init(() => {
   storage.surfaceIndexToStage = new LuaMap()
 })
 
-export { getAllProjects, moveProjectUp, moveProjectDown } from "./ProjectList"
+export { getAllProjects, moveProjectDown, moveProjectUp } from "./ProjectList"
 
 declare const luaLength: LuaLength<Record<number, any>, number>
 
 @RegisterClass("Assembly") // named differently for legacy reasons
-class UserProjectImpl implements UserProject {
+class ProjectImpl implements Project {
   readonly settings: ProjectSettings
   readonly surfaces: ProjectSurfaces
 
@@ -81,8 +148,8 @@ class UserProjectImpl implements UserProject {
     name: string,
     initialNumStages: number,
     surfaceSettings: SurfaceSettings = getDefaultSurfaceSettings(),
-  ): UserProjectImpl {
-    const project = new UserProjectImpl(storage.nextProjectId++ as ProjectId, name, initialNumStages, surfaceSettings)
+  ): ProjectImpl {
+    const project = new ProjectImpl(storage.nextProjectId++ as ProjectId, name, initialNumStages, surfaceSettings)
     addProject(project)
     project.registerEvents()
     if (project.settings.isSpacePlatform()) {
@@ -255,7 +322,7 @@ class UserProjectImpl implements UserProject {
 }
 
 interface HasProject {
-  project: UserProject
+  project: Project
 }
 
 const UserActionsClass = LazyLoadClass<HasProject, UserActions>("UserActions", ({ project }) =>
@@ -265,7 +332,7 @@ const ProjectUpdatesClass = LazyLoadClass<HasProject, ProjectUpdates>("ProjectUp
   ProjectUpdates(project, project.worldUpdates),
 )
 
-function initSpacePlatform(project: UserProjectImpl): void {
+function initSpacePlatform(project: ProjectImpl): void {
   for (const stage of project.getAllStages()) {
     const surface = stage.getSurface()
     for (const hub of surface.find_entities_filtered({ type: "space-platform-hub" })) {
@@ -280,12 +347,12 @@ function initSpacePlatform(project: UserProjectImpl): void {
   }
 }
 
-export function createUserProject(
+export function createProject(
   name: string,
   initialNumStages: number,
   surfaceSettings: SurfaceSettings = getDefaultSurfaceSettings(),
-): UserProject {
-  return UserProjectImpl.create(name, initialNumStages, surfaceSettings)
+): Project {
+  return ProjectImpl.create(name, initialNumStages, surfaceSettings)
 }
 
 export function _deleteAllProjects(): void {
@@ -306,7 +373,7 @@ class StageImpl implements Stage {
   id?: StageId
 
   constructor(
-    public project: UserProjectImpl,
+    public project: ProjectImpl,
     public stageNumber: StageNumber,
   ) {
     this.actions = project.actions
@@ -320,7 +387,7 @@ class StageImpl implements Stage {
     return this.project.settings.getStageSettings(this.stageNumber)
   }
 
-  getBlueprintSettingsView(): import("../blueprints/blueprint-settings").BlueprintSettingsTable {
+  getBlueprintSettingsView(): BlueprintSettingsTable {
     return this.project.settings.getBlueprintSettingsView(this.stageNumber)
   }
 

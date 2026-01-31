@@ -13,8 +13,8 @@ import { canBeAnyDirection, saveEntity } from "../../entity/save-load"
 import { assert } from "../../lib"
 import { Position, Pos } from "../../lib/geometry"
 import { checkForEntityUpdates } from "../../project/event-handlers"
-import { UserProject } from "../../project/ProjectDef"
-import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { Project } from "../../project/Project"
+import { _deleteAllProjects, createProject } from "../../project/Project"
 import {
   assertConfigChangedHighlightsCorrect,
   assertErrorHighlightsCorrect,
@@ -63,7 +63,7 @@ export interface TestProjectOps {
   ): import("../../project/project-updates").StageMoveResult
 }
 
-export function createOldPipelineProjectOps(project: UserProject): TestProjectOps {
+export function createOldPipelineProjectOps(project: Project): TestProjectOps {
   return {
     resetProp: (entity, stage, prop) => project.updates.resetProp(entity, stage, prop),
     movePropDown: (entity, stage, prop) => project.updates.movePropDown(entity, stage, prop),
@@ -92,7 +92,7 @@ export function applyDiffViaWorld(
 }
 
 export function assertEntityCorrect(
-  project: UserProject,
+  project: Project,
   entity: ProjectEntity,
   expectError: number | false,
   wq: TestWorldQueries,
@@ -201,7 +201,7 @@ export function assertEntityCorrect(
   }
 }
 
-export function assertEntityNotPresent(project: UserProject, entity: ProjectEntity, wq: TestWorldQueries): void {
+export function assertEntityNotPresent(project: Project, entity: ProjectEntity, wq: TestWorldQueries): void {
   const found = project.content.findCompatibleEntity(entity.firstValue.name, entity.position, entity.direction, 1)
   expect(found).toBeNil()
 
@@ -212,7 +212,7 @@ export function assertEntityNotPresent(project: UserProject, entity: ProjectEnti
   expect(wq.hasAnyExtraEntities(entity, "errorElsewhereIndicator")).toBe(false)
 }
 
-export function assertIsSettingsRemnant(project: UserProject, entity: ProjectEntity, wq: TestWorldQueries): void {
+export function assertIsSettingsRemnant(project: Project, entity: ProjectEntity, wq: TestWorldQueries): void {
   expect(entity.isSettingsRemnant).toBe(true)
   for (const stage of $range(1, project.lastStageFor(entity))) {
     const preview = wq.getWorldOrPreviewEntity(entity, stage)!
@@ -225,7 +225,7 @@ export function assertIsSettingsRemnant(project: UserProject, entity: ProjectEnt
 }
 
 export interface EntityTestContext {
-  project: UserProject
+  project: Project
   surfaces: LuaSurface[]
   player: LuaPlayer
   worldOps: TestWorldOps
@@ -309,7 +309,7 @@ export function setupEntityIntegrationTest(numStages = 6): EntityTestContext {
   })
 
   before_each(() => {
-    ctx.project = createUserProject("test", numStages)
+    ctx.project = createProject("test", numStages)
     ctx.surfaces = ctx.project.getAllStages().map((stage) => stage.getSurface())
     ctx.player = game.players[1]
     ctx.worldOps = {

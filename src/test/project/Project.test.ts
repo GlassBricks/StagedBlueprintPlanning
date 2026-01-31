@@ -6,10 +6,10 @@
 import expect, { AnySelflessFun, mock, MockNoSelf } from "tstl-expect"
 import { getIconsFromSettings } from "../../blueprints/blueprint-settings"
 import { getReferencedStage } from "../../blueprints/stage-reference"
-import { UserProject } from "../../project/ProjectDef"
+import { Project } from "../../project/Project"
 import { getProjectById, getStageAtSurface } from "../../project/project-refs"
 import { projectCreated, projectDeleted } from "../../project/ProjectList"
-import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { _deleteAllProjects, createProject } from "../../project/Project"
 import { getCurrentValues } from "../../utils/properties-obj"
 
 let createdListener: MockNoSelf<AnySelflessFun>
@@ -27,17 +27,17 @@ after_each(() => {
 })
 
 test("project created fires projectCreated event", () => {
-  const project = createUserProject("Mock", 0)
+  const project = createProject("Mock", 0)
   expect(createdListener).toHaveBeenCalledWith(project)
 })
 
 test("getProjectById", () => {
-  const project = createUserProject("Test2", 0)
+  const project = createProject("Test2", 0)
   expect(getProjectById(project.id)).toBe(project)
 })
 
 test("getStageAtSurface", () => {
-  const project = createUserProject("Mock", 2)
+  const project = createProject("Mock", 2)
   const stage1 = project.getStage(1)!,
     stage2 = project.getStage(2)!
   expect(getStageAtSurface(stage1.getSurface().index)).toBe(stage1)
@@ -46,28 +46,28 @@ test("getStageAtSurface", () => {
 
 describe("deletion", () => {
   test("sets to invalid", () => {
-    const project = createUserProject("Test", 0)
+    const project = createProject("Test", 0)
     project.delete()
     expect(project.valid).toBe(false)
   })
   test("sets stages to invalid", () => {
-    const project = createUserProject("Test", 1)
+    const project = createProject("Test", 1)
     const stage = project.getStage(1)!
     expect(stage.valid).toBe(true)
     project.delete()
     expect(stage.valid).toBe(false)
   })
   test("fires projectDeleted event", () => {
-    const project = createUserProject("Mock", 0)
+    const project = createProject("Mock", 0)
     project.delete()
     expect(deletedListener).toHaveBeenCalledWith(project)
   })
 })
 
 describe("Stages", () => {
-  let project: UserProject
+  let project: Project
   before_each(() => {
-    project = createUserProject("Test", 2)
+    project = createProject("Test", 2)
   })
   test("stageNumber is correct", () => {
     expect(project.getStage(1)!.stageNumber).toEqual(1)
@@ -81,7 +81,7 @@ describe("Stages", () => {
 
 test("insert stage", () => {
   const stageAddedListener = mock.fn()
-  const project = createUserProject("Mock", 2)
+  const project = createProject("Mock", 2)
   const oldStage = project.getStage(1)!
   project.stageAdded._subscribeIndependently({ invoke: stageAddedListener })
 
@@ -121,7 +121,7 @@ test("insert stage", () => {
 test("delete stage", () => {
   const preDeleteListener = mock.fn()
   const deleteListener = mock.fn()
-  const project = createUserProject("Test", 3)
+  const project = createProject("Test", 3)
   project.preStageDeleted._subscribeIndependently({ invoke: preDeleteListener })
   project.stageDeleted._subscribeIndependently({ invoke: deleteListener })
 
@@ -149,7 +149,7 @@ test("delete stage", () => {
 })
 
 test("delete stage by deleting surface", () => {
-  const project = createUserProject("Test", 2)
+  const project = createProject("Test", 2)
   const stage = project.getStage(2)!
   game.delete_surface(stage.getSurface())
   async()
@@ -160,7 +160,7 @@ test("delete stage by deleting surface", () => {
 })
 
 test("deleting last stage deletes project", () => {
-  const project = createUserProject("Test", 1)
+  const project = createProject("Test", 1)
   const stage = project.getStage(1)!
   stage.deleteByMerging()
   expect(project.valid).toBe(false)
@@ -169,7 +169,7 @@ test("deleting last stage deletes project", () => {
 describe("discardStage()", () => {
   test("discards stage and raises events", () => {
     const preDeleteListener = mock.fn()
-    const project = createUserProject("Test", 3)
+    const project = createProject("Test", 3)
     project.preStageDeleted._subscribeIndependently({ invoke: preDeleteListener })
 
     const stage1 = project.getStage(1)!
@@ -186,7 +186,7 @@ describe("discardStage()", () => {
   })
 
   test("deletes entire project when discarding only stage", () => {
-    const project = createUserProject("Test", 1)
+    const project = createProject("Test", 1)
     const stage = project.getStage(1)!
 
     project.discardStage(1)
@@ -197,9 +197,9 @@ describe("discardStage()", () => {
 })
 
 describe("new stage name", () => {
-  let project: UserProject
+  let project: Project
   before_each(() => {
-    project = createUserProject("Test", 2)
+    project = createProject("Test", 2)
   })
 
   describe("first stage", () => {
@@ -266,12 +266,12 @@ describe("new stage name", () => {
 
 describe("blueprintBookTemplate", () => {
   test("initially nil", () => {
-    const project = createUserProject("Test", 0)
+    const project = createProject("Test", 0)
     expect(project.settings.blueprintBookTemplate.get()).toBeNil()
   })
 
   test("can be set", () => {
-    const project = createUserProject("Test", 0)
+    const project = createProject("Test", 0)
     const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
     expect(project.settings.blueprintBookTemplate.get()).toEqual(book)
 
@@ -285,7 +285,7 @@ describe("blueprintBookTemplate", () => {
     }
   })
   test("can be reset", () => {
-    const project = createUserProject("Test", 0)
+    const project = createProject("Test", 0)
     const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
     project.settings.blueprintBookTemplate.reset()
     expect(project.settings.blueprintBookTemplate.get()).toBeNil()
@@ -293,7 +293,7 @@ describe("blueprintBookTemplate", () => {
   })
 
   test("can be fixed if deleted", () => {
-    const project = createUserProject("Test", 0)
+    const project = createProject("Test", 0)
     const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
     book.clear()
     expect(project.settings.blueprintBookTemplate.get()).toBe(nil)
@@ -302,14 +302,14 @@ describe("blueprintBookTemplate", () => {
   })
 
   test("changing project name changes book label", () => {
-    const project = createUserProject("Test", 0)
+    const project = createProject("Test", 0)
     const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
     project.settings.projectName.set("New Name")
     expect(book.label).toEqual("New Name")
   })
 
   test("changing project name does not change book label if book label is different", () => {
-    const project = createUserProject("Test", 0)
+    const project = createProject("Test", 0)
     const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
     book.label = "Different"
     project.settings.projectName.set("New Name")
@@ -318,7 +318,7 @@ describe("blueprintBookTemplate", () => {
 
   describe("inserting stage", () => {
     test("inserts template into new stage in middle", () => {
-      const project = createUserProject("Test", 3)
+      const project = createProject("Test", 3)
       const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
       for (const insertStage of [2, 4, 1, 7]) {
         project.insertStage(insertStage)
@@ -330,7 +330,7 @@ describe("blueprintBookTemplate", () => {
     })
 
     test("inserts template into empty space if exists", () => {
-      const project = createUserProject("Test", 3)
+      const project = createProject("Test", 3)
       const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
       const inventory = book.get_inventory(defines.inventory.item_main)!
       inventory[2 - 1].clear()
@@ -340,7 +340,7 @@ describe("blueprintBookTemplate", () => {
     })
 
     test("only pushes in template until the next empty space", () => {
-      const project = createUserProject("Test", 5)
+      const project = createProject("Test", 5)
       const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
       const inventory = book.get_inventory(defines.inventory.item_main)!
       inventory[4 - 1].clear()
@@ -351,7 +351,7 @@ describe("blueprintBookTemplate", () => {
     })
 
     test("can push past last stage with empty slots", () => {
-      const project = createUserProject("Test", 5)
+      const project = createProject("Test", 5)
       const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
       const inventory = book.get_inventory(defines.inventory.item_main)!
       inventory[2 - 1].clear()

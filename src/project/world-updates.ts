@@ -30,7 +30,7 @@ import { L_GuiTasks } from "../locale"
 import { ProjectTile } from "../tiles/ProjectTile"
 import { withTileEventsDisabled } from "../tiles/tile-events"
 import { EntityHighlights } from "./entity-highlights"
-import { Project } from "./ProjectDef"
+import { ProjectBase } from "./Project"
 
 export interface TileCollision {
   stage: StageNumber
@@ -74,7 +74,7 @@ export interface WorldUpdates {
 
 @RegisterClass("RebuildAllStagesTask")
 class RebuildAllStagesTask extends LoopTask {
-  constructor(private project: Project) {
+  constructor(private project: ProjectBase) {
     super(project.settings.stageCount())
   }
   override getTitle(): LocalisedString {
@@ -92,7 +92,7 @@ let worldUpdatesBlocked = false
 
 @RegisterClass("ResyncWithWorldTask")
 class ResyncWithWorldTask extends LoopTask {
-  constructor(private project: Project) {
+  constructor(private project: ProjectBase) {
     super(project.settings.stageCount() * 2)
   }
 
@@ -142,7 +142,7 @@ OnPrototypeInfoLoaded.addListener((info) => {
   nameToType = info.nameToType
 })
 
-export function WorldUpdates(project: Project, highlights: EntityHighlights): WorldUpdates {
+export function WorldUpdates(project: ProjectBase, highlights: EntityHighlights): WorldUpdates {
   const content = project.content
   const wp = project.worldPresentation
   const {
@@ -413,7 +413,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     updateHighlightsOnReviveSettingsRemnant(entity)
   }
 
-  function deleteUndergroundBelt(entity: ProjectEntity, project: Project): void {
+  function deleteUndergroundBelt(entity: ProjectEntity, project: ProjectBase): void {
     const pairsToUpdate = new LuaSet<UndergroundBeltProjectEntity>()
     for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
       const worldEntity = wp.getWorldEntity(entity, stage)

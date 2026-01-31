@@ -8,7 +8,7 @@ import expect from "tstl-expect"
 import { CustomInputs, Prototypes } from "../../constants"
 import { Events } from "../../lib"
 import { getProjectPlayerData } from "../../project/player-project-data"
-import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { _deleteAllProjects, createProject } from "../../project/Project"
 import { updateMoveToolInCursor } from "../../ui/stage-move-tool"
 
 let player: LuaPlayer
@@ -21,7 +21,7 @@ after_each(() => {
 })
 
 test("current selected stage starts out as current stage", () => {
-  const project = createUserProject("Test", 3)
+  const project = createProject("Test", 3)
   player.teleport([0, 0], project.surfaces.getSurface(2))
 
   const projectPlayerData = getProjectPlayerData(player.index, project)!
@@ -47,7 +47,7 @@ test("item removed if not in project", () => {
 })
 
 test("changing selected stage", () => {
-  const project = createUserProject("Test", 3)
+  const project = createProject("Test", 3)
   player.teleport([0, 0], project.surfaces.getSurface(2))
   after_ticks(1, () => {
     const projectPlayerData = getProjectPlayerData(player.index, project)!
@@ -93,7 +93,7 @@ test("filtered stage move tool name set to <Not in a staged BP project>", () => 
 
 test("changing selected stage with filtered stage move tool", () => {
   // only test 3 stages
-  const project = createUserProject("Test", 3)
+  const project = createProject("Test", 3)
   player.teleport([0, 0], project.surfaces.getSurface(2))
   after_ticks(1, () => {
     const projectPlayerData = getProjectPlayerData(player.index, project)!

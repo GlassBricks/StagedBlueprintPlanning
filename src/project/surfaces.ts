@@ -12,7 +12,7 @@ import {
   PrototypeWithQualityRead,
 } from "factorio:runtime"
 import { BBox } from "../lib/geometry"
-import { Stage, UserProject } from "./ProjectDef"
+import { Stage, Project } from "./Project"
 import { withTileEventsDisabled } from "../tiles/tile-events"
 
 export interface NormalSurfaceSettings {
@@ -91,7 +91,7 @@ export function syncMapGenSettings(stage: Stage): void {
   applySurfaceSettingsAndClear(project)
 }
 
-export function applySurfaceSettingsAndClear(project: UserProject): void {
+export function applySurfaceSettingsAndClear(project: Project): void {
   const settings = project.settings.surfaceSettings
   if (settings.type != "normal") return
   for (const stage of project.getAllStages()) {

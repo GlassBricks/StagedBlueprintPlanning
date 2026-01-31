@@ -4,9 +4,9 @@
 
 import { OverrideableBlueprintSettings, StageBlueprintSettings } from "../blueprints/blueprint-settings"
 import { ProjectEntity } from "../entity/ProjectEntity"
-import { Stage, StageSettings, UserProject } from "../project/ProjectDef"
+import { Stage, StageSettings, Project } from "../project/Project"
 import { type SurfaceSettings } from "../project/surfaces"
-import { createUserProject } from "../project/UserProject"
+import { createProject } from "../project/Project"
 import { getCurrentValues, getCurrentValuesOf, OverrideTable, setCurrentValuesOf } from "../utils/properties-obj"
 import { EntityExport, exportAllEntities, importAllEntities } from "./entity"
 
@@ -27,7 +27,7 @@ export interface StageExport extends Partial<StageSettings> {
   stageBlueprintSettings?: Partial<StageBlueprintSettings>
 }
 
-export function exportProject(project: UserProject): ProjectExport {
+export function exportProject(project: Project): ProjectExport {
   return {
     name: project.settings.projectName.get(),
     defaultBlueprintSettings: getCurrentValues(project.settings.defaultBlueprintSettings),
@@ -54,9 +54,9 @@ export function exportStage(this: unknown, stage: Stage): StageExport {
   }
 }
 
-export function importProjectDataOnly(project: ProjectExport): UserProject {
+export function importProjectDataOnly(project: ProjectExport): Project {
   const stages = project.stages
-  const result = createUserProject(project.name ?? "", stages?.length ?? 3, project?.surfaceSettings)
+  const result = createProject(project.name ?? "", stages?.length ?? 3, project?.surfaceSettings)
 
   if (project.landfillTile != nil) {
     result.settings.landfillTile.set(project.landfillTile)

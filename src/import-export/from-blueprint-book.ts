@@ -6,10 +6,10 @@ import { BaseBlueprintEntity, LuaItemStack } from "factorio:runtime"
 import { updateBasicBlueprintSettings } from "../blueprints/edit-blueprint-settings"
 import { Entity } from "../entity/Entity"
 import { newProjectEntity, ProjectEntity } from "../entity/ProjectEntity"
-import { UserProject } from "../project/ProjectDef"
-import { createUserProject } from "../project/UserProject"
+import { Project } from "../project/Project"
+import { createProject } from "../project/Project"
 
-export function convertBookToProjectDataOnly(stack: LuaItemStack): UserProject {
+export function convertBookToProjectDataOnly(stack: LuaItemStack): Project {
   if (!(stack.valid && stack.valid_for_read && stack.is_blueprint_book)) {
     const name = stack.valid_for_read ? stack.name : "<empty stack>"
     error("Not a blueprint book; found " + name)
@@ -29,7 +29,7 @@ export function convertBookToProjectDataOnly(stack: LuaItemStack): UserProject {
     }
   }
 
-  const project = createUserProject(stack.label ?? "", blueprintStacks.length)
+  const project = createProject(stack.label ?? "", blueprintStacks.length)
 
   let curStageNum = 0
 

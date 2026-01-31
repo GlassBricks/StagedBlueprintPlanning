@@ -17,7 +17,7 @@ import { ibind, RegisterClass } from "../lib"
 import { Component, destroy, Element, FactorioJsx, renderOpened } from "../lib/factoriojsx"
 import { Confirmable, HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
 import { L_GuiProjectSelector } from "../locale"
-import { createUserProject } from "../project/UserProject"
+import { createProject } from "../project/Project"
 import { MapGenSettingsForm, PlanetSelect } from "./MapGenSettings"
 import { teleportToProject } from "./player-current-stage"
 import { bringSettingsWindowToFront } from "./ProjectSettings"
@@ -210,7 +210,7 @@ export class NewProjectDialog extends Confirmable<NewProjectDialogProps> {
       surfaceSettings = this.mapGenSettingsSelect.getSettings()
     }
 
-    const project = createUserProject(projectName, numStages, surfaceSettings)
+    const project = createProject(projectName, numStages, surfaceSettings)
     storage.players[player.index].compactProjectSettings = nil
 
     teleportToProject(player, project)

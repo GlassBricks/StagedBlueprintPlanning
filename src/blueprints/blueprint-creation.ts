@@ -10,7 +10,7 @@ import { isEmpty, RegisterClass } from "../lib"
 import { BBox } from "../lib/geometry"
 import { EnumeratedItemsTask, runEntireTask, submitTask } from "../lib/task"
 import { L_GuiBlueprintBookTask, L_GuiProjectSettings } from "../locale"
-import { Stage, UserProject } from "../project/ProjectDef"
+import { Stage, Project } from "../project/Project"
 import { showBlueprintString } from "../ui/blueprint-string"
 import { getCurrentValues } from "../utils/properties-obj"
 import {
@@ -36,7 +36,7 @@ class Ref<T extends AnyNotNil> {
 }
 
 interface ProjectBlueprintPlan {
-  project: UserProject
+  project: Project
   stagePlans: LuaMap<StageNumber, StageBlueprintPlan>
 
   excludeFromFutureBlueprintStages: LuaSet<StageNumber>
@@ -312,10 +312,10 @@ class BlueprintCreationTask extends EnumeratedItemsTask<BlueprintStep> {
 
 class BlueprintingTaskBuilder {
   private inventory?: LuaInventory
-  private projectPlans = new LuaMap<UserProject, ProjectBlueprintPlan>()
+  private projectPlans = new LuaMap<Project, ProjectBlueprintPlan>()
   private tasks: BlueprintStep[] = []
 
-  private getPlanForProject(project: UserProject): ProjectBlueprintPlan {
+  private getPlanForProject(project: Project): ProjectBlueprintPlan {
     if (!this.projectPlans.has(project)) {
       const plan: ProjectBlueprintPlan = {
         project,
@@ -464,7 +464,7 @@ export function takeStageBlueprint(stage: Stage, stack: LuaItemStack): boolean {
   return plan?.result != nil
 }
 
-function addCreateDefaultBookTasks(builder: BlueprintingTaskBuilder, project: UserProject, stack: LuaItemStack) {
+function addCreateDefaultBookTasks(builder: BlueprintingTaskBuilder, project: Project, stack: LuaItemStack) {
   stack.set_stack("blueprint-book")
   stack.label = project.settings.projectName.get()
   const bookInventory = stack.get_inventory(defines.inventory.item_main)!
@@ -506,7 +506,7 @@ function addCompileBookTemplateTasks(
   builder.addTask(new SetSelectedIndexTask(destStack, 1))
 }
 
-function addBlueprintBookTasks(project: UserProject, builder: BlueprintingTaskBuilder, stack: LuaItemStack): void {
+function addBlueprintBookTasks(project: Project, builder: BlueprintingTaskBuilder, stack: LuaItemStack): void {
   const template = project.settings.blueprintBookTemplate.get()
   if (template) {
     addCompileBookTemplateTasks(builder, template, stack)
@@ -515,13 +515,13 @@ function addBlueprintBookTasks(project: UserProject, builder: BlueprintingTaskBu
   }
 }
 
-export function submitProjectBlueprintBookTask(project: UserProject, stack: LuaItemStack): void {
+export function submitProjectBlueprintBookTask(project: Project, stack: LuaItemStack): void {
   const builder = new BlueprintingTaskBuilder()
   addBlueprintBookTasks(project, builder, stack)
   submitTask(builder.build([L_GuiBlueprintBookTask.AssemblingBlueprintBook]))
 }
 
-export function exportBlueprintBookToFile(project: UserProject, player: LuaPlayer): string | nil {
+export function exportBlueprintBookToFile(project: Project, player: LuaPlayer): string | nil {
   const builder = new BlueprintingTaskBuilder()
   const stack = builder.getNewTempStack()
   stack.set_stack("blueprint-book")
@@ -541,7 +541,7 @@ export function exportBlueprintBookToFile(project: UserProject, player: LuaPlaye
   return name
 }
 
-export function exportBlueprintBookToString(project: UserProject, player: LuaPlayer): void {
+export function exportBlueprintBookToString(project: Project, player: LuaPlayer): void {
   const builder = new BlueprintingTaskBuilder()
   const stack = builder.getNewTempStack()
   stack.set_stack("blueprint-book")

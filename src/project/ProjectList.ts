@@ -1,18 +1,18 @@
 import { nil } from "factorio:runtime"
 import { remove_from_list } from "util"
 import { globalEvent } from "../lib"
-import { ProjectId, Stage, UserProject } from "./ProjectDef"
+import { ProjectId, Stage, Project } from "./Project"
 
 declare const storage: {
-  projects: UserProject[]
+  projects: Project[]
 }
 
-export const projectCreated = globalEvent<[UserProject]>()
-export const projectDeleted = globalEvent<[UserProject]>()
-export const projectsReordered = globalEvent<[UserProject, UserProject]>()
-export const stageDeleted = globalEvent<[project: UserProject, stage: Stage]>()
+export const projectCreated = globalEvent<[Project]>()
+export const projectDeleted = globalEvent<[Project]>()
+export const projectsReordered = globalEvent<[Project, Project]>()
+export const stageDeleted = globalEvent<[project: Project, stage: Stage]>()
 
-export function getAllProjects(): readonly UserProject[] {
+export function getAllProjects(): readonly Project[] {
   return storage.projects
 }
 
@@ -20,19 +20,19 @@ export function getProjectCount(): number {
   return storage.projects.length
 }
 
-export function getProjectById(id: ProjectId): UserProject | nil {
-  for (const [, project] of pairs(storage.projects as Record<number, UserProject>)) {
+export function getProjectById(id: ProjectId): Project | nil {
+  for (const [, project] of pairs(storage.projects as Record<number, Project>)) {
     if (project.id == id) return project
   }
   return nil
 }
 
-export function addProject(project: UserProject): void {
+export function addProject(project: Project): void {
   storage.projects.push(project)
   projectCreated.raise(project)
 }
 
-export function removeProject(project: UserProject): void {
+export function removeProject(project: Project): void {
   remove_from_list(storage.projects, project)
   projectDeleted.raise(project)
 }
@@ -45,14 +45,14 @@ function swapProjects(index1: number, index2: number): void {
   projectsReordered.raise(projects[index1], projects[index2])
 }
 
-export function moveProjectUp(project: UserProject): boolean {
+export function moveProjectUp(project: Project): boolean {
   const index = storage.projects.indexOf(project as any)
   if (index <= 0) return false
   swapProjects(index - 1, index)
   return true
 }
 
-export function moveProjectDown(project: UserProject): boolean {
+export function moveProjectDown(project: Project): boolean {
   const index = storage.projects.indexOf(project as any)
   if (index < 0 || index >= storage.projects.length - 1) return false
   swapProjects(index, index + 1)

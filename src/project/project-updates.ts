@@ -24,7 +24,7 @@ import { saveWireConnections } from "../entity/wires"
 import { fromExportStageDiffs, StageInfoExport } from "../import-export/entity"
 import { Pos, Position } from "../lib/geometry"
 import { createProjectTile, ProjectTile } from "../tiles/ProjectTile"
-import { Project } from "./ProjectDef"
+import { ProjectBase } from "./Project"
 import { WorldUpdates } from "./world-updates"
 import min = math.min
 
@@ -101,7 +101,7 @@ export interface ProjectUpdates {
   scanProjectForExistingTiles(): void
 }
 
-export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): ProjectUpdates {
+export function ProjectUpdates(project: ProjectBase, WorldUpdates: WorldUpdates): ProjectUpdates {
   const content = project.content
   const wp = project.worldPresentation
 

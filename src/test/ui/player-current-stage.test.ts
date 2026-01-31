@@ -6,8 +6,8 @@
 import { LuaPlayer, PlayerIndex, SurfaceIndex } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Pos } from "../../lib/geometry"
-import { UserProject } from "../../project/ProjectDef"
-import { createUserProject, _deleteAllProjects } from "../../project/UserProject"
+import { Project } from "../../project/Project"
+import { createProject, _deleteAllProjects } from "../../project/Project"
 import { exitProject, playerCurrentStage, teleportToProject, teleportToStage } from "../../ui/player-current-stage"
 
 before_each(() => {
@@ -22,7 +22,7 @@ after_all(() => {
 })
 
 test("playerCurrentStage", () => {
-  const project = createUserProject("Test", 3)
+  const project = createProject("Test", 3)
   const player = game.players[1]
   player.teleport([0, 0], 1 as SurfaceIndex)
   const currentStage = playerCurrentStage(1 as PlayerIndex)
@@ -58,12 +58,12 @@ test("playerCurrentStage", () => {
 })
 
 describe("teleporting to stage/project", () => {
-  let project1: UserProject
-  let project2: UserProject
+  let project1: Project
+  let project2: Project
   let player: LuaPlayer
   before_all(() => {
-    project1 = createUserProject("Test1", 3)
-    project2 = createUserProject("Test2", 3)
+    project1 = createProject("Test1", 3)
+    project2 = createProject("Test2", 3)
     player = game.players[1]!
   })
   test("can teleport to stage", () => {

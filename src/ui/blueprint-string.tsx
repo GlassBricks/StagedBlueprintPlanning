@@ -19,7 +19,7 @@ import {
 } from "../lib/factoriojsx"
 import { HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
 import { L_Gui, L_GuiProjectSettings } from "../locale"
-import { UserProject } from "../project/ProjectDef"
+import { Project } from "../project/Project"
 import { teleportToProject } from "./player-current-stage"
 
 interface ShowBlueprintProps {
@@ -50,7 +50,7 @@ class ShowBlueprintString extends Component<ShowBlueprintProps> {
   }
 }
 
-export function exportProjectToString(player: LuaPlayer, project: UserProject): void {
+export function exportProjectToString(player: LuaPlayer, project: Project): void {
   const exported = exportProject(project)
   const result = prefix + helpers.encode_string(helpers.table_to_json(exported))
   if (!result) {
@@ -129,7 +129,7 @@ export function showImportBlueprintWindow(player: LuaPlayer): void {
 
 const prefix = "staged-blueprint-project:"
 function tryImportProjectFromStringUser(player: LuaPlayer, str: string): boolean {
-  let result: UserProject | nil | string
+  let result: Project | nil | string
   if (str.startsWith(prefix)) {
     result = importProjectString(player, str.slice(prefix.length))
   } else if (str.startsWith("0")) {
@@ -148,7 +148,7 @@ function tryImportProjectFromStringUser(player: LuaPlayer, str: string): boolean
   }
 }
 
-function importProjectString(player: LuaPlayer, str: string): UserProject | string {
+function importProjectString(player: LuaPlayer, str: string): Project | string {
   const json = helpers.decode_string(str)
   const table = json ? (helpers.json_to_table(json) as ProjectExport | nil) : nil
   if (!table) {
@@ -157,7 +157,7 @@ function importProjectString(player: LuaPlayer, str: string): UserProject | stri
   return importProject(table)
 }
 
-function importProjectFromBook(player: LuaPlayer, str: string): UserProject | string {
+function importProjectFromBook(player: LuaPlayer, str: string): Project | string {
   const inventory = game.create_inventory(1)
   try {
     const stack = inventory[0]

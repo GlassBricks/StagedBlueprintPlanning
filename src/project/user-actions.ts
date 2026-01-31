@@ -16,7 +16,7 @@ import { L_Interaction } from "../locale"
 import { createIndicator, createNotification } from "./notifications"
 import { EntityUpdateResult, ProjectUpdates, StageMoveResult } from "./project-updates"
 
-import { Project, UserProject } from "./ProjectDef"
+import { ProjectBase, Project } from "./Project"
 import { prepareArea } from "./surfaces"
 import { registerUndoAction, UndoAction, UndoHandler } from "./undo"
 import { WorldUpdates } from "./world-updates"
@@ -104,7 +104,7 @@ interface InternalUserActions extends UserActions {
 }
 
 interface ProjectEntityRecord {
-  project: Project
+  project: ProjectBase
   entity: ProjectEntity
 }
 
@@ -112,7 +112,7 @@ interface StageChangeRecord extends ProjectEntityRecord {
   oldStage: StageNumber
 }
 
-interface InternalProject extends UserProject {
+interface InternalProject extends Project {
   actions: InternalUserActions
 }
 
@@ -160,7 +160,11 @@ const lastStageChangeUndo = UndoHandler(
   },
 )
 
-export function UserActions(project: Project, projectUpdates: ProjectUpdates, WorldUpdates: WorldUpdates): UserActions {
+export function UserActions(
+  project: ProjectBase,
+  projectUpdates: ProjectUpdates,
+  WorldUpdates: WorldUpdates,
+): UserActions {
   const content = project.content
   const wp = project.worldPresentation
   const {

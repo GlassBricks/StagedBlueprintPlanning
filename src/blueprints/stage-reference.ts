@@ -7,7 +7,7 @@ import { LuaItemStack } from "factorio:runtime"
 import { Prototypes } from "../constants"
 import { Events } from "../lib"
 import { getProjectById } from "../project/project-refs"
-import { ProjectId, Stage, StageId } from "../project/ProjectDef"
+import { ProjectId, Stage, StageId } from "../project/Project"
 import { getCurrentValues } from "../utils/properties-obj"
 import { getIconsFromSettings } from "./blueprint-settings"
 

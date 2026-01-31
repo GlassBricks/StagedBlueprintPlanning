@@ -556,11 +556,11 @@ Use ast-grep, regex search-replace, or parallel haiku agents:
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] `pnpm run test` passes
-- [ ] `pnpm run lint` passes
-- [ ] `pnpm run format:fix` passes
-- [ ] No `ProjectDef.d.ts` file exists
-- [ ] No `UserProject` type references remain (except `@RegisterClass("Assembly")`)
+- [x] `pnpm run test` passes
+- [x] `pnpm run lint` passes
+- [x] `pnpm run format:fix` passes
+- [x] No `ProjectDef.d.ts` file exists
+- [x] No `UserProject` type references remain (except `@RegisterClass("Assembly")`)
 
 #### Manual Verification:
 - [ ] Mod loads correctly in Factorio

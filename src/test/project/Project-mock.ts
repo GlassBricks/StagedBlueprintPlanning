@@ -7,12 +7,12 @@ import { LuaSurface } from "factorio:runtime"
 import { newProjectContent } from "../../entity/ProjectContent"
 import { StageNumber } from "../../entity/ProjectEntity"
 import { getPlayer } from "../../lib/test/misc"
-import { Project } from "../../project/ProjectDef"
+import { ProjectBase } from "../../project/Project"
 import { ProjectSurfaces } from "../../project/ProjectSurfaces"
 import { createStageSurface, destroySurface, getDefaultSurfaceSettings } from "../../project/surfaces"
 import { WorldPresentation } from "../../project/WorldPresentation"
 
-export function createMockProject(stages: number | LuaSurface[]): Project {
+export function createMockProject(stages: number | LuaSurface[]): ProjectBase {
   const surfaces: LuaSurface[] =
     typeof stages == "number" ? Array.from({ length: stages }, () => game.surfaces[1]) : stages
   const mockSurfaces = {
@@ -26,7 +26,7 @@ export function createMockProject(stages: number | LuaSurface[]): Project {
       return surfaces.length
     },
   } as unknown as ProjectSurfaces
-  const project: Project = {
+  const project: ProjectBase = {
     surfaces: mockSurfaces,
     settings: {
       stageCount() {

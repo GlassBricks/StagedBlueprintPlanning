@@ -14,7 +14,7 @@ import { Pos } from "../../lib/geometry"
 import { getPlayer } from "../../lib/test/misc"
 import { L_Interaction } from "../../locale"
 import { EntityUpdateResult, ProjectUpdates, StageMoveResult, WireUpdateResult } from "../../project/project-updates"
-import { Project } from "../../project/ProjectDef"
+import { ProjectBase } from "../../project/Project"
 import { performUndoAction } from "../../project/undo"
 import { UserActions } from "../../project/user-actions"
 import { WorldUpdates } from "../../project/world-updates"
@@ -27,7 +27,7 @@ const notifications = moduleMock(_notifications, true)
 let expectedNumCalls = 1
 
 const surfaces = setupTestSurfaces(6)
-let project: Project
+let project: ProjectBase
 function wp() {
   return project.worldPresentation
 }

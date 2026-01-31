@@ -7,7 +7,7 @@ import { PlayerIndex } from "factorio:runtime"
 import { StageNumber } from "../entity/ProjectEntity"
 import { onPlayerInit } from "../lib"
 import { Position } from "../lib/geometry"
-import { ProjectId, UserProject } from "./ProjectDef"
+import { ProjectId, Project } from "./Project"
 import { projectDeleted } from "./ProjectList"
 
 export interface ProjectPlayerData {
@@ -32,7 +32,7 @@ projectDeleted.addListener((project) => {
     storage.players[player.index].projectPlayerData.delete(project.id)
   }
 })
-export function getProjectPlayerData(player: PlayerIndex, project: UserProject): ProjectPlayerData | nil {
+export function getProjectPlayerData(player: PlayerIndex, project: Project): ProjectPlayerData | nil {
   if (!project.valid) return nil
   const map = storage.players[player].projectPlayerData
   const id = project.id

@@ -10,7 +10,7 @@ import { newProjectEntity } from "../../entity/ProjectEntity"
 import { exportProject, importProjectDataOnly, ProjectExport } from "../../import-export/project"
 import { asMutable, deepCopy, Mutable } from "../../lib"
 import { getDefaultSurfaceSettings, NormalSurfaceSettings } from "../../project/surfaces"
-import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { _deleteAllProjects, createProject } from "../../project/Project"
 import { simpleInsertPlan } from "../entity/entity-util"
 
 after_each(() => {
@@ -20,7 +20,7 @@ after_each(() => {
 const fromId = 2
 const toId = 4
 function createSampleProject() {
-  const project = createUserProject("name", 2)
+  const project = createProject("name", 2)
   project.settings.defaultBlueprintSettings.snapToGrid.set({ x: 4, y: 5 })
 
   const [stage1, stage2] = project.getAllStages()
@@ -158,7 +158,7 @@ test("preserves unstaged values in round trip", () => {
 })
 
 test("exports and imports surface settings", () => {
-  const project = createUserProject("Test", 2)
+  const project = createProject("Test", 2)
 
   const vulcanus = prototypes.space_location["vulcanus"]
   const mapGenSettings: Mutable<MapGenSettings> = asMutable(deepCopy(vulcanus.map_gen_settings!))

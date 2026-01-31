@@ -27,7 +27,7 @@ import {
   TrashButton,
 } from "../lib/factoriojsx/components"
 import { L_Gui, L_GuiProjectSelector, L_GuiProjectSettings } from "../locale"
-import { UserProject } from "../project/ProjectDef"
+import { Project } from "../project/Project"
 import {
   getAllProjects,
   moveProjectDown,
@@ -137,11 +137,11 @@ class AllProjects extends Component {
     closeParentAtLevel(1, event)
   }
 
-  private projectButtonFlow(project: UserProject) {
+  private projectButtonFlow(project: Project) {
     return <flow tags={{ projectId: project.id }}>{this.projectButton(project)}</flow>
   }
 
-  private projectButton(project: UserProject) {
+  private projectButton(project: Project) {
     const currentProject = playerCurrentStage(this.playerIndex).get()?.project
     return (
       <flow
@@ -176,7 +176,7 @@ class AllProjects extends Component {
     }
   }
 
-  private static onButtonClick(this: void, project: UserProject, event: OnGuiClickEvent): void {
+  private static onButtonClick(this: void, project: Project, event: OnGuiClickEvent): void {
     // control left-click: move up
     // control right-click: move down
     // normal click: teleport
@@ -205,7 +205,7 @@ class AllProjects extends Component {
     exitProject(player)
   }
 
-  private beginDeleteProject(project: UserProject) {
+  private beginDeleteProject(project: Project) {
     const player = game.get_player(this.playerIndex)
     if (!player) return
     showDialog(player, {
@@ -221,7 +221,7 @@ class AllProjects extends Component {
     })
   }
 
-  private deleteProject(project: UserProject) {
+  private deleteProject(project: Project) {
     exitProject(game.get_player(this.playerIndex)!)
     project.delete()
   }
@@ -231,21 +231,21 @@ class AllProjects extends Component {
     showImportBlueprintWindow(player)
   }
 
-  onProjectCreated(project: UserProject) {
+  onProjectCreated(project: Project) {
     const element = this.scrollPane
     if (!element || !element.valid) return
     render(this.projectButtonFlow(project), element)
     this.scrollToCurrentProject()
   }
 
-  onProjectDeleted(project: UserProject) {
+  onProjectDeleted(project: Project) {
     const element = this.scrollPane
     if (!element || !element.valid) return
     const flow = element.children.find((c) => c.tags.projectId == project.id)
     if (flow) destroy(flow)
   }
 
-  onProjectsReordered(project1: UserProject, project2: UserProject) {
+  onProjectsReordered(project1: Project, project2: Project) {
     const element = this.scrollPane
     if (!element || !element.valid) return
     const children = element.children
@@ -256,7 +256,7 @@ class AllProjects extends Component {
     this.scrollToCurrentProject()
   }
 
-  private rerenderProject(project: UserProject) {
+  private rerenderProject(project: Project) {
     const element = this.scrollPane
     if (!element || !element.valid) return
     const flow = element.children.find((c) => c.tags.projectId == project.id)
@@ -266,7 +266,7 @@ class AllProjects extends Component {
     }
   }
 
-  playerProjectChanged(oldProject: UserProject | nil, newProject: UserProject | nil) {
+  playerProjectChanged(oldProject: Project | nil, newProject: Project | nil) {
     if (oldProject) this.rerenderProject(oldProject)
     if (newProject) this.rerenderProject(newProject)
     this.scrollToCurrentProject()

@@ -10,7 +10,7 @@ import { Entity } from "../../entity/Entity"
 import { newProjectEntity, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { Pos } from "../../lib/geometry"
 import { EntityHighlights, HighlightEntities } from "../../project/entity-highlights"
-import { Project } from "../../project/ProjectDef"
+import { ProjectBase } from "../../project/Project"
 import { simpleInsertPlan } from "../entity/entity-util"
 import { moduleMock } from "../module-mock"
 import { simpleMock } from "../simple-mock"
@@ -27,7 +27,7 @@ interface FooEntity extends Entity {
   foo?: number
 }
 let entity: ProjectEntity<FooEntity>
-let project: Project
+let project: ProjectBase
 
 import _highlightCreator = require("../../project/create-highlight")
 

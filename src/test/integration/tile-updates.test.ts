@@ -6,17 +6,17 @@
 import { LuaPlayer } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Pos } from "../../lib/geometry"
-import { UserProject } from "../../project/ProjectDef"
-import { createUserProject } from "../../project/UserProject"
+import { Project } from "../../project/Project"
+import { createProject } from "../../project/Project"
 import { createOldPipelineProjectOps, TestProjectOps } from "./integration-test-util"
 
 describe("Tiles integration tests", () => {
-  let project: UserProject
+  let project: Project
   let player: LuaPlayer
   let projectOps: TestProjectOps
 
   before_each(() => {
-    project = createUserProject("Test", 6)
+    project = createProject("Test", 6)
     project.settings.stagedTilesEnabled.set(true)
     player = game.players[1]
     projectOps = createOldPipelineProjectOps(project)

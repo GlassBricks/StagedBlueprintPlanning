@@ -4,11 +4,11 @@
 
 import { LuaItemStack } from "factorio:runtime"
 import { getErrorWithStacktrace } from "../lib"
-import { UserProject } from "../project/ProjectDef"
+import { Project } from "../project/Project"
 import { convertBookToProjectDataOnly } from "./from-blueprint-book"
 import { importProjectDataOnly, ProjectExport } from "./project"
 
-function doImport(fn: () => UserProject): UserProject | string {
+function doImport(fn: () => Project): Project | string {
   const [success, result] = xpcall(fn, getErrorWithStacktrace)
   if (success) {
     result.worldUpdates.rebuildAllStages()
@@ -22,10 +22,10 @@ function doImport(fn: () => UserProject): UserProject | string {
 /**
  * On error, returns an error message.
  */
-export function importProject(project: ProjectExport): UserProject | string {
+export function importProject(project: ProjectExport): Project | string {
   return doImport(() => importProjectDataOnly(project))
 }
 
-export function convertBookToProject(stack: LuaItemStack): UserProject | string {
+export function convertBookToProject(stack: LuaItemStack): Project | string {
   return doImport(() => convertBookToProjectDataOnly(stack))
 }

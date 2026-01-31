@@ -20,9 +20,9 @@ import { createProjectTile } from "../tiles/ProjectTile"
 import { getNilPlaceholder } from "../utils/diff-value"
 import "./event-handlers"
 import { getDefaultSurfaceSettings, readSurfaceSettings, updateStageSurfaceName } from "./surfaces"
-import "./UserProject"
+import "./Project"
 import { getAllProjects } from "./ProjectList"
-import { UserProject } from "./ProjectDef"
+import { Project } from "./Project"
 import { WorldPresentation } from "./WorldPresentation"
 
 Migrations.to("2.2.0", () => {
@@ -173,7 +173,7 @@ Migrations.to("2.12.0", () => {
 
 Migrations.to($CURRENT_VERSION, () => {
   for (const project of getAllProjects()) {
-    interface OldUserProject extends Omit<UserProject, "worldUpdates"> {
+    interface OldUserProject extends Omit<Project, "worldUpdates"> {
       worldUpdates?: unknown
     }
     const old = project as unknown as OldUserProject

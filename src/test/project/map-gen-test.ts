@@ -6,15 +6,15 @@
 import { MapGenSettings } from "factorio:runtime"
 import expect from "tstl-expect"
 import { asMutable, deepCopy, Mutable } from "../../lib"
-import { UserProject } from "../../project/ProjectDef"
+import { Project } from "../../project/Project"
 import { NormalSurfaceSettings, syncMapGenSettings } from "../../project/surfaces"
-import { createUserProject } from "../../project/UserProject"
+import { createProject } from "../../project/Project"
 import { setupTestSurfaces } from "./Project-mock"
 
 const surfaces = setupTestSurfaces(2)
-let project: UserProject
+let project: Project
 before_each(() => {
-  project = createUserProject("test", 3)
+  project = createProject("test", 3)
 })
 after_each(() => {
   project.delete()
@@ -58,7 +58,7 @@ test("sync map gen settings", () => {
 })
 
 test("syncMapGenSettings reads from stage and applies to all", () => {
-  const project = createUserProject("Test", 3)
+  const project = createProject("Test", 3)
   const stage1 = project.getStage(1)!
 
   stage1.getSurface().generate_with_lab_tiles = false

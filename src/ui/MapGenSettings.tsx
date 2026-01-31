@@ -15,7 +15,7 @@ import { asMutable, Func, ibind, RegisterClass } from "../lib"
 import { Component, destroy, Element, FactorioJsx, renderNamed } from "../lib/factoriojsx"
 import { HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
 import { L_GuiMapGenSettings } from "../locale"
-import { Stage } from "../project/ProjectDef"
+import { Stage } from "../project/Project"
 import { applySurfaceSettingsAndClear, NormalSurfaceSettings, type SurfaceSettings } from "../project/surfaces"
 import { createPropertiesTable, PropertiesTable } from "../utils/properties-obj"
 

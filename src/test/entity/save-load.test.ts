@@ -25,8 +25,8 @@ import {
 } from "../../entity/save-load"
 import { assert, crossProduct, Events } from "../../lib"
 import { Pos } from "../../lib/geometry"
-import { UserProject } from "../../project/ProjectDef"
-import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { Project } from "../../project/Project"
+import { _deleteAllProjects, createProject } from "../../project/Project"
 import { createRollingStocks } from "./createRollingStock"
 import { moduleInsertPlan, simpleInsertPlan } from "./entity-util"
 
@@ -429,9 +429,9 @@ test("can delete rocks in the way", () => {
 describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
   const type = flipped ? "output" : "input"
   const otherType = flipped ? "input" : "output"
-  let project: UserProject
+  let project: Project
   before_each(() => {
-    project = createUserProject("Test", 2)
+    project = createProject("Test", 2)
     surface = project.surfaces.getSurface(1)!
   })
   after_each(() => {

@@ -3,7 +3,7 @@ import { createStageReference, getReferencedStage } from "../blueprints/stage-re
 import { Prototypes } from "../constants"
 import { StageNumber } from "../entity/ProjectEntity"
 import { RegisterClass } from "../lib"
-import { Stage } from "./ProjectDef"
+import { Stage } from "./Project"
 
 export interface StageProvider {
   getAllStages(): readonly Stage[]

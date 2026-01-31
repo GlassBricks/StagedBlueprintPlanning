@@ -8,10 +8,10 @@ import { Settings } from "../constants"
 import { Events } from "../lib"
 import { Migrations } from "../lib/migration"
 import { debugPrint, getLastDebugPrintCall } from "../lib/test/misc"
-import { UserProject } from "../project/ProjectDef"
+import { Project } from "../project/Project"
 import { deleteAllFreeSurfaces } from "../project/surfaces"
 import { UndoHandler } from "../project/undo"
-import { createUserProject } from "../project/UserProject"
+import { createProject } from "../project/Project"
 import { getProjectEntityOfEntity } from "../ui/entity-util"
 import { teleportToProject } from "../ui/player-current-stage"
 import { refreshCurrentProject } from "../ui/ProjectSettings"
@@ -123,7 +123,7 @@ if ("factorio-test" in script.active_mods) {
 
         deleteAllFreeSurfaces()
 
-        const project = createUserProject("Test", 5)
+        const project = createProject("Test", 5)
         teleportToProject(player, project)
 
         setupManualTests(project)
@@ -212,7 +212,7 @@ commands.add_command("rr", "", (e) => {
 })
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function setupManualTests(_project: UserProject) {
+function setupManualTests(_project: Project) {
   // const player = game.players[1]
   // function createEntityWithChanges() {
   //   const entity = createProjectEntityNoCopy(

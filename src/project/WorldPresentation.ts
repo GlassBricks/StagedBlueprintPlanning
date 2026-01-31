@@ -5,7 +5,7 @@ import { RegisterClass } from "../lib"
 import { registerEntity } from "../entity/registration"
 import { EntityHighlights } from "./entity-highlights"
 import { EntityStorage } from "./EntityStorage"
-import { Project } from "./ProjectDef"
+import { ProjectBase } from "./Project"
 import { WorldUpdates } from "./world-updates"
 
 export interface WorldEntityLookup {
@@ -50,7 +50,7 @@ function getClosures(wp: WorldPresentation): Closures {
 export class WorldPresentation implements WorldEntityLookup {
   readonly entityStorage = new EntityStorage<WorldEntityTypes>()
 
-  constructor(readonly project: Project) {}
+  constructor(readonly project: ProjectBase) {}
 
   getWorldUpdates(): WorldUpdates {
     return getClosures(this).worldUpdates

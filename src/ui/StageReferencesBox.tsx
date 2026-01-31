@@ -18,18 +18,18 @@ import {
   renderNamed,
 } from "../lib/factoriojsx"
 import { L_Gui } from "../locale"
-import { UserProject } from "../project/ProjectDef"
+import { Project } from "../project/Project"
 
 @RegisterClass("gui:StageReferencePanel")
 class StageReferencePanel extends Component<{
-  project: UserProject
+  project: Project
 }> {
-  private project!: UserProject
+  private project!: Project
   private subscription!: Subscription
   private element!: TableGuiElement
   override render(
     props: {
-      project: UserProject
+      project: Project
     },
     context: RenderContext,
   ): Element {
@@ -99,7 +99,7 @@ class StageReferencePanel extends Component<{
 }
 
 const stageReferenceBoxName = "bp100_stage-reference-box"
-export function renderStageReferencePanel(player: LuaPlayer, project: UserProject): void {
+export function renderStageReferencePanel(player: LuaPlayer, project: Project): void {
   renderNamed(<StageReferencePanel project={project} />, player.gui.relative, stageReferenceBoxName)
 }
 

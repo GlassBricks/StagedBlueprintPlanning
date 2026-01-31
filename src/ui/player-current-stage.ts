@@ -9,7 +9,7 @@ import { Events, globalEvent, MutableProperty, onPlayerInit, Property, property 
 import { Position } from "../lib/geometry"
 import { getProjectPlayerData } from "../project/player-project-data"
 import { getStageAtSurface } from "../project/project-refs"
-import { Stage, UserProject } from "../project/ProjectDef"
+import { Stage, Project } from "../project/Project"
 import { projectDeleted, stageDeleted } from "../project/ProjectList"
 
 declare global {
@@ -83,7 +83,7 @@ export function teleportToStage(player: LuaPlayer, stage: Stage): void {
   }
 }
 
-export function teleportToProject(player: LuaPlayer, project: UserProject): void {
+export function teleportToProject(player: LuaPlayer, project: Project): void {
   const currentStage = getStageAtSurface(player.surface_index)
   if (currentStage?.project == project) {
     return

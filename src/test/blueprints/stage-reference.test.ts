@@ -13,7 +13,7 @@ import {
 } from "../../blueprints/stage-reference"
 import { Prototypes } from "../../constants"
 import { getPlayer } from "../../lib/test/misc"
-import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { _deleteAllProjects, createProject } from "../../project/Project"
 import { temporaryItemStack } from "../test-util"
 
 let player: LuaPlayer
@@ -26,7 +26,7 @@ after_each(() => {
 })
 
 test("creates stage reference with correct properties", () => {
-  const project = createUserProject("Test", 3)
+  const project = createProject("Test", 3)
   const stage = project.getStage(2)!
 
   const settings = stage.getBlueprintSettingsView()
@@ -57,7 +57,7 @@ test("creates stage reference with correct properties", () => {
 })
 
 test("correctStageReference deletes stack if stage not found", () => {
-  const project = createUserProject("Test", 3)
+  const project = createProject("Test", 3)
   const stage = project.getStage(2)!
   const stack = temporaryItemStack()
   createStageReference(stack, stage)
@@ -74,7 +74,7 @@ test("correctStageReference deletes stack if stage not found", () => {
 })
 
 test("correctStageReference deletes stack if tags are invalid", () => {
-  const project = createUserProject("Test", 3)
+  const project = createProject("Test", 3)
   const stage = project.getStage(2)!
   const stack = temporaryItemStack()
   createStageReference(stack, stage)
@@ -87,7 +87,7 @@ test("correctStageReference deletes stack if tags are invalid", () => {
 })
 
 test("correctStageReference updates stack if stage changed", () => {
-  const project = createUserProject("Test", 3)
+  const project = createProject("Test", 3)
   const stage = project.getStage(2)!
   const stack = temporaryItemStack()
   createStageReference(stack, stage)
@@ -102,7 +102,7 @@ test("correctStageReference updates stack if stage changed", () => {
 })
 
 test("corrects stage reference recursively in blueprint books", () => {
-  const project = createUserProject("Test", 3)
+  const project = createProject("Test", 3)
   const stage = project.getStage(2)!
 
   const book = temporaryItemStack()
@@ -118,7 +118,7 @@ test("corrects stage reference recursively in blueprint books", () => {
 
 describe("opening a stage reference", () => {
   test("opening a broken stage reference deletes it", () => {
-    const project = createUserProject("Test", 3)
+    const project = createProject("Test", 3)
     const stage = project.getStage(2)!
     const player = getPlayer()
     // tempInventory does not show up in event when opened

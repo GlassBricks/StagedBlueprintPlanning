@@ -7,22 +7,22 @@ import { TileWrite } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Mutable } from "../../lib"
 import { BBox, Position } from "../../lib/geometry"
-import { UserProject } from "../../project/ProjectDef"
+import { Project } from "../../project/Project"
 import { SpacePlatformSettings } from "../../project/surfaces"
-import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
+import { _deleteAllProjects, createProject } from "../../project/Project"
 import { resetSpacePlatformTiles } from "../../tiles/set-tiles"
 
 before_each(() => {
   _deleteAllProjects()
 })
 
-function createSpacePlatformProject(quality: string = "normal"): UserProject {
+function createSpacePlatformProject(quality: string = "normal"): Project {
   const settings: SpacePlatformSettings = {
     type: "spacePlatform",
     starterPack: { name: "space-platform-starter-pack", quality },
     initialPlanet: "nauvis",
   }
-  return createUserProject("test", 2, settings)
+  return createProject("test", 2, settings)
 }
 
 describe("space platform foundation reset", () => {
