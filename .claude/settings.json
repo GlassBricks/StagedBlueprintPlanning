@@ -8,6 +8,8 @@
       "Bash(pnpm run lint:*)",
       "Bash(pnpm run check:*)",
       "Bash(pnpm run subst-current-version:*)",
+      "Bash(pnpm exec tstl:*)",
+      "Bash(pnpm exec factorio-test run:*)",
       "Bash(pnpx factorio-test-cli:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",

@@ -8,9 +8,11 @@ Staged Blueprint Planning is a Factorio mod for designing multi-stage blueprints
 pnpm run build:test        # Full build (run once initially, or after clean)
 pnpm run build:release     # Production build
 pnpm run test              # Run tests (incremental build)
+pnpm exec tstl && pnpm exec factorio-test run # decomposed pnpm run test
 pnpm run test:rebuild      # Clean, rebuild, and test
 
-pnpm run test "filter1" "foo%-test > block name" # Run specific test (Lua patterns: escape - as %-)
+
+pnpm exec factorio-test run "filter1" "foo%-test > block name" # Run specific test (Lua patterns: escape - as %-)
 
 pnpm run format:fix        # Prettier
 pnpm run lint              # ESLint
