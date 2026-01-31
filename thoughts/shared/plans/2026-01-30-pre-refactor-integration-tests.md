@@ -302,11 +302,11 @@ All tests use `describeDualPipeline`. Undo is triggered via `_simulateUndo(playe
 - Verify `entity.firstStage == 4`, `assertEntityCorrect`
 
 **Bring down to stage undo (stage move tool alt-reverse):**
-- Build entity at stage 1
-- Raise `on_player_alt_reverse_selected_area` with `item: Prototypes.StageMoveTool` on stage 3 surface
-- Verify `entity.firstStage == 3`
+- Build entity at stage 4
+- Raise `on_player_alt_reverse_selected_area` with `item: Prototypes.StageMoveTool` on stage 2 surface
+- Verify `entity.firstStage == 2`
 - `_simulateUndo(player)`
-- Verify `entity.firstStage == 1`, `assertEntityCorrect`
+- Verify `entity.firstStage == 4`, `assertEntityCorrect`
 
 **Last stage set undo (stage deconstruct tool):**
 - Build entity at stage 1
@@ -331,8 +331,8 @@ All tests use `describeDualPipeline`. Undo is triggered via `_simulateUndo(playe
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] Tests pass: `pnpm run test "undo%-redo"`
-- [ ] All existing tests pass: `pnpm run test`
+- [x] Tests pass: `pnpm run test "undo%-redo"`
+- [x] All existing tests pass: `pnpm run test`
 
 **Implementation Note**: Pause for manual confirmation before proceeding.
 
