@@ -188,18 +188,17 @@ Extract surface management from `StageImpl.create()` and `UserProject`:
 - Surface creation, deletion, naming
 - Subscribes to `ProjectSettings` for name changes
 
-### 3c. ProjectList
+### 3c. ProjectList Module
 
-Extract project list management from module-level functions in `UserProject.ts`:
-- `getAllProjects()`, `moveProjectUp()`, `moveProjectDown()` → `ProjectList` methods
-- `ProjectList` emits events for project create/delete/reorder
-- Replaces `GlobalProjectEvents` for project-level lifecycle
+Move project list management from `UserProject.ts` to dedicated `ProjectList.ts` module:
+- `getAllProjects()`, `moveProjectUp()`, `moveProjectDown()` → flat exported functions in `ProjectList.ts`
+- Module-level `globalEvent()` exports (`projectCreated`, `projectDeleted`, `projectsReordered`) replace `GlobalProjectEvents`
 
 ### 3d. Replace Event System
 
-- UI components (`StageSelector`, `StageReferencesBox`) register as `ProjectLifecycleObserver` instead of subscribing to `localEvents`
-- `AllProjects.tsx` subscribes to `ProjectList` events instead of `GlobalProjectEvents`
-- `player-current-stage.ts`, `player-project-data.ts` subscribe to `ProjectList.projectDeleted`
+- UI components (`StageSelector`, `StageReferencesBox`) subscribe to per-project `SimpleEvent` fields instead of `localEvents`
+- `AllProjects.tsx` subscribes to `ProjectList.ts` module events instead of `GlobalProjectEvents`
+- `player-current-stage.ts`, `player-project-data.ts` subscribe to `projectDeleted` from `ProjectList.ts`
 - Delete `project-event-listener.ts` (logic moves into `Project` stage lifecycle; `worldUpdates.rebuildStage()` calls become `worldPresentation.rebuildStage()` after Phase 2 merges)
 - Delete `GlobalProjectEvents` and `localEvents`
 

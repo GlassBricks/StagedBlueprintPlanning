@@ -2,7 +2,7 @@
 
 ## Overview
 
-Extract `ProjectSettings`, `ProjectSurfaces`, `BlueprintBookTemplate`, and `ProjectList` from the `UserProject` god object. Replace `GlobalProjectEvents`/`localEvents` with `ProjectLifecycleObserver` pattern and `ProjectList` events. Restructure `Project` and `Stage` to match the target state.
+Extract `ProjectSettings`, `ProjectSurfaces`, and `BlueprintBookTemplate` from the `UserProject` god object. Move project list management to a dedicated `ProjectList.ts` module with flat exported functions and module-level `GlobalEvent` exports. Replace `GlobalProjectEvents`/`localEvents` with these module-level events and per-project `SimpleEvent` fields. Restructure `Project` and `Stage` to match the target state.
 
 This phase works against the current codebase (no Phase 1-2 changes). The old pipeline (`UserActions`, `ProjectUpdates`, `WorldUpdates`) remains functional and is still accessed via the Project.
 
@@ -40,10 +40,10 @@ Event subscribers:
 After this phase:
 - `ProjectSettings` class owns all settings + `BlueprintBookTemplate`
 - `ProjectSurfaces` class manages surface lifecycle, observes stage name changes
-- `ProjectList` class manages project collection, emits events
+- Module-level functions in `ProjectList.ts` manage project collection; module-level `GlobalEvent` exports replace `GlobalProjectEvents`
 - `Project` (renamed from `UserProject`) coordinates stage lifecycle by calling components directly
-- `ProjectLifecycleObserver` replaces `localEvents` for UI components
-- `ProjectList` events replace `GlobalProjectEvents` for project-level lifecycle
+- Per-project `SimpleEvent` fields (`stageAdded`, `preStageDeleted`, `stageDeleted`) replace `localEvents` for UI components
+- Module-level `GlobalEvent` exports in `ProjectList.ts` replace `GlobalProjectEvents` for project-level lifecycle
 - `project-event-listener.ts` deleted; its logic moved into `Project` methods
 - `ProjectDef.d.ts` deleted; types live in their implementing files
 - `Stage` is a lightweight accessor
@@ -65,6 +65,10 @@ After this phase:
 ## Implementation Approach
 
 Incremental extraction: each sub-phase extracts one component, delegates from `Project`, and all tests pass before proceeding. The event system replacement happens last since it touches the most files.
+
+### Commits
+
+Make a commit after every stage passes.
 
 ## Phase 3a: Extract ProjectSettings + BlueprintBookTemplate
 
@@ -167,7 +171,7 @@ Move from `StageImpl`:
 #### 4. Update `StageImpl`
 - Remove `name` property (now comes from `settings.getStageNameProperty(stageNumber)`)
 - Remove `blueprintOverrideSettings`, `stageBlueprintSettings` (now from `settings.getStageSettings(stageNumber)`)
-- Add getters that delegate to `project.settings`
+- Add delegation methods (e.g. `getName()`, `getSettings()`) that delegate to `project.settings`
 
 #### 5. Update `ProjectDef.d.ts`
 Add `settings: ProjectSettings` to interfaces. Keep backward-compatible delegate methods during this phase.
@@ -184,36 +188,7 @@ Callers that access `project.landfillTile` etc. → `project.settings.landfillTi
 **File**: `src/blueprints/blueprint-creation.ts`
 - `addBlueprintBookTasks()`: `project.getBlueprintBookTemplate()` → `project.settings.blueprintBookTemplate.get()`
 
-#### 7. Add migration
-**File**: `src/project/index.ts`
-
-Single migration to construct both `BlueprintBookTemplate` and `ProjectSettings` from fields scattered across `UserProjectImpl` and `StageImpl`.
-
-```typescript
-Migrations.to($CURRENT_VERSION)(() => {
-  for (const project of getAllProjects()) {
-    const raw = project as any
-    if (!raw.settings) {
-      const blueprintBookTemplate = raw.blueprintBookTemplateInv
-        ? BlueprintBookTemplate._fromExistingInventory(raw.blueprintBookTemplateInv)
-        : new BlueprintBookTemplate()
-      raw.settings = ProjectSettings._fromExisting({
-        name: raw.name,
-        landfillTile: raw.landfillTile,
-        stagedTilesEnabled: raw.stagedTilesEnabled,
-        defaultBlueprintSettings: raw.defaultBlueprintSettings,
-        surfaceSettings: raw.surfaceSettings,
-        blueprintBookTemplate,
-        stages: raw.stages, // extract per-stage names and settings
-      })
-      delete raw.blueprintBookTemplateInv
-      // delete other migrated fields from project
-    }
-  }
-})
-```
-
-#### 8. Add tests
+#### 7. Add tests
 **File**: `src/test/project/BlueprintBookTemplate.test.ts`
 
 Unit tests for `BlueprintBookTemplate`:
@@ -286,7 +261,7 @@ class ProjectSurfaces implements SurfaceManager {
 #### 2. Update `StageImpl`
 - Remove `surface` storage from `StageImpl` constructor (surface comes from `project.surfaces.getSurface(stageNumber)`)
 - Remove `StageImpl.create()` static method (surface creation moves to `ProjectSurfaces`)
-- `surface` getter delegates to `project.surfaces.getSurface(this.stageNumber)`
+- Add `getSurface()` method that delegates to `project.surfaces.getSurface(this.stageNumber)`
 - Remove `registerEvents()` / `onNameChange()` (surface name sync moves to `ProjectSurfaces`)
 
 #### 3. Update `UserProjectImpl`
@@ -300,28 +275,7 @@ class ProjectSurfaces implements SurfaceManager {
 #### 4. Update `storage.surfaceIndexToStage` mapping
 Currently populated in `StageImpl` constructor. Move to `Project` level — `Project` manages the `surfaceIndexToStage` mapping when creating/deleting stages.
 
-#### 5. Add migration
-**File**: `src/project/index.ts`
-
-Migration to construct `ProjectSurfaces` from existing per-stage surface references. For each project, collect the ordered surface list from stages and wrap in a `ProjectSurfaces` instance.
-
-```typescript
-Migrations.to($CURRENT_VERSION)(() => {
-  for (const project of getAllProjects()) {
-    const raw = project as any
-    if (!raw.surfaces) {
-      const surfaces: LuaSurface[] = []
-      for (const [, stage] of pairs(raw.stages)) {
-        surfaces[stage.stageNumber - 1] = stage.surface
-      }
-      raw.surfaces = ProjectSurfaces._fromExisting(surfaces, raw.settings)
-      // remove surface field from each stage
-    }
-  }
-})
-```
-
-#### 6. Add tests
+#### 5. Add tests
 **File**: `src/test/project/ProjectSurfaces.test.ts`
 
 Unit tests for `ProjectSurfaces`:
@@ -344,78 +298,62 @@ Unit tests for `ProjectSurfaces`:
 
 ---
 
-## Phase 3c: Extract ProjectList
+## Phase 3c: ProjectList Module
 
 ### Overview
-Extract project list management from module-level functions into `ProjectList` class with typed events.
+Move project list management from `UserProject.ts` to a dedicated `ProjectList.ts` module with flat exported functions and module-level `GlobalEvent` exports. `GlobalEvent` is used because all subscribers are module-level listeners that register raw functions at module load time and re-register every load — no `Func` wrappers or storable subscriptions needed. Module-level `globalEvent()` calls are initialized once at module load; no re-creation on save/load needed.
 
 ### Changes Required:
 
-#### 1. Create `ProjectList` class
+#### 1. Create `ProjectList.ts` module
 **File**: `src/project/ProjectList.ts`
 
 ```typescript
-@RegisterClass("ProjectList")
-class ProjectList {
-  readonly projectCreated: SimpleEvent<Project>
-  readonly projectDeleted: SimpleEvent<Project>
-  readonly projectsReordered: SimpleEvent<{ project1: Project; project2: Project }>
-
-  getAll(): readonly Project[]
-  count(): number
-  getById(id: ProjectId): Project | nil
-  add(project: Project): void
-  remove(project: Project): void
-  moveUp(project: Project): boolean
-  moveDown(project: Project): boolean
+declare const storage: {
+  projects: Project[]
 }
+
+export const projectCreated = globalEvent<[Project]>()
+export const projectDeleted = globalEvent<[Project]>()
+export const projectsReordered = globalEvent<[Project, Project]>()
+
+export function getAllProjects(): readonly Project[]
+export function getProjectCount(): number
+export function getProjectById(id: ProjectId): Project | nil
+export function addProject(project: Project): void
+export function removeProject(project: Project): void
+export function moveProjectUp(project: Project): boolean
+export function moveProjectDown(project: Project): boolean
 ```
 
-Storage changes:
-- `storage.projects` array management moves into `ProjectList`
-- `storage.nextProjectId` management stays in `Project.create()` or moves to `ProjectList.add()`
+Functions operate directly on `storage.projects`. `storage.nextProjectId` management stays in `Project.create()`.
 
-#### 2. Replace module-level functions
+#### 2. Move functions from `UserProject.ts`
 **File**: `src/project/UserProject.ts`
 - Remove `getAllProjects()`, `moveProjectUp()`, `moveProjectDown()`, `swapProjects()`
 - Remove `UserProjectImpl.onProjectCreated()` static method
-- `UserProjectImpl.create()`: calls `projectList.add(project)` which raises `projectCreated`
-- `UserProjectImpl.delete()`: calls `projectList.remove(this)` which raises `projectDeleted`
+- `UserProjectImpl.create()`: calls `addProject(project)` which raises `projectCreated`
+- `UserProjectImpl.delete()`: calls `removeProject(this)` which raises `projectDeleted`
 
-#### 3. Export `projectList` singleton
-**File**: `src/project/ProjectList.ts`
-Export a singleton `projectList` instance (stored in `storage`).
+#### 3. Move `getProjectById` from `project-refs.ts`
+**File**: `src/project/project-refs.ts`
+- `getProjectById` moves to `ProjectList.ts` (alongside the other project collection functions)
 
 #### 4. Update callers
-- `AllProjects.tsx:31`: `getAllProjects` → `projectList.getAll()`
-- `AllProjects.tsx:31`: `moveProjectUp/Down` → `projectList.moveUp/Down()`
-- All `ProjectEvents.addListener` calls → subscribe to `projectList` events
-- `project-refs.ts`: `getProjectById` → `projectList.getById()`
+- `AllProjects.tsx:31`: import `getAllProjects`, `moveProjectUp`, `moveProjectDown` from `ProjectList`
+- All `ProjectEvents.addListener` calls → import specific event (`projectCreated`, `projectDeleted`, `projectsReordered`) and call `.addListener()`
 
-#### 5. Add migration
-**File**: `src/project/index.ts`
-
-Migration to wrap `storage.projects` array in a `ProjectList` instance. `ProjectList` takes ownership of the existing array.
-
-```typescript
-Migrations.to($CURRENT_VERSION)(() => {
-  if (!storage.projectList) {
-    storage.projectList = ProjectList._fromExisting(storage.projects)
-  }
-})
-```
-
-#### 6. Add tests
+#### 5. Add tests
 **File**: `src/test/project/ProjectList.test.ts`
 
-Unit tests for `ProjectList`:
-- `add()` appends to list and fires `projectCreated` event
-- `remove()` removes from list and fires `projectDeleted` event
-- `getAll()` returns readonly list in insertion order
-- `count()` returns correct count
-- `getById()` returns project by id, nil for missing id
-- `moveUp()` swaps with previous, fires `projectsReordered`, returns true; returns false at start
-- `moveDown()` swaps with next, fires `projectsReordered`, returns true; returns false at end
+Unit tests:
+- `addProject()` appends to list and fires `projectCreated` event
+- `removeProject()` removes from list and fires `projectDeleted` event
+- `getAllProjects()` returns readonly list in insertion order
+- `getProjectCount()` returns correct count
+- `getProjectById()` returns project by id, nil for missing id
+- `moveProjectUp()` swaps with previous, fires `projectsReordered`, returns true; returns false at start
+- `moveProjectDown()` swaps with next, fires `projectsReordered`, returns true; returns false at end
 
 ### Success Criteria:
 
@@ -430,103 +368,93 @@ Unit tests for `ProjectList`:
 ## Phase 3d: Replace Event System
 
 ### Overview
-Replace `GlobalProjectEvents` and `localEvents` with `ProjectLifecycleObserver` for UI components and `ProjectList` events for project-level lifecycle. Move `project-event-listener.ts` logic into `Project` methods.
+Replace `GlobalProjectEvents` and `localEvents` with two event types matching subscriber lifecycles: module-level `GlobalEvent` exports in `ProjectList.ts` for module-level listeners, and per-project `SimpleEvent` fields for GUI component subscribers. Move `project-event-listener.ts` logic into `Project` methods.
+
+**Justification:** Two subscriber categories have different lifecycles:
+- **Module-level listeners** (`player-project-data.ts`, `player-current-stage.ts`, `AllProjects.tsx`): Register raw functions at module load, re-registered every load. `GlobalEvent` avoids `Func` wrappers and storable subscription concerns. Using `SimpleEvent` here would cause double-registration on save/load (stored subscriptions persist, module re-registers).
+- **Per-project GUI subscribers** (`StageSelector.tsx`, `StageReferencesBox.tsx`): Subscribe via `Subscription` from render context. `SimpleEvent` enables automatic cleanup through `Subscription.close()` on GUI destruction. An observer-set pattern would risk zombie references (GUI instances serialized into the set, invalid after load).
 
 ### Changes Required:
 
-#### 1. Define `ProjectLifecycleObserver` interface
-**File**: `src/project/ProjectLifecycleObserver.ts`
-
-```typescript
-interface ProjectLifecycleObserver {
-  onStageAdded?(stage: Stage): void
-  onPreStageDeleted?(stage: Stage): void
-  onStageDeleted?(stage: Stage): void
-}
-```
-
-#### 2. Add observer management to `Project`
+#### 1. Add per-project stage lifecycle events to `Project`
 **File**: `src/project/UserProject.ts`
 
 ```typescript
-private readonly lifecycleObservers = new LuaSet<ProjectLifecycleObserver>()
-addLifecycleObserver(observer: ProjectLifecycleObserver): void
-removeLifecycleObserver(observer: ProjectLifecycleObserver): void
+readonly stageAdded = new SimpleEvent<Stage>()
+readonly preStageDeleted = new SimpleEvent<Stage>()
+readonly stageDeleted = new SimpleEvent<Stage>()
 ```
 
-#### 3. Move `project-event-listener.ts` logic into `Project`
+These are `SimpleEvent` (storable, `@RegisterClass("ObserverList")`). Subscribers use `event.subscribe(subscription, func)` with `Func` wrappers. Subscriptions are cleaned up when the GUI `Subscription` is closed.
+
+#### 2. Move `project-event-listener.ts` logic into `Project`
 **File**: `src/project/UserProject.ts`
 
 `insertStage()`:
 - After all other work, call `this.worldUpdates.rebuildStage(stageNumber)` (was in project-event-listener; Phase 2 renames to `this.worldPresentation.rebuildStage()`)
 - If `hub` exists, call `this.actions.rebuildEntity(hub, stageNumber)` (was in project-event-listener)
-- Notify `lifecycleObservers.onStageAdded(newStage)`
+- Raise `this.stageAdded.raise(newStage)`
 
 `deleteStage()`:
-- Before deletion: notify `lifecycleObservers.onPreStageDeleted(stage)`
+- Before deletion: raise `this.preStageDeleted.raise(stage)`
 - After deletion + content update: `this.worldUpdates.rebuildStage(adjacentStage)` (was in project-event-listener; Phase 2 renames to `this.worldPresentation.rebuildStage()`)
-- After all cleanup: notify `lifecycleObservers.onStageDeleted(stage)`
+- After all cleanup: raise `this.stageDeleted.raise(stage)`
 
 `Project.create()`:
 - If space platform: call `initSpacePlatform()` directly (was in project-event-listener)
 
 Delete `project-event-listener.ts`.
 
-#### 4. Update `StageSelector.tsx`
-Replace `project.localEvents.subscribe()` with `ProjectLifecycleObserver`:
+#### 3. Update `StageSelector.tsx`
+Replace `project.localEvents.subscribe()` with per-project `SimpleEvent` subscriptions:
 
 ```typescript
-private observer: ProjectLifecycleObserver = {
-  onStageAdded: () => this.setup(),
-  onStageDeleted: () => this.setup(),
-}
-// In setup():
-project.addLifecycleObserver(this.observer)
-// In cleanup:
-project.removeLifecycleObserver(this.observer)
+project.stageAdded.subscribe(subscription, ibind(this.setup))
+project.stageDeleted.subscribe(subscription, ibind(this.setup))
 ```
 
-#### 5. Update `StageReferencesBox.tsx`
-Same pattern — register as `ProjectLifecycleObserver` for stage-added/deleted events to call `setup()`.
+Same subscription lifecycle as current `localEvents` — subscription is tied to the render context and cleaned up on GUI destruction.
 
-#### 6. Update `AllProjects.tsx`
-Replace `ProjectEvents.addListener()` with `projectList` event subscriptions:
+#### 4. Update `StageReferencesBox.tsx`
+Same pattern — subscribe to `project.stageAdded` and `project.stageDeleted` with `subscription` from render context.
+
+#### 5. Update `AllProjects.tsx`
+Replace `ProjectEvents.addListener()` with `ProjectList.ts` module event listeners:
 
 ```typescript
-projectList.projectCreated.subscribe(subscription, ...)
-projectList.projectDeleted.subscribe(subscription, ...)
-projectList.projectsReordered.subscribe(subscription, ...)
+projectCreated.addListener(...)
+projectDeleted.addListener(...)
+projectsReordered.addListener(...)
 ```
 
-#### 7. Update `player-project-data.ts`
-Replace `ProjectEvents.addListener()` with `projectList.projectDeleted.subscribe()`.
+Same lifecycle as current `GlobalProjectEvents` — raw functions, re-registered every load.
 
-#### 8. Update `player-current-stage.ts`
+#### 6. Update `player-project-data.ts`
+Replace `ProjectEvents.addListener()` with `projectDeleted.addListener(...)` (imported from `ProjectList.ts`).
+
+#### 7. Update `player-current-stage.ts`
 Replace `ProjectEvents.addListener()` with:
-- `projectList.projectDeleted.subscribe()` → update all players
-- Stage deletion handling: `Project` lifecycle now notifies observers. But `player-current-stage.ts` currently handles "stage-deleted" via `ProjectEvents` to update all players. This should instead subscribe to `on_player_changed_surface` (which already exists at line 48) — when a stage is deleted, its surface is destroyed, triggering `on_player_changed_surface`. The existing handler already calls `updatePlayer()`. So the `ProjectEvents` subscription for "stage-deleted" is redundant with the surface deletion event and can be removed. Only "project-deleted" needs explicit handling via `projectList.projectDeleted`.
+- `projectDeleted.addListener(...)` (imported from `ProjectList.ts`) → update all players
+- Stage deletion handling: `Project` lifecycle now raises `stageDeleted`. But `player-current-stage.ts` currently handles "stage-deleted" via `ProjectEvents` to update all players. This should instead rely on `on_player_changed_surface` (which already exists at line 48) — when a stage is deleted, its surface is destroyed, triggering `on_player_changed_surface`. The existing handler already calls `updatePlayer()`. So the `ProjectEvents` subscription for "stage-deleted" is redundant with the surface deletion event and can be removed. Only "project-deleted" needs explicit handling via `projectList.projectDeleted`.
 
-#### 9. Delete old event types and fields
+#### 8. Delete old event types and fields
 - Remove `localEvents` field from `UserProjectImpl`
 - Remove `GlobalProjectEvents` and `ProjectEvents` exports
 - Remove event type definitions from `ProjectDef.d.ts`: `ProjectCreatedEvent`, `ProjectDeletedEvent`, etc.
 - Remove `raiseEvent()` method
 
-#### 10. Delete `project-event-listener.ts`
+#### 9. Delete `project-event-listener.ts`
 Remove file and its import from `src/project/index.ts`.
 
-#### 11. Update tests
+#### 10. Update tests
 **File**: `src/test/project/UserProject.test.ts`
 
-- Replace `ProjectEvents.addListener(eventListener)` / `ProjectEvents.removeListener(eventListener)` with `ProjectLifecycleObserver` registration
-- Update "project created calls event" test to verify `projectList.projectCreated` fires
-- Update "calls event" deletion test to verify `projectList.projectDeleted` fires
-- Update "insert stage" test to verify `ProjectLifecycleObserver.onStageAdded` called
-- Update "delete stage" test to verify `ProjectLifecycleObserver.onPreStageDeleted` called
+- Update "project created calls event" test to verify `projectCreated` fires (use `addListener` / `removeListener`)
+- Update "calls event" deletion test to verify `projectDeleted` fires
+- Update "insert stage" test to verify `project.stageAdded` fires (use `_subscribeIndependently` or mock)
+- Update "delete stage" test to verify `project.preStageDeleted` fires
 - Remove assertions on `localEvents` (field no longer exists)
 - Verify `initSpacePlatform()` is called during project creation (not via event listener)
-
-No migration needed — this phase changes behavior (event dispatch) but not storage shape. The removal of `localEvents` from `UserProjectImpl` is handled by the 3b migration (or is a no-op since `SimpleEvent` instances don't persist meaningfully).
 
 ### Success Criteria:
 
@@ -550,18 +478,18 @@ Final cleanup: rename `UserProject` → `Project`, delete `ProjectDef.d.ts`, mak
 #### 1. Restructure `Stage`
 **File**: `src/project/UserProject.ts` (or new `src/project/Stage.ts`)
 
-`Stage` becomes a lightweight accessor:
+`Stage` becomes a lightweight accessor. Use `getFoo()` methods (not `get foo()` property accessors) for delegation:
 ```typescript
 @RegisterClass("Stage")
 class Stage {
   readonly project: Project
   private _stageNumber: StageNumber
 
-  get stageNumber(): StageNumber
-  get surface(): LuaSurface
-  get name(): Property<string>
-  get nameProperty(): MutableProperty<string>
-  get settings(): MutableProperty<StageSettingsData>
+  getStageNumber(): StageNumber
+  getSurface(): LuaSurface
+  getName(): Property<string>
+  getNameProperty(): MutableProperty<string>
+  getSettings(): MutableProperty<StageSettingsData>
 
   _setStageNumber(stageNumber: StageNumber): void
 }
@@ -601,29 +529,7 @@ Now that `ProjectSettings` and `ProjectSurfaces` exist, remove convenience deleg
 #### 5. Update all callers
 Mechanical rename/import changes across the codebase. `project.name` → `project.settings.projectName`, etc.
 
-#### 6. Add migration
-**File**: `src/project/index.ts`
-
-Migration for the `Stage` restructure. If `StageImpl` stored fields that are now removed (e.g., `surface`, `actions`, `blueprintOverrideSettings`), clean them up. The `@RegisterClass("Stage")` name is preserved so no class rename migration is needed. `@RegisterClass("Assembly")` is preserved for `Project`.
-
-```typescript
-Migrations.to($CURRENT_VERSION)(() => {
-  for (const project of getAllProjects()) {
-    for (const stage of project.getAllStages()) {
-      const raw = stage as any
-      // Remove fields that moved to ProjectSettings/ProjectSurfaces
-      delete raw.surface
-      delete raw.surfaceIndex
-      delete raw.actions
-      delete raw.blueprintOverrideSettings
-      delete raw.stageBlueprintSettings
-      // name property moved to ProjectSettings in 3b migration
-    }
-  }
-})
-```
-
-#### 7. Update tests
+#### 6. Update tests
 - Rename all `UserProject` references to `Project` in test files
 - `createUserProject()` → `createProject()`
 - Update imports across all test files
@@ -647,17 +553,132 @@ Migrations.to($CURRENT_VERSION)(() => {
 
 ---
 
-## Migration Strategy
+## Phase 3f: Storage Migration
 
-Each sub-phase includes its own migration step in `src/project/index.ts` using `Migrations.to($CURRENT_VERSION)`. Migrations run in order and each handles the storage shape changes for that phase. Key considerations:
+### Overview
 
-- `ProjectSettings` + `BlueprintBookTemplate` (3a): wraps settings fields and `blueprintBookTemplateInv` from `UserProjectImpl` + per-stage settings from `StageImpl`
-- `ProjectSurfaces` (3b): wraps per-stage surface references
-- `ProjectList` (3c): wraps `storage.projects` array
-- `Stage` restructure (3e): removes fields that moved to other components
-- Phase 3d (event system) has no storage changes
+Single consolidated migration in `src/project/index.ts` to transform existing save data to the new structure. All phases 3a-3e change the code but defer storage migration to this phase. During 3a-3e, tests create objects fresh via constructors; this phase handles upgrading existing saves.
 
-If multiple sub-phases ship together in a single version, their migrations can be consolidated into one `Migrations.to($CURRENT_VERSION)` block.
+### How Migrations Work
+
+Migrations are registered via `Migrations.to($CURRENT_VERSION, func)` in `src/project/index.ts`. The `$CURRENT_VERSION` placeholder is replaced by the build script with the version from `src/info.json`. Migrations run inside `on_configuration_changed` — Factorio restores metatables for all `@RegisterClass`-registered objects *before* this event fires, so existing stored objects already have their methods.
+
+New class instances created with `new` during migrations automatically get the correct metatable via TSTL's class system. For wrapper objects that need to be constructed from raw data (where `new` calls a constructor that doesn't match the old data shape), use a static `_fromExisting()` factory method.
+
+Use `Migrations.early()` (priority 8, runs before normal `to()` at priority 9) if the migration creates objects that subsequent migrations need to call methods on.
+
+### Changes Required
+
+**File**: `src/project/index.ts`
+
+One `Migrations.to($CURRENT_VERSION, ...)` block that performs all transformations:
+
+```typescript
+interface OldStage {
+  surface: LuaSurface
+  surfaceIndex: SurfaceIndex
+  name: MutableProperty<string>
+  actions: UserActions
+  blueprintOverrideSettings: OverrideTable<OverrideableBlueprintSettings>
+  stageBlueprintSettings: StageBlueprintSettings
+}
+
+interface OldProject {
+  name: MutableProperty<string>
+  landfillTile: MutableProperty<string | nil>
+  stagedTilesEnabled: MutableProperty<boolean>
+  defaultBlueprintSettings: MutableProperty<OverrideableBlueprintSettings>
+  surfaceSettings: Property<SurfaceSettings>
+  blueprintBookTemplateInv?: LuaInventory
+  localEvents?: SimpleEvent<any>
+  stages: Stage[]
+  settings?: ProjectSettings
+  surfaces?: ProjectSurfaces
+}
+
+Migrations.to($CURRENT_VERSION, () => {
+  for (const project of storage.projects) {
+    const old = project as unknown as OldProject
+
+    // 1. Construct BlueprintBookTemplate from existing inventory
+    const blueprintBookTemplate = old.blueprintBookTemplateInv
+      ? BlueprintBookTemplate._fromExistingInventory(old.blueprintBookTemplateInv)
+      : new BlueprintBookTemplate()
+    delete old.blueprintBookTemplateInv
+
+    // 2. Extract per-stage names and settings from old Stage objects
+    const stageNames: MutableProperty<string>[] = []
+    const stageSettings: MutableProperty<StageSettingsData>[] = []
+    const surfaces: LuaSurface[] = []
+    for (const stage of old.stages) {
+      const oldStage = stage as unknown as OldStage
+      stageNames.push(oldStage.name)
+      stageSettings.push(property({
+        blueprintOverrideSettings: oldStage.blueprintOverrideSettings,
+        stageBlueprintSettings: oldStage.stageBlueprintSettings,
+      }))
+      surfaces.push(oldStage.surface)
+
+      // Clean up fields moved out of Stage
+      delete oldStage.surface
+      delete oldStage.surfaceIndex
+      delete oldStage.actions
+      delete oldStage.blueprintOverrideSettings
+      delete oldStage.stageBlueprintSettings
+      delete oldStage.name
+    }
+
+    // 3. Construct ProjectSettings wrapping extracted data
+    old.settings = ProjectSettings._fromExisting({
+      projectName: old.name,
+      landfillTile: old.landfillTile,
+      stagedTilesEnabled: old.stagedTilesEnabled,
+      defaultBlueprintSettings: old.defaultBlueprintSettings,
+      surfaceSettings: old.surfaceSettings,
+      blueprintBookTemplate,
+      stageNames,
+      stageSettings,
+    })
+
+    // 4. Construct ProjectSurfaces wrapping surface list
+    old.surfaces = ProjectSurfaces._fromExisting(surfaces, old.settings)
+
+    // Clean up fields moved to ProjectSettings
+    delete old.name
+    delete old.landfillTile
+    delete old.stagedTilesEnabled
+    delete old.defaultBlueprintSettings
+    delete old.surfaceSettings
+
+    // Clean up old event field (replaced by typed SimpleEvent fields on Project)
+    old.localEvents?.closeAll()
+    delete old.localEvents
+  }
+
+})
+```
+
+Each `_fromExisting()` factory is a static method on the respective class that wraps existing data without copying — it constructs an instance and assigns the already-deserialized properties directly. These factories are internal (`_` prefix) and only used by migrations.
+
+No migration needed for `ProjectList` — it's a module with functions operating on `storage.projects`, which remains unchanged. The module-level `globalEvent()` exports are initialized at module load time and don't survive serialization by design.
+
+### Testing
+
+**File**: `src/test/project/migration.test.ts`
+
+Test the migration by:
+1. Setting up storage in the old format (raw fields on project and stage objects)
+2. Running the migration function
+3. Verifying the new structure: `project.settings`, `project.surfaces` exist with correct data
+4. Verifying old fields are cleaned up
+
+### Success Criteria
+
+#### Automated Verification:
+- [ ] `pnpm run test` passes
+- [ ] `pnpm run lint` passes
+- [ ] Migration test verifies old-format data transforms correctly
+- [ ] No old fields remain on migrated objects
 
 ## References
 

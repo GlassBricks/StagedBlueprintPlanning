@@ -18,7 +18,7 @@ This doc outlines a major refactor to improve the separation of concerns and arc
 
 ### Core Components
 
-**Project** - Central coordinator owning all project components. Manages project identity and stage lifecycle (insert/merge/discard) by calling components directly in sequence. Notifies external lifecycle observers after core components are synchronized. Renamed from `UserProject`.
+**Project** - Central coordinator owning all project components. Manages project identity and stage lifecycle (insert/merge/discard) by calling components directly in sequence. Raises per-project stage lifecycle events after core components are synchronized. Renamed from `UserProject`.
 
 **ProjectSettings** - Stores and exposes project configuration as reactive properties: project name, stage names, blueprint settings, surface settings, entity behavior flags. Implements `ProjectSettingsWriter`.
 
@@ -40,11 +40,11 @@ This doc outlines a major refactor to improve the separation of concerns and arc
 
 Internally may use pure helper functions for complex domain logic (e.g., underground belt pairing, train handling). These helpers encapsulate what was previously in `ProjectUpdates`, minus the world sync calls.
 
-**ProjectList** - Global registry of all projects. Emits events when projects are created, deleted, or reordered.
+**ProjectList module** (`ProjectList.ts`) - Module-level functions managing the `storage.projects` array. Module-level `GlobalEvent` exports emit events when projects are created, deleted, or reordered.
 
 ### Composition
 
-`ProjectList` holds all `Project` instances. Each `Project` owns: `ProjectSettings`, `ProjectSurfaces`, `MutableProjectContent`, `WorldPresentation`, and `ProjectActions`.
+Module-level functions in `ProjectList.ts` manage the project collection in `storage.projects`. Each `Project` owns: `ProjectSettings`, `ProjectSurfaces`, `MutableProjectContent`, `WorldPresentation`, and `ProjectActions`.
 
 `ProjectSurfaces` observes `ProjectSettings` for stage name changes.
 `WorldPresentation` owns `EntityStorage` and implements `ContentObserver` to receive content change notifications.
@@ -100,7 +100,7 @@ Content-related types should be organized into a dedicated `content/` module:
 
 1. **Stage operation** → `Project.insertStage()` / `deleteStage()` called
 2. **Direct coordination** → `Project` calls components in sequence (see Stage Synchronization)
-3. **External notification** → `ProjectLifecycleObserver` notified last (for UI components)
+3. **External notification** → Per-project stage events raised last (for UI components)
 
 ## Stage
 
@@ -138,23 +138,23 @@ Stage objects are stored for the global surface mapping:
 
 `MutableProjectContent` notifies `ContentObserver` on all entity/tile mutations. `WorldPresentation` implements `ContentObserver` to react to content changes.
 
-### ProjectLifecycleObserver
+### Replace event system
 
-Used only for external/UI components that need notification after stage operations complete. Core components (`ProjectSurfaces`, `MutableProjectContent`, `WorldPresentation`) are coordinated directly by `Project` with explicit ordering (see Stage Synchronization).
+`GlobalProjectEvents` and `localEvents` are replaced with two event types matching their subscriber lifecycles:
 
-### Remove global events
+**`ProjectList.ts` module-level `GlobalEvent` exports** for project-level lifecycle (project created/deleted/reordered). Module-level listeners register raw functions at module load time, re-registered every load. No `Func` wrappers or storable subscriptions needed. This matches the existing `GlobalProjectEvents` pattern — subscribers have no storage concerns.
 
-These observer patterns obsolete `GlobalProjectEvents` and `localEvents`:
+- `AllProjects.tsx` → `projectCreated.addListener(...)`, etc.
+- `player-project-data.ts` → `projectDeleted.addListener(...)`
+- `player-current-stage.ts` → `projectDeleted.addListener(...)`; stage deletion handled by existing `on_player_changed_surface` event (surface is destroyed)
 
-- **Hardcoded/always-active listeners** move inside components:
-  - `project-event-listener.ts` (stage rebuild on add/delete, space platform init) → logic moves into `Project` stage lifecycle methods and `WorldPresentation`
-- **Project-level lifecycle** (`project-created`, `project-deleted`, `projects-reordered`) → handled by `ProjectList` events:
-  - `AllProjects.tsx` → subscribes to `ProjectList.projectCreated`, `projectDeleted`, `projectsReordered`
-  - `player-project-data.ts` → subscribes to `ProjectList.projectDeleted`
-  - `player-current-stage.ts` → subscribes to `ProjectList.projectDeleted`; stage deletion handled by existing `on_player_changed_surface` event (surface is destroyed)
-- **Per-project UI** (`localEvents` subscribers) → register as `ProjectLifecycleObserver` on the project:
-  - `StageSelector.tsx` → `ProjectLifecycleObserver.onStageAdded` / `onStageDeleted`
-  - `StageReferencesBox.tsx` → `ProjectLifecycleObserver.onStageAdded` / `onStageDeleted`
+**`Project` uses `SimpleEvent`** for per-project stage lifecycle (`stageAdded`, `preStageDeleted`, `stageDeleted`). GUI components subscribe via `subscribe(subscription, func)` where the `Subscription` is tied to the render context lifecycle. `Subscription.close()` removes the observer from the event's map on GUI destruction. This matches the existing `localEvents` pattern — subscriptions are storable and cleaned up through the `Subscription` lifecycle.
+
+- `StageSelector.tsx` → `project.stageAdded.subscribe(subscription, ...)`, `project.stageDeleted.subscribe(subscription, ...)`
+- `StageReferencesBox.tsx` → same pattern
+
+**Hardcoded/always-active listeners** move inside components:
+- `project-event-listener.ts` (stage rebuild on add/delete, space platform init) → logic moves into `Project` stage lifecycle methods and `WorldPresentation`
 
 ## Stage Synchronization
 
@@ -184,10 +184,8 @@ insertStage(stageNumber: StageNumber): Stage {
   this.stages.set(stageNumber, stage)
   registerStage(stage)
 
-  // 7. Notify external observers (UI components)
-  for (const observer of this.lifecycleObservers) {
-    observer.onStageAdded?.(stage)
-  }
+  // 7. Notify external subscribers (UI components)
+  this.stageAdded.raise(stage)
 
   return stage
 }
@@ -199,10 +197,8 @@ insertStage(stageNumber: StageNumber): Stage {
 deleteStage(stageNumber: StageNumber, merge: boolean): void {
   const stage = this.stages.get(stageNumber)!
 
-  // 1. Notify external observers of pending deletion (UI cleanup)
-  for (const observer of this.lifecycleObservers) {
-    observer.onPreStageDeleted?.(stage)
-  }
+  // 1. Notify external subscribers of pending deletion (UI cleanup)
+  this.preStageDeleted.raise(stage)
 
   // 2. Clear world entities on the stage being deleted
   this.worldPresentation.onPreStageDeleted(stageNumber)
@@ -238,10 +234,8 @@ deleteStage(stageNumber: StageNumber, merge: boolean): void {
     }
   }
 
-  // 9. Notify external observers
-  for (const observer of this.lifecycleObservers) {
-    observer.onStageDeleted?.(stage)
-  }
+  // 9. Notify external subscribers
+  this.stageDeleted.raise(stage)
 }
 ```
 
@@ -268,7 +262,7 @@ Renamed from `UserProject`. The minimal `Project` interface is deleted.
 - Coordinates stage operations (see Stage Synchronization)
 - Display helper (`displayName()`)
 - Stage registration (`registerStage()`, `unregisterStage()`)
-- Lifecycle observer management (for external/UI observers only)
+- Stage lifecycle events (for external/UI subscribers)
 
 ```typescript
 @RegisterClass("Assembly")
@@ -282,7 +276,9 @@ class ProjectImpl implements Project {
   valid = true
 
   private readonly stages: LuaMap<StageNumber, Stage>
-  private readonly lifecycleObservers: LuaSet<ProjectLifecycleObserver>
+  readonly stageAdded = new SimpleEvent<Stage>()
+  readonly preStageDeleted = new SimpleEvent<Stage>()
+  readonly stageDeleted = new SimpleEvent<Stage>()
 }
 ```
 
@@ -406,16 +402,15 @@ Tile world sync is a direct call from `ProjectActions` to `WorldPresentation`, n
 
 `MutableProjectContent.setTile()` mutates content data silently. `ProjectActions` then calls `WorldPresentation.updateTiles(position, fromStage)` which returns `TileCollision | nil`. If a collision occurs, `ProjectActions` adjusts content accordingly. `WorldPresentation.rebuildStage()` handles tile rebuilds internally.
 
-### ProjectLifecycleObserver
+### Per-Project Stage Lifecycle Events
 
-For external/UI components only. Core components are coordinated directly by `Project`.
+For external/UI components only. Core components are coordinated directly by `Project`. These are `SimpleEvent` fields on `Project`, enabling GUI components to subscribe via `subscribe(subscription, func)` with automatic cleanup through the `Subscription` lifecycle.
 
 ```typescript
-interface ProjectLifecycleObserver {
-  onStageAdded?(stage: Stage): void
-  onPreStageDeleted?(stage: Stage): void
-  onStageDeleted?(stage: Stage): void
-}
+// On Project:
+readonly stageAdded = new SimpleEvent<Stage>()
+readonly preStageDeleted = new SimpleEvent<Stage>()
+readonly stageDeleted = new SimpleEvent<Stage>()
 ```
 
 ### ProjectEntity (Public Read-Only)
@@ -804,23 +799,22 @@ Stage movement methods consolidated:
 
 The existing undo system (`src/project/undo.ts`) is compatible with this architecture and requires no structural changes. `ProjectActions` returns `UndoAction` objects; `event-handlers.ts` registers them. Undo handler implementations will be updated to call `MutableProjectContent` methods instead of `ProjectUpdates` methods.
 
-### ProjectList
+### ProjectList Module
+
+`src/project/ProjectList.ts` — module-level functions and events operating on `storage.projects`:
 
 ```typescript
-@RegisterClass("ProjectList")
-class ProjectList {
-  readonly projectCreated: SimpleEvent<Project>
-  readonly projectDeleted: SimpleEvent<Project>
-  readonly projectsReordered: SimpleEvent<{ project1: Project; project2: Project }>
+export const projectCreated = globalEvent<[Project]>()
+export const projectDeleted = globalEvent<[Project]>()
+export const projectsReordered = globalEvent<[Project, Project]>()
 
-  getAll(): readonly Project[]
-  count(): number
-  getById(id: ProjectId): Project | nil
-  add(project: ProjectImpl): void
-  remove(project: Project): void
-  moveUp(project: Project): boolean
-  moveDown(project: Project): boolean
-}
+export function getAllProjects(): readonly Project[]
+export function getProjectCount(): number
+export function getProjectById(id: ProjectId): Project | nil
+export function addProject(project: Project): void
+export function removeProject(project: Project): void
+export function moveProjectUp(project: Project): boolean
+export function moveProjectDown(project: Project): boolean
 ```
 
 ## Import/Export
@@ -894,7 +888,7 @@ function exportProject(project: Project): ProjectExport {
 - `ProjectUpdates` module
 - `LazyLoadClass`
 - `GlobalProjectEvents` singleton
-- `localEvents` field on Project
+- `localEvents` field on Project (replaced by typed `SimpleEvent` fields: `stageAdded`, `preStageDeleted`, `stageDeleted`)
 - `project-event-listener.ts`
 - Delegate methods on Project: `getSurface`, `getStageName`, `isSpacePlatform`, `numStages`, `lastStageFor`, `worldUpdates`, `updates`
 - World entity methods on ProjectEntity: `getWorldOrPreviewEntity`, `getWorldEntity`, `replaceWorldEntity`, `replaceWorldOrPreviewEntity`, `destroyWorldOrPreviewEntity`, `destroyAllWorldOrPreviewEntities`, `hasWorldEntityInRange`, `iterateWorldOrPreviewEntities`, `hasErrorAt`
@@ -908,7 +902,8 @@ function exportProject(project: Project): ProjectExport {
 - [ ] No delegate methods on Project
 - [ ] `project-event-listener.ts` is deleted
 - [ ] No `GlobalProjectEvents` singleton
-- [ ] No `localEvents` field on Project
+- [ ] No `localEvents` field on Project (replaced by typed `SimpleEvent` fields)
+- [ ] `ProjectList.ts` exports module-level `GlobalEvent` instances (not `SimpleEvent`, not instance fields)
 - [ ] Import/export uses `ProjectSettings.exportData()` and `content.exportEntities()`
 - [ ] All entity mutations go through `MutableProjectContent`
 - [ ] `MutableProjectContent` has no LuaEntity references or business logic
@@ -916,4 +911,4 @@ function exportProject(project: Project): ProjectExport {
 - [ ] No direct mutation of `ProjectEntity` from outside content module
 - [ ] External code cannot call `InternalProjectEntity` methods without casting
 - [ ] Stage operations in `Project` call components directly in order (not via observer)
-- [ ] `ProjectLifecycleObserver` is only used by UI/external components
+- [ ] Per-project stage events (`SimpleEvent`) are only used by UI/external components
