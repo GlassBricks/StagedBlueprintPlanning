@@ -449,8 +449,8 @@ Use `describeDualPipeline`. All actions triggered via `Events.raiseFakeEventName
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] Tests pass: `pnpm run test "selection%-tools"`
-- [ ] All existing tests pass: `pnpm run test`
+- [x] Tests pass: `pnpm run test "selection%-tools"`
+- [x] All existing tests pass: `pnpm run test`
 
 **Implementation Note**: Pause for manual confirmation before proceeding.
 
