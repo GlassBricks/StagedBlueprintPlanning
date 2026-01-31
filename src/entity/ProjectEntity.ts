@@ -159,10 +159,6 @@ export interface ProjectEntity<out T extends Entity = Entity> extends StagedValu
 export type StageDiffs<E extends Entity = Entity> = PRRecord<StageNumber, StageDiff<E>>
 export type StageDiffsInternal<E extends Entity = Entity> = PRRecord<StageNumber, StageDiffInternal<E>>
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface ExtraEntities {}
-export type ExtraEntityType = keyof ExtraEntities
-
 export interface StageProperties {
   unstagedValue?: UnstagedEntityProps
 }
@@ -172,8 +168,6 @@ export type LoaderProjectEntity = ProjectEntity<LoaderEntity>
 export type InserterProjectEntity = ProjectEntity<InserterEntity>
 export type MovableProjectEntity = ProjectEntity<MovableEntity>
 export type TrainProjectEntity = ProjectEntity<TrainEntity>
-
-type StageData = ExtraEntities & StageProperties
 
 export function orientationToDirection(orientation: RealOrientation | nil): defines.direction {
   if (orientation == nil) return 0
@@ -194,11 +188,10 @@ class ProjectEntityImpl<T extends Entity = Entity>
 
   wireConnections?: LuaMap<ProjectEntity, LuaSet<ProjectWireConnection>>
 
-  _next: ProjectEntityImpl<T> | nil;
+  _next: ProjectEntityImpl<T> | nil
 
-  [stage: StageNumber]: LuaEntity | nil // world entities and preview entities are stored in the same table
   stageProperties?: {
-    [P in keyof StageData]?: PRecord<StageNumber, StageData[P]>
+    [P in keyof StageProperties]?: PRecord<StageNumber, StageProperties[P]>
   }
 
   constructor(firstStage: StageNumber, firstValue: T, position: Position, direction: defines.direction) {

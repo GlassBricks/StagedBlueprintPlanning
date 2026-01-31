@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { SignalID } from "factorio:runtime"
+import { LuaEntity, SignalID } from "factorio:runtime"
 import {
   BlueprintSettingsOverrideTable,
   BlueprintSettingsTable,
@@ -13,17 +13,17 @@ import {
 } from "../blueprints/blueprint-settings"
 import { newMap2d } from "../entity/map2d"
 import { StageNumber } from "../entity/ProjectEntity"
-import { createProjectTile } from "../tiles/ProjectTile"
 import { Mutable, PRecord, property } from "../lib"
-import { WorldPresentation } from "./WorldPresentation"
 import { Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
+import { createProjectTile } from "../tiles/ProjectTile"
 import { getNilPlaceholder } from "../utils/diff-value"
 import "./event-handlers"
 import "./project-event-listener"
 import { getDefaultSurfaceSettings, readSurfaceSettings, updateStageSurfaceName } from "./surfaces"
 import "./UserProject"
 import { getAllProjects, StageInternal, UserProjectInternal } from "./UserProject"
+import { WorldPresentation } from "./WorldPresentation"
 
 Migrations.to("2.2.0", () => {
   for (const project of getAllProjects()) {
@@ -171,10 +171,27 @@ Migrations.to("2.12.0", () => {
 
 Migrations.to($CURRENT_VERSION, () => {
   for (const project of getAllProjects()) {
-    const p = project as unknown as Record<string, unknown>
-    delete p.worldUpdates
-    if (!p._worldPresentation) {
-      p._worldPresentation = new WorldPresentation(project)
+    interface OldUserProject extends Omit<UserProjectInternal, "worldUpdates"> {
+      worldUpdates?: unknown
+      _worldPresentation?: WorldPresentation
+    }
+    const old = project as unknown as OldUserProject
+    delete old.worldUpdates
+    if (!old._worldPresentation) {
+      old._worldPresentation = new WorldPresentation(project)
+    }
+    interface OldProjectEntity {
+      [stage: StageNumber]: LuaEntity | nil
+    }
+    const es = project.worldPresentation.entityStorage
+    for (const entity of project.content.allEntities()) {
+      const old = entity as unknown as OldProjectEntity
+      for (const [k, v] of pairs(old)) {
+        if (typeof k == "number") {
+          es.set(entity, "worldOrPreviewEntity", k, v!)
+          delete old[k]
+        }
+      }
     }
   }
 })

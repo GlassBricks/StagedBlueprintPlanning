@@ -378,29 +378,9 @@ this.worldPresentation.onStageDeleted(index)
 
 ### Sub-step 2c.4: Remove world entity methods from ProjectEntity
 
-#### `src/entity/ProjectEntity.ts`
+**Done**: All world entity methods removed from `ProjectEntity` interfaces and `ProjectEntityImpl`. `registerEntity` and `raise_script_destroy` moved to `WorldPresentation`.
 
-Remove from `ProjectEntityImpl`:
-- `[stage: StageNumber]: LuaEntity | nil` — numeric index signature
-- `getWorldOrPreviewEntity(stage)`
-- `getWorldEntity(stage)`
-- `replaceWorldEntity(stage, entity)`
-- `replaceWorldOrPreviewEntity(stage, entity)`
-- `destroyWorldOrPreviewEntity(stage)`
-- `destroyAllWorldOrPreviewEntities()`
-- `hasWorldEntityInRange(start, end)`
-- `iterateWorldOrPreviewEntities()`
-- `hasErrorAt(stage)`
-
-After Phase 1 merge, the interfaces are split: remove read-only world entity methods (`getWorldEntity`, `getWorldOrPreviewEntity`, `hasErrorAt`, `hasWorldEntityInRange`, `iterateWorldOrPreviewEntities`) from the `ProjectEntity` interface, and remove mutation methods (`replaceWorldEntity`, `replaceWorldOrPreviewEntity`, `destroyWorldOrPreviewEntity`, `destroyAllWorldOrPreviewEntities`) from the `InternalProjectEntity` interface.
-
-Remove the `registerEntity` call from `replaceWorldOrPreviewEntity` — move entity registration to the equivalent code in `WorldPresentation` or `WorldUpdates`.
-
-Remove the `raise_script_destroy` calls — move them to the destroy helpers in `WorldPresentation`/`WorldUpdates`.
-
-#### `src/entity/ProjectContent.ts`
-
-If `ProjectContent` calls any world entity methods internally (e.g., in `findCompatibleWithLuaEntity`), update those.
+**Remaining**: Remove the numeric index signature `[stage: StageNumber]: LuaEntity | nil` from `ProjectEntityImpl` (line 199). This is now unused — all world entity storage goes through `EntityStorage` — but the declaration remains.
 
 ### Test Updates
 
@@ -440,6 +420,7 @@ No individual test files change.
 - [x] Grep for `\.hasErrorAt\(` on `ProjectEntity` references returns zero results
 - [x] Grep for `\.destroyWorldOrPreviewEntity\(` on `ProjectEntity` references returns zero results
 - [x] Grep for `\.destroyAllWorldOrPreviewEntities\(` returns zero results
+- [x] `[stage: StageNumber]: LuaEntity | nil` numeric index signature removed from `ProjectEntity`
 
 ---
 
@@ -450,6 +431,10 @@ No individual test files change.
 Clean up `ProjectEntity` by removing the extra entity (highlight) methods and `ExtraEntities` declaration merging. The actual highlight storage migration to `EntityStorage` was done in Phase 2c.
 
 ### Changes
+
+**Done**: Extra entity methods (`getExtraEntity`, `replaceExtraEntity`, `destroyExtraEntity`, `destroyAllExtraEntities`, `hasAnyExtraEntities`) removed from `ProjectEntity`. These now exist as local helper functions in `entity-highlights.ts` delegating to `EntityStorage`. Test utilities updated.
+
+### Remaining Changes
 
 #### `src/project/entity-highlights.ts` — Remove declaration merging
 
@@ -462,23 +447,14 @@ declare module "../entity/ProjectEntity" {
 
 The `HighlightEntities` type definitions are already in `WorldEntityTypes` (defined in Phase 2b).
 
-#### `src/entity/ProjectEntity.ts` — Remove extra entity methods
+#### `src/entity/ProjectEntity.ts` — Remove ExtraEntities and numeric index
 
-Remove from `ProjectEntityImpl`:
-- `stageProperties` field (only the `ExtraEntities` portion — `unstagedValue` remains via `StageProperties`)
-- `getExtraEntity(type, stage)`
-- `replaceExtraEntity(type, stage, entity)`
-- `destroyExtraEntity(type, stage)`
-- `destroyAllExtraEntities(type)`
-- `hasAnyExtraEntities(type)`
+Remove:
+- `ExtraEntities` interface export and `ExtraEntityType` type alias
+- `StageData` type alias (replace usages with `StageProperties` directly)
+- `[stage: StageNumber]: LuaEntity | nil` numeric index signature (from 2c.4)
 
-Remove `ExtraEntities` interface export and `ExtraEntityType`.
-
-**Important**: The `stageProperties` field also stores `StageProperties` (which includes `unstagedValue`). We must separate these concerns:
-- `unstagedValue` storage remains on `ProjectEntity` (it's pure data, not presentation)
-- `ExtraEntities` storage moves to `EntityStorage`
-
-Currently `stageProperties` is typed as `{ [P in keyof StageData]?: PRecord<StageNumber, StageData[P]> }` where `StageData = ExtraEntities & StageProperties`. After removing `ExtraEntities`, it becomes just `StageProperties`:
+Retype `stageProperties` from `StageData` to `StageProperties`:
 
 ```typescript
 stageProperties?: {
@@ -486,25 +462,21 @@ stageProperties?: {
 }
 ```
 
-The `insertStage`/`shiftKeysDown` methods on `ProjectEntity` that shift `stageProperties` keys continue to work — they'll just shift the `unstagedValue` keys (which is correct behavior that must be preserved).
-
-### Test Updates
-
-- `src/test/entity/ProjectEntity.test.ts` — Remove tests for extra entity methods.
-- `src/test/project/entity-highlight-test-util.ts` — Update to read from `EntityStorage` (if not already done in 2c).
+The `insertStage`/`shiftKeysDown` methods that shift `stageProperties` keys continue to work — they'll just shift the `unstagedValue` keys.
 
 ### Success Criteria
 
 #### Automated
-- [ ] `pnpm run test` — all tests pass
-- [ ] `pnpm run lint && pnpm run format:fix` — clean
-- [ ] Grep for `getExtraEntity` returns zero results outside of test utilities
-- [ ] Grep for `replaceExtraEntity` returns zero results
-- [ ] Grep for `destroyExtraEntity` returns zero results
-- [ ] Grep for `destroyAllExtraEntities` returns zero results
-- [ ] Grep for `hasAnyExtraEntities` returns zero results
-- [ ] `ExtraEntities` interface no longer exists on `ProjectEntity`
-- [ ] `ProjectEntity` has no highlight/render object storage
+- [x] `pnpm run test` — all tests pass
+- [x] `pnpm run lint && pnpm run format:fix` — clean
+- [x] Grep for `getExtraEntity` returns zero results outside of `entity-highlights.ts` local helpers and test utilities
+- [x] Grep for `replaceExtraEntity` returns zero results outside of `entity-highlights.ts` local helpers
+- [x] Grep for `destroyExtraEntity` returns zero results outside of `entity-highlights.ts` local helpers
+- [x] Grep for `destroyAllExtraEntities` returns zero results outside of `entity-highlights.ts` local helpers
+- [x] Grep for `hasAnyExtraEntities` returns zero results outside of test utilities
+- [x] `ExtraEntities` interface and declaration merging removed from `ProjectEntity` and `entity-highlights.ts`
+- [x] `stageProperties` typed with only `StageProperties` (not `StageData = ExtraEntities & StageProperties`)
+- [x] `ProjectEntity` has no highlight/render object storage
 
 ---
 

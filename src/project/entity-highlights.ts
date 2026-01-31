@@ -48,10 +48,6 @@ export interface HighlightEntities {
   itemRequestHighlight?: LuaRenderObject
   itemRequestHighlightOverlay?: LuaRenderObject
 }
-declare module "../entity/ProjectEntity" {
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  export interface ExtraEntities extends HighlightEntities {}
-}
 
 interface HighlightConfig {
   readonly type: "highlight"
