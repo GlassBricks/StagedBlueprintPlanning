@@ -9,6 +9,8 @@ import { _assertCorrect, MutableProjectContent, newProjectContent } from "../../
 import { newProjectEntity, ProjectEntity } from "../../entity/ProjectEntity"
 import { createProjectTile } from "../../tiles/ProjectTile"
 import { getPrototypeRotationType, RotationType } from "../../entity/prototype-info"
+import { registerEntity } from "../../entity/registration"
+import { WorldEntityLookup } from "../../project/WorldPresentation"
 import { setupTestSurfaces } from "../project/Project-mock"
 import { createRollingStocks } from "./createRollingStock"
 
@@ -106,10 +108,14 @@ test("finds exact entity match by lua entity and position", () => {
   const entity: ProjectEntity = newProjectEntity({ name: "stone-furnace" }, { x: 0, y: 0 }, 0, 1)
   const luaEntity = assert(surfaces[0].create_entity({ name: "stone-furnace", position: { x: 0, y: 0 } }))
   content.addEntity(entity)
-  entity.replaceWorldEntity(2, luaEntity)
-  expect(content.findEntityExact(luaEntity, luaEntity.position, 2)).toBe(entity)
+  const lookup: WorldEntityLookup = {
+    getWorldOrPreviewEntity: (_e, _s) => (_e == entity && _s == 2 ? luaEntity : nil),
+    getWorldEntity: (_e, _s) => (_e == entity && _s == 2 ? luaEntity : nil),
+    hasErrorAt: () => false,
+  }
+  expect(content.findEntityExact(luaEntity, luaEntity.position, 2, lookup)).toBe(entity)
   luaEntity.teleport(1, 1)
-  expect(content.findEntityExact(luaEntity, { x: 0, y: 0 }, 2)).toBe(entity)
+  expect(content.findEntityExact(luaEntity, { x: 0, y: 0 }, 2, lookup)).toBe(entity)
 })
 
 describe("findCompatibleWithLuaEntity", () => {
@@ -202,7 +208,7 @@ describe("findCompatibleWithLuaEntity", () => {
     const entity = newProjectEntity({ name: "locomotive" }, { x: 0, y: 0 }, 0, 1)
     const [a1, a2] = createRollingStocks(surfaces[0], "locomotive", "locomotive")
     content.addEntity(entity)
-    entity.replaceWorldEntity(1, a1)
+    registerEntity(a1, entity)
 
     expect(content.findCompatibleWithLuaEntity(a1, nil, 1)).toBe(entity)
     expect(content.findCompatibleWithLuaEntity(a2, nil, 1)).toBeNil()

@@ -8,11 +8,12 @@ import { newProjectContent } from "../../entity/ProjectContent"
 import { getPlayer } from "../../lib/test/misc"
 import { Project } from "../../project/ProjectDef"
 import { createStageSurface, destroySurface, getDefaultSurfaceSettings } from "../../project/surfaces"
+import { WorldPresentation } from "../../project/WorldPresentation"
 
 export function createMockProject(stages: number | LuaSurface[]): Project {
   const surfaces: LuaSurface[] =
     typeof stages == "number" ? Array.from({ length: stages }, () => game.surfaces[1]) : stages
-  return {
+  const project: Project = {
     getSurface: (stage) => surfaces[stage - 1],
     settings: {
       stageCount() {
@@ -31,8 +32,10 @@ export function createMockProject(stages: number | LuaSurface[]): Project {
     actions: "actions not mocked" as any,
     updates: "updates not mocked" as any,
     worldUpdates: "entityUpdates not mocked" as any,
-    worldPresentation: "worldPresentation not mocked" as any,
+    worldPresentation: nil!,
   }
+  project.worldPresentation = new WorldPresentation(project)
+  return project
 }
 
 export function setupTestSurfaces(numSurfaces: number): LuaSurface[] {

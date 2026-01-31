@@ -392,7 +392,7 @@ function processPendingBplibPaste(data: BplibPasteData): void {
 
     let worldEntity: LuaEntity | nil = luaEntity
     if (!luaEntity.valid && projectEntity) {
-      worldEntity = projectEntity.getWorldEntity(stage.stageNumber)
+      worldEntity = stage.project.worldPresentation.getWorldEntity(projectEntity, stage.stageNumber)
     }
 
     if (worldEntity?.valid) {
@@ -938,7 +938,7 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
       // check for circuit wires
       if (!luaEntity.valid) {
         // must have been upgraded
-        luaEntity = projectEntity.getWorldEntity(stage.stageNumber)
+        luaEntity = stage.project.worldPresentation.getWorldEntity(projectEntity, stage.stageNumber)
         if (!luaEntity) return
 
         bpState.needsManualConnections.push(entityId)

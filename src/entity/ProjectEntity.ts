@@ -30,13 +30,10 @@ import {
 import {
   isMovableEntity,
   isPersistentEntity,
-  isPreviewEntity,
   isTrainEntity,
-  movableTypes,
   OnPrototypeInfoLoaded,
   PrototypeInfo,
 } from "./prototype-info"
-import { registerEntity } from "./registration"
 import { applyDiffToEntity, getDiffDiff, getEntityDiff, StageDiff, StageDiffInternal } from "./stage-diff"
 import { BaseStagedValue, StagedValue } from "./StagedValue"
 import { getDirectionalInfo, ProjectWireConnection, wireConnectionEquals } from "./wire-connection"
@@ -101,8 +98,6 @@ export interface ProjectEntity<out T extends Entity = Entity> extends StagedValu
   /** If this is a rolling stock, the direction is based off of orientation instead. */
   getPreviewDirection(): defines.direction
 
-  hasErrorAt(stage: StageNumber): boolean
-
   getFirstStageDiffForProp<K extends keyof T>(prop: K): LuaMultiReturn<[] | [StageNumber | nil, T[K]]>
   _applyDiffAtStage(stage: StageNumber, diff: StageDiffInternal<T>): void
 
@@ -154,24 +149,6 @@ export interface ProjectEntity<out T extends Entity = Entity> extends StagedValu
   setUnstagedValue(stage: StageNumber, value: UnstagedEntityProps | nil): boolean
   getUnstagedValue(stage: StageNumber): UnstagedEntityProps | nil
 
-  getWorldEntity(stage: StageNumber): LuaEntity | nil
-  getWorldOrPreviewEntity(stage: StageNumber): LuaEntity | nil
-
-  replaceWorldEntity(stage: StageNumber, entity: LuaEntity | nil): void
-  replaceWorldOrPreviewEntity(stage: StageNumber, entity: LuaEntity | nil): void
-
-  destroyWorldOrPreviewEntity(stage: StageNumber): void
-  destroyAllWorldOrPreviewEntities(): void
-
-  iterateWorldOrPreviewEntities(): LuaIterable<LuaMultiReturn<[StageNumber, LuaEntity]>>
-  hasWorldEntityInRange(startStage: StageNumber, endStage: StageNumber): boolean
-
-  getExtraEntity<T extends keyof ExtraEntities>(type: T, stage: StageNumber): ExtraEntities[T] | nil
-  replaceExtraEntity<T extends ExtraEntityType>(type: T, stage: StageNumber, entity: ExtraEntities[T] | nil): void
-  destroyExtraEntity<T extends ExtraEntityType>(type: T, stage: StageNumber): void
-  destroyAllExtraEntities(type: ExtraEntityType): void
-  hasAnyExtraEntities(type: ExtraEntityType): boolean
-
   setProperty<T extends keyof StageProperties>(key: T, stage: StageNumber, value: StageProperties[T] | nil): boolean
   getProperty<T extends keyof StageProperties>(key: T, stage: StageNumber): StageProperties[T] | nil
   getPropertyAllStages<T extends keyof StageProperties>(key: T): Record<StageNumber, StageProperties[T]> | nil
@@ -202,8 +179,6 @@ export function orientationToDirection(orientation: RealOrientation | nil): defi
   if (orientation == nil) return 0
   return floor(orientation * 16 + 0.5) % 16
 }
-
-const { raise_script_destroy } = script
 
 // kinda messy
 // 4 years ago me was only so kind
@@ -266,17 +241,6 @@ class ProjectEntityImpl<T extends Entity = Entity>
   }
   override oneStageOnly(): boolean {
     return this.isMovable()
-  }
-
-  hasErrorAt(stage: StageNumber): boolean {
-    // if this gets complicated enough, it may move out of this class
-    if (!this.isInStage(stage)) return false
-    const worldEntity = this.getWorldEntity(stage)
-    return (
-      worldEntity == nil ||
-      (worldEntity.type == "underground-belt" &&
-        worldEntity.belt_to_ground_type != (this.firstValue as unknown as UndergroundBeltEntity).type)
-    )
   }
 
   addOneWayWireConnection(connection: ProjectWireConnection): boolean {
@@ -585,135 +549,6 @@ class ProjectEntityImpl<T extends Entity = Entity>
 
   getUnstagedValue(stage: StageNumber): UnstagedEntityProps | nil {
     return this.getProperty("unstagedValue", stage)
-  }
-
-  getWorldOrPreviewEntity(stage: StageNumber): LuaEntity | nil {
-    const entity = this[stage]
-    if (entity) {
-      if (entity.valid) return entity
-      delete this[stage]
-    }
-  }
-
-  getWorldEntity(stage: StageNumber) {
-    const entity = this.getWorldOrPreviewEntity(stage)
-    if (entity && !isPreviewEntity(entity)) return entity
-  }
-
-  replaceWorldEntity(stage: StageNumber, entity: LuaEntity | nil): void {
-    // assert(!entity || !isPreviewEntity(entity), "entity must not be a preview entity")
-    this.replaceWorldOrPreviewEntity(stage, entity)
-  }
-  replaceWorldOrPreviewEntity(stage: StageNumber, entity: LuaEntity | nil): void {
-    const existing = this[stage]
-    if (existing && existing.valid && existing != entity) {
-      raise_script_destroy({ entity: existing })
-      existing.destroy()
-    }
-    this[stage] = entity
-    if (entity && movableTypes.has(entity.type)) {
-      registerEntity(entity, this)
-    }
-  }
-
-  destroyWorldOrPreviewEntity(stage: StageNumber): void {
-    const existing = this[stage]
-    if (existing && existing.valid) {
-      raise_script_destroy({ entity: existing })
-      existing.destroy()
-    }
-    delete this[stage]
-  }
-
-  destroyAllWorldOrPreviewEntities(): void {
-    for (const [k, v] of pairs(this)) {
-      if (typeof k != "number") break
-      assume<LuaEntity>(v)
-      if (v.valid) {
-        raise_script_destroy({ entity: v })
-        v.destroy()
-      }
-      delete this[k]
-    }
-  }
-
-  hasWorldEntityInRange(start: StageNumber, end: StageNumber): boolean {
-    for (const i of $range(start, end)) {
-      const entity = this[i]
-      if (entity && entity.valid) {
-        if (!isPreviewEntity(entity)) return true
-      } else {
-        delete this[i]
-      }
-    }
-    return false
-  }
-
-  // note: for extra entities, we don't call raiseScriptDestroy as it's not needed + for performance reasons
-  getExtraEntity<T extends keyof ExtraEntities>(type: T, stage: StageNumber): ExtraEntities[T] | nil {
-    const { stageProperties } = this
-    if (!stageProperties) return nil
-    const byType = stageProperties[type]
-    if (!byType) return nil
-    const worldEntity = byType[stage]
-    if (worldEntity && worldEntity.valid) return worldEntity
-    // delete
-    delete byType[stage]
-    if (isEmpty(byType)) delete stageProperties[type]
-  }
-  replaceExtraEntity<T extends keyof ExtraEntities>(type: T, stage: StageNumber, entity: ExtraEntities[T] | nil): void {
-    if (entity == nil) return this.destroyExtraEntity(type, stage)
-    const stageProperties = this.stageProperties ?? (this.stageProperties = {})
-    const byType = stageProperties[type] ?? ((stageProperties[type] = {}) as PRecord<StageNumber, ExtraEntities[T]>)
-    const existing = byType[stage]
-    if (existing && existing.valid && existing != entity) existing.destroy()
-    byType[stage] = entity
-  }
-  destroyExtraEntity<T extends ExtraEntityType>(type: T, stage: StageNumber): void {
-    const { stageProperties } = this
-    if (!stageProperties) return
-    const byType = stageProperties[type]
-    if (!byType) return
-    const entity = byType[stage]
-    if (entity && entity.valid) entity.destroy()
-    if (!entity || !entity.valid) {
-      delete byType[stage]
-      if (isEmpty(byType)) {
-        delete stageProperties[type]
-        if (isEmpty(stageProperties)) delete this.stageProperties
-      }
-    }
-  }
-
-  destroyAllExtraEntities(type: ExtraEntityType): void {
-    const { stageProperties } = this
-    if (!stageProperties) return
-    const byType = stageProperties[type]
-    if (!byType) return
-    for (const [, entity] of pairs(byType)) {
-      if (entity && entity.valid) entity.destroy()
-    }
-    delete stageProperties[type]
-    if (isEmpty(stageProperties)) delete this.stageProperties
-  }
-
-  hasAnyExtraEntities(type: ExtraEntityType): boolean {
-    const { stageProperties } = this
-    return stageProperties != nil && stageProperties[type] != nil
-  }
-
-  iterateWorldOrPreviewEntities(): LuaIterable<LuaMultiReturn<[StageNumber, any]>> {
-    let lastKey: StageNumber | nil = nil
-    return (() => {
-      while (true) {
-        const nextKey = next(this, lastKey)[0]
-        if (typeof nextKey != "number") return nil
-        lastKey = nextKey
-        const entity = this[nextKey]
-        if (entity && entity.valid) return $multi(nextKey, entity)
-        delete this[nextKey]
-      }
-    }) as any
   }
 
   setProperty<T extends keyof StageProperties>(key: T, stage: StageNumber, value: StageProperties[T] | nil): boolean {

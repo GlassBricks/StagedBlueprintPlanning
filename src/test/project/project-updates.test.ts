@@ -40,6 +40,9 @@ const pos = Pos(10.5, 10.5)
 
 let project: Project
 const surfaces: LuaSurface[] = setupTestSurfaces(6)
+function wp() {
+  return project.worldPresentation
+}
 
 const worldUpdates = fMock<WorldUpdates>()
 const wireSaver = moduleMock(_wireHandler, true)
@@ -189,7 +192,7 @@ describe("addNewEntity()", () => {
     const found = project.content.findCompatibleWithLuaEntity(luaEntity, nil, 2) as ProjectEntity<BlueprintEntity>
     expect(found).toBe(entity)
 
-    expect(entity.getWorldEntity(2)).toBe(luaEntity)
+    expect(wp().getWorldEntity(entity, 2)).toBe(luaEntity)
 
     assertOneEntity()
     assertNewUpdated(entity)
@@ -247,7 +250,7 @@ function registerNewEntity(luaEntity: LuaEntity, stage: number): ProjectEntity<B
   const entity = projectUpdates.addNewEntity(luaEntity, stage) as ProjectEntity<BlueprintEntity>
   expect(entity).toBeAny()
   clearMocks()
-  entity.replaceWorldEntity(stage, luaEntity)
+  wp().replaceWorldOrPreviewEntity(entity, stage, luaEntity)
   return entity
 }
 function addEntity<T extends BlueprintEntity>(
@@ -347,7 +350,8 @@ describe("deleteEntityOrCreateSettingsRemnant()", () => {
       fromId: defines.wire_connector_id.circuit_green,
       toId: defines.wire_connector_id.circuit_green,
     })
-    otherEntity.replaceWorldEntity(
+    wp().replaceWorldOrPreviewEntity(
+      otherEntity,
       1,
       createEntity(1, {
         position: Pos.plus(entity.position, { x: 0, y: 1 }),
@@ -410,7 +414,7 @@ describe("tryUpdateEntityFromWorld()", () => {
     const { luaEntity, entity } = addEntity(2)
     luaEntity.direction = defines.direction.east
 
-    entity.replaceWorldEntity(3, luaEntity)
+    wp().replaceWorldOrPreviewEntity(entity, 3, luaEntity)
     const ret = projectUpdates.tryUpdateEntityFromWorld(entity, 3)
     expect(ret).toBe("cannot-rotate")
     expect(entity.direction).toBe(defines.direction.north)
@@ -427,7 +431,7 @@ describe("tryUpdateEntityFromWorld()", () => {
     }
 
     luaEntity.inserter_stack_size_override = 3
-    entity.replaceWorldEntity(2, luaEntity)
+    wp().replaceWorldOrPreviewEntity(entity, 2, luaEntity)
     const ret = projectUpdates.tryUpdateEntityFromWorld(entity, 2)
     expect(ret).toBe("updated")
 
@@ -448,7 +452,7 @@ describe("tryUpdateEntityFromWorld()", () => {
     expect(entity.hasStageDiff()).toBe(true)
     luaEntity.inserter_stack_size_override = 1
 
-    entity.replaceWorldEntity(2, luaEntity)
+    wp().replaceWorldOrPreviewEntity(entity, 2, luaEntity)
     const ret = projectUpdates.tryUpdateEntityFromWorld(entity, 2)
     expect(ret).toBe("updated")
     expect(entity.hasStageDiff()).toBe(false)
@@ -473,7 +477,7 @@ describe("tryRotateEntityFromWorld()", () => {
     const { luaEntity, entity } = addEntity(1)
     const oldDirection = luaEntity.direction
     luaEntity.direction = direction.west
-    entity.replaceWorldEntity(2, luaEntity)
+    wp().replaceWorldOrPreviewEntity(entity, 2, luaEntity)
     const ret = projectUpdates.tryRotateEntityFromWorld(entity, 2)
     expect(ret).toBe("cannot-rotate")
     expect(entity.direction).toBe(oldDirection)
@@ -505,7 +509,7 @@ describe("ignores assembling machine rotation if no fluid inputs", () => {
       direction: defines.direction.east,
     }))
 
-    entity.replaceWorldEntity(3, luaEntity)
+    wp().replaceWorldOrPreviewEntity(entity, 3, luaEntity)
     // hacky way to rotate
     luaEntity.set_recipe("express-transport-belt")
     luaEntity.direction = defines.direction.south
@@ -870,7 +874,7 @@ describe("undergrounds", () => {
       const rotated = luaEntity.rotate()
       assert(rotated)
 
-      entity.replaceWorldEntity(2, luaEntity)
+      wp().replaceWorldOrPreviewEntity(entity, 2, luaEntity)
       const ret = projectUpdates.tryRotateEntityFromWorld(entity, 2)
       expect(ret).toBe("cannot-rotate")
 
@@ -885,7 +889,7 @@ describe("undergrounds", () => {
       const { entity1, entity2 } = createUndergroundBeltPair(1, 2)
 
       const entity = which == "lower" ? entity1 : entity2
-      const rotated = entity.getWorldEntity(entity.firstStage)!.rotate()
+      const rotated = wp().getWorldEntity(entity, entity.firstStage)!.rotate()
       assert(rotated)
 
       const ret = projectUpdates.tryRotateEntityFromWorld(entity, entity.firstStage)
@@ -911,7 +915,7 @@ describe("undergrounds", () => {
       const rotated1 = luaEntity1.rotate()
       assert(rotated1)
 
-      entity1.replaceWorldEntity(3, luaEntity1)
+      wp().replaceWorldOrPreviewEntity(entity1, 3, luaEntity1)
       const ret = projectUpdates.tryRotateEntityFromWorld(entity1, 3)
       expect(ret).toBe("cannot-rotate")
 
@@ -952,7 +956,7 @@ describe("undergrounds", () => {
         target: "fast-underground-belt",
         force: luaEntity.force,
       })
-      entity.replaceWorldEntity(2, luaEntity)
+      wp().replaceWorldOrPreviewEntity(entity, 2, luaEntity)
       const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, 2)
       expect(ret).toBe("updated")
 
@@ -974,7 +978,7 @@ describe("undergrounds", () => {
           target: "fast-underground-belt",
           force: luaEntity.force,
         })
-        entity.replaceWorldEntity(endStage, luaEntity)
+        wp().replaceWorldOrPreviewEntity(entity, endStage, luaEntity)
         const ret = projectUpdates.tryUpgradeEntityFromWorld(entity, endStage)
         expect(ret).toBe("updated")
 
@@ -1095,7 +1099,7 @@ describe("undergrounds", () => {
       fast_replace: true,
     })!
     expect(newEntity).toBeAny()
-    entity1.replaceWorldEntity(1, newEntity)
+    wp().replaceWorldOrPreviewEntity(entity1, 1, newEntity)
 
     const ret = projectUpdates.tryUpdateEntityFromWorld(entity1, 1)
     expect(ret).toBe("updated")
@@ -1117,9 +1121,9 @@ describe("undergrounds", () => {
   test("rotating to fix direction updates all entities", () => {
     const { luaEntity, entity } = createUndergroundBelt(1)
     luaEntity.rotate()
-    expect(entity.hasErrorAt(1)).toBe(true)
+    expect(wp().hasErrorAt(entity, 1)).toBe(true)
     luaEntity.rotate()
-    expect(entity.hasErrorAt(1)).toBe(false)
+    expect(wp().hasErrorAt(entity, 1)).toBe(false)
     const ret = projectUpdates.tryRotateEntityFromWorld(entity, 1)
     expect(ret).toBe(EntityUpdateResult.NoChange)
 
@@ -1129,9 +1133,9 @@ describe("undergrounds", () => {
   test("updating to fix direction updates all entities", () => {
     const { luaEntity, entity } = createUndergroundBelt(1)
     luaEntity.rotate()
-    expect(entity.hasErrorAt(1)).toBe(true)
+    expect(wp().hasErrorAt(entity, 1)).toBe(true)
     luaEntity.rotate()
-    expect(entity.hasErrorAt(1)).toBe(false)
+    expect(wp().hasErrorAt(entity, 1)).toBe(false)
     const ret = projectUpdates.tryUpdateEntityFromWorld(entity, 1)
     expect(ret).toBe(EntityUpdateResult.NoChange)
 
@@ -1141,13 +1145,13 @@ describe("undergrounds", () => {
 
   test("rotate a broken underground at higher stage fixes underground, if pair is correct", () => {
     const { luaEntity1, entity1, luaEntity2, entity2 } = createUndergroundBeltPair(1, 1)
-    entity1.replaceWorldEntity(2, luaEntity1)
-    entity2.replaceWorldEntity(2, luaEntity2)
+    wp().replaceWorldOrPreviewEntity(entity1, 2, luaEntity1)
+    wp().replaceWorldOrPreviewEntity(entity2, 2, luaEntity2)
 
     luaEntity2.rotate()
-    expect(entity2.hasErrorAt(2)).toBe(true)
+    expect(wp().hasErrorAt(entity2, 2)).toBe(true)
     luaEntity2.rotate()
-    expect(entity2.hasErrorAt(2)).toBe(false)
+    expect(wp().hasErrorAt(entity2, 2)).toBe(false)
 
     const ret = projectUpdates.tryRotateEntityFromWorld(entity2, 2)
     expect(ret).toBe(EntityUpdateResult.NoChange)
@@ -1161,12 +1165,12 @@ describe("undergrounds", () => {
       which == "pair" ? 2 : 1,
       which == "pair" ? 1 : 2,
     )
-    entity1.replaceWorldEntity(2, luaEntity1)
-    entity2.replaceWorldEntity(2, luaEntity2)
+    wp().replaceWorldOrPreviewEntity(entity1, 2, luaEntity1)
+    wp().replaceWorldOrPreviewEntity(entity2, 2, luaEntity2)
     // break entity2
     entity2.direction = direction.east
     entity2.setTypeProperty("input")
-    expect(entity2.hasErrorAt(2)).toBe(true)
+    expect(wp().hasErrorAt(entity2, 2)).toBe(true)
 
     assert(luaEntity2.rotate())
 
@@ -1189,12 +1193,12 @@ describe("undergrounds", () => {
   })
   test("rotating a broken underground that changes pair disallowed if not first stage", () => {
     const { luaEntity1, entity1, luaEntity2, entity2 } = createUndergroundBeltPair(1, 1)
-    entity1.replaceWorldEntity(2, luaEntity1)
-    entity2.replaceWorldEntity(2, luaEntity2)
+    wp().replaceWorldOrPreviewEntity(entity1, 2, luaEntity1)
+    wp().replaceWorldOrPreviewEntity(entity2, 2, luaEntity2)
     // break entity2
     entity2.direction = direction.east
     entity2.setTypeProperty("input")
-    expect(entity2.hasErrorAt(2)).toBe(true)
+    expect(wp().hasErrorAt(entity2, 2)).toBe(true)
 
     assert(luaEntity2.rotate())
 
@@ -1268,7 +1272,7 @@ describe("train", () => {
         0,
         1,
       )
-      aEntity.replaceWorldEntity(1, e)
+      wp().replaceWorldOrPreviewEntity(aEntity, 1, e)
       project.content.addEntity(aEntity)
       e.connect_rolling_stock(defines.rail_direction.front)
       return aEntity
@@ -1319,7 +1323,7 @@ describe("car", () => {
       0,
       1,
     )
-    carProjectEntity.replaceWorldEntity(1, carEntity)
+    wp().replaceWorldOrPreviewEntity(carProjectEntity, 1, carEntity)
     project.content.addEntity(carProjectEntity)
   })
   test("resetVehicleLocation", () => {

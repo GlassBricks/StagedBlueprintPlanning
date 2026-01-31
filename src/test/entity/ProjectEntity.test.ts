@@ -5,16 +5,14 @@
 
 import { LuaEntity, ScriptRaisedBuiltEvent, ScriptRaisedDestroyEvent } from "factorio:runtime"
 import expect from "tstl-expect"
-import { Prototypes } from "../../constants"
 import { Entity } from "../../entity/Entity"
-import { ExtraEntityType, newProjectEntity, ProjectEntity } from "../../entity/ProjectEntity"
-import { getRegisteredProjectEntity } from "../../entity/registration"
+import { newProjectEntity, ProjectEntity } from "../../entity/ProjectEntity"
+import { getRegisteredProjectEntity, registerEntity } from "../../entity/registration"
 import { getEntityDiff } from "../../entity/stage-diff"
 import { deepCompare, deepCopy, Events, shallowCopy } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { getNilPlaceholder } from "../../utils/diff-value"
-import { setupTestSurfaces } from "../project/Project-mock"
-import { simpleMock } from "../simple-mock"
+
 import { createRollingStock } from "./createRollingStock"
 
 interface InserterEntity extends Entity {
@@ -478,205 +476,6 @@ describe("trySetLastStage", () => {
   })
 })
 
-describe("Get/set world entities", () => {
-  let entity: LuaEntity
-  let previewEntity: LuaEntity
-  const surfaces = setupTestSurfaces(1)
-  let projectEntity: ProjectEntity
-  before_each(() => {
-    const pos = Pos(0.5, 0.5)
-    entity = surfaces[0].create_entity({ name: "iron-chest", position: pos })!
-    previewEntity = surfaces[0].create_entity({ name: Prototypes.PreviewEntityPrefix + "iron-chest", position: pos })!
-    projectEntity = newProjectEntity({ name: entity.name }, pos, 0, 1)
-  })
-
-  test("get after replace returns the correct entity", () => {
-    expect(projectEntity.getWorldEntity(1)).toBeNil()
-    expect(projectEntity.getWorldEntity(2)).toBeNil()
-    projectEntity.replaceWorldEntity(1, entity)
-    expect(projectEntity.getWorldEntity(1)).toEqual(entity)
-    expect(projectEntity.getWorldEntity(2)).toBeNil()
-    projectEntity.replaceWorldEntity(2, entity)
-    expect(projectEntity.getWorldEntity(1)).toEqual(entity)
-    expect(projectEntity.getWorldEntity(2)).toEqual(entity)
-  })
-
-  test("replaceWorldEntity deletes old entity", () => {
-    projectEntity.replaceWorldEntity(1, entity)
-    const newEntity = surfaces[0].create_entity({ name: "iron-chest", position: Pos(1.5, 1.5) })!
-    projectEntity.replaceWorldEntity(1, newEntity)
-    expect(entity.valid).toBe(false)
-    expect(projectEntity.getWorldEntity(1)).toEqual(newEntity)
-    expect(events).toHaveLength(1)
-    expect(events[0]).toMatchTable({
-      name: defines.events.script_raised_destroy,
-      entity: {
-        name: "iron-chest",
-        position: Pos(0.5, 0.5),
-      } as any,
-      mod_name: script.mod_name,
-    } satisfies Partial<ScriptRaisedDestroyEvent>)
-  })
-
-  test("getWorldEntity returns nil if is a preview entity", () => {
-    projectEntity.replaceWorldOrPreviewEntity(1, previewEntity)
-    expect(projectEntity.getWorldEntity(1)).toBeNil()
-    expect(projectEntity.getWorldOrPreviewEntity(1)).toBe(previewEntity)
-  })
-
-  test("destroyWorldOrPreviewEntity", () => {
-    projectEntity.replaceWorldEntity(1, entity)
-    projectEntity.destroyWorldOrPreviewEntity(1)
-    expect(entity.valid).toBe(false)
-    expect(events).toHaveLength(1)
-    expect(events[0]).toMatchTable({
-      name: defines.events.script_raised_destroy,
-      entity: {
-        name: "iron-chest",
-        position: Pos(0.5, 0.5),
-      } as any,
-      mod_name: script.mod_name,
-    } satisfies Partial<ScriptRaisedDestroyEvent>)
-    expect(projectEntity.getWorldEntity(1)).toBeNil()
-  })
-
-  test("replace with nil destroys the entity", () => {
-    projectEntity.replaceWorldEntity(1, entity)
-    projectEntity.replaceWorldEntity(1, nil)
-    expect(entity.valid).toBe(false)
-    expect(projectEntity.getWorldEntity(1)).toBeNil()
-  })
-
-  test("replace world entity deletes old entity", () => {
-    projectEntity.replaceWorldEntity(1, entity)
-    const newEntity = surfaces[0].create_entity({ name: "iron-chest", position: Pos(1.5, 1.5) })!
-    projectEntity.replaceWorldEntity(1, newEntity)
-    expect(entity.valid).toBe(false)
-    expect(projectEntity.getWorldEntity(1)).toEqual(newEntity)
-  })
-
-  test("replace world entity does not delete if same entity", () => {
-    projectEntity.replaceWorldEntity(1, entity)
-    projectEntity.replaceWorldEntity(1, entity)
-    expect(entity.valid).toBe(true)
-    expect(projectEntity.getWorldEntity(1)).toEqual(entity)
-  })
-
-  test("get world entity returns nil if entity becomes invalid", () => {
-    projectEntity.replaceWorldEntity(1, entity)
-    entity.destroy()
-    expect(projectEntity.getWorldEntity(1)).toBeNil()
-  })
-
-  test("destroyAllWorldOrPreviewEntities", () => {
-    projectEntity.replaceWorldOrPreviewEntity(1, entity)
-    projectEntity.replaceWorldOrPreviewEntity(2, previewEntity)
-    projectEntity.destroyAllWorldOrPreviewEntities()
-    expect(entity.valid).toBe(false)
-    expect(previewEntity.valid).toBe(false)
-    expect(projectEntity.getWorldEntity(1)).toBeNil()
-    expect(projectEntity.getWorldEntity(2)).toBeNil()
-
-    expect(events).toHaveLength(2)
-    expect(events[0]).toMatchTable({
-      name: defines.events.script_raised_destroy,
-      entity: {
-        name: "iron-chest",
-        position: Pos(0.5, 0.5),
-        direction: 0,
-      } as any,
-      mod_name: script.mod_name,
-    } satisfies Partial<ScriptRaisedDestroyEvent>)
-    expect(events[1]).toMatchTable({
-      name: defines.events.script_raised_destroy,
-      entity: {
-        name: Prototypes.PreviewEntityPrefix + "iron-chest",
-        position: Pos(0.5, 0.5),
-        direction: 0,
-      } as any,
-      mod_name: script.mod_name,
-    } satisfies Partial<ScriptRaisedDestroyEvent>)
-  })
-
-  test("hasWorldEntityInRange", () => {
-    expect(projectEntity.hasWorldEntityInRange(1, 2)).toBe(false)
-    projectEntity.replaceWorldEntity(2, entity)
-    projectEntity.replaceWorldEntity(5, entity)
-    expect(projectEntity.hasWorldEntityInRange(1, 1)).toBe(false)
-    expect(projectEntity.hasWorldEntityInRange(1, 3)).toBe(true)
-    expect(projectEntity.hasWorldEntityInRange(3, 4)).toBe(false)
-    expect(projectEntity.hasWorldEntityInRange(3, 5)).toBe(true)
-  })
-})
-
-declare module "../../entity/ProjectEntity" {
-  interface ExtraEntities {
-    _type?: LuaEntity
-  }
-}
-describe("get/set extra entities", () => {
-  const type: ExtraEntityType = "_type"
-  let entity: LuaEntity
-  let projectEntity: ProjectEntity
-  before_each(() => {
-    entity = simpleMock<LuaEntity>({ name: "test", position: Pos(0, 0) })
-    projectEntity = newProjectEntity({ name: entity.name }, Pos(0, 0), 0, 1)
-  })
-
-  test("get after replace returns the correct entity", () => {
-    expect(projectEntity.getExtraEntity(type, 1)).toBeNil()
-    expect(projectEntity.getExtraEntity(type, 2)).toBeNil()
-    projectEntity.replaceExtraEntity(type, 1, entity)
-    expect(projectEntity.getExtraEntity(type, 1)).toEqual(entity)
-    expect(projectEntity.getExtraEntity(type, 2)).toBeNil()
-    projectEntity.replaceExtraEntity(type, 2, entity)
-    expect(projectEntity.getExtraEntity(type, 1)).toEqual(entity)
-    expect(projectEntity.getExtraEntity(type, 2)).toEqual(entity)
-  })
-
-  test("destroyExtraEntity", () => {
-    projectEntity.replaceExtraEntity(type, 1, entity)
-    projectEntity.destroyExtraEntity(type, 1)
-    expect(entity.valid).toBe(false)
-    expect(projectEntity.getExtraEntity(type, 1)).toBeNil()
-  })
-
-  test("replace with nil destroys the entity", () => {
-    projectEntity.replaceExtraEntity(type, 1, entity)
-    projectEntity.replaceExtraEntity(type, 1, nil)
-    expect(entity.valid).toBe(false)
-    expect(projectEntity.getExtraEntity(type, 1)).toBeNil()
-  })
-
-  test("replace extra entity deletes old entity", () => {
-    projectEntity.replaceExtraEntity(type, 1, entity)
-    const newEntity = simpleMock<LuaEntity>({ name: "test", position: Pos(0, 0) })
-    projectEntity.replaceExtraEntity(type, 1, newEntity)
-    expect(entity.valid).toBe(false)
-    expect(projectEntity.getExtraEntity(type, 1)).toEqual(newEntity)
-  })
-
-  test("replace extra entity does not delete if same entity", () => {
-    projectEntity.replaceExtraEntity(type, 1, entity)
-    projectEntity.replaceExtraEntity(type, 1, entity)
-    expect(entity.valid).toBe(true)
-    expect(projectEntity.getExtraEntity(type, 1)).toEqual(entity)
-  })
-
-  test("get extra entity returns nil if entity becomes invalid", () => {
-    projectEntity.replaceExtraEntity(type, 1, entity)
-    entity.destroy()
-    expect(projectEntity.getExtraEntity(type, 1)).toBeNil()
-  })
-
-  test("destroyAllExtraEntities", () => {
-    projectEntity.replaceExtraEntity(type, 1, entity)
-    projectEntity.destroyAllExtraEntities(type)
-    expect(entity.valid).toBe(false)
-    expect(projectEntity.getExtraEntity(type, 1)).toBeNil()
-  })
-})
-
 describe("rolling stock", () => {
   test("rolling stock only appears in its first stage", () => {
     const projectEntity = newProjectEntity({ name: "cargo-wagon" }, Pos(0, 0), 0, 2)
@@ -693,10 +492,10 @@ describe("rolling stock", () => {
     expect(adjusted).toBe(false)
     expect(projectEntity.firstValue.orientation).toBe(0.25)
   })
-  test("setting a rolling stock world entity will register it in entity-registration", () => {
+  test("registering a rolling stock registers it in entity-registration", () => {
     const rollingStock = createRollingStock()
 
-    projectEntity.replaceWorldEntity(1, rollingStock)
+    registerEntity(rollingStock, projectEntity)
     const found = getRegisteredProjectEntity(rollingStock)
     expect(found).toEqual(projectEntity)
   })
@@ -737,10 +536,7 @@ describe("get/set properties", () => {
 
 describe("insert/deleting stages", () => {
   test("insert stage after base", () => {
-    const luaEntity = simpleMock<LuaEntity>({ name: "test", type: "inserter" })
-    const entity = newProjectEntity({ name: luaEntity.name, override_stack_size: 1 }, Pos(0, 0), 0, 1)
-    entity.replaceWorldEntity(2, luaEntity)
-    entity.replaceWorldEntity(3, luaEntity)
+    const entity = newProjectEntity({ name: "fast-inserter", override_stack_size: 1 }, Pos(0, 0), 0, 1)
     entity.setProperty("foo", 2, "bar2")
     entity.setProperty("foo", 3, "bar3")
     entity.setProperty("foo", 4, "bar4")
@@ -751,14 +547,8 @@ describe("insert/deleting stages", () => {
 
     entity.insertStage(3)
 
-    // all keys at 3 and above are shifted up
-
     expect(entity.firstStage).toEqual(1)
     expect(entity.lastStage).toEqual(5)
-
-    expect(entity.getWorldEntity(2)).toBeAny()
-    expect(entity.getWorldEntity(3)).toBeNil()
-    expect(entity.getWorldEntity(4)).toBeAny()
 
     expect(entity.getProperty("foo", 2)).toBe("bar2")
     expect(entity.getProperty("foo", 3)).toBeNil()
@@ -804,7 +594,6 @@ describe("insert/deleting stages", () => {
   })
 
   test("delete stage after firstStage", () => {
-    const luaEntity = simpleMock<LuaEntity>({ name: "test", type: "inserter" })
     const entity = newProjectEntity<InserterEntity>(
       {
         name: "fast-inserter",
@@ -814,9 +603,6 @@ describe("insert/deleting stages", () => {
       0,
       1,
     )
-    entity.replaceWorldEntity(2, luaEntity)
-    entity.replaceWorldEntity(3, luaEntity)
-    entity.replaceWorldEntity(4, luaEntity)
     entity.setProperty("foo", 2, "bar2")
     entity.setProperty("foo", 3, "bar3")
     entity.setProperty("foo", 4, "bar4")
@@ -827,14 +613,8 @@ describe("insert/deleting stages", () => {
 
     entity.mergeStage(3)
 
-    // key 3 is deleted, all keys above it are shifted down
-
     expect(entity.firstStage).toEqual(1)
     expect(entity.lastStage).toEqual(3)
-
-    expect(entity.getWorldEntity(2)).toBeAny()
-    expect(entity.getWorldEntity(3)).toBeAny()
-    expect(entity.getWorldEntity(4)).toBeNil()
 
     expect(entity.getProperty("foo", 2)).toBe("bar2")
     expect(entity.getProperty("foo", 3)).toBe("bar4")

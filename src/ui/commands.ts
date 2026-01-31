@@ -12,7 +12,7 @@ commands.add_command(
     let numDeleted = 0
     for (const project of getAllProjects()) {
       for (const entity of project.content.allEntities()) {
-        const broken = entity.getWorldEntity(entity.firstStage) == nil
+        const broken = project.worldPresentation.getWorldEntity(entity, entity.firstStage) == nil
         if (broken) {
           project.updates.forceDeleteEntity(entity)
           numDeleted++

@@ -1,10 +1,18 @@
 import { HighlightBoxEntity, LuaEntity, LuaRenderObject, nil } from "factorio:runtime"
-import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
+import { ProjectEntity, StageNumber, UndergroundBeltProjectEntity } from "../entity/ProjectEntity"
+import { isPreviewEntity, movableTypes } from "../entity/prototype-info"
 import { RegisterClass } from "../lib"
+import { registerEntity } from "../entity/registration"
 import { EntityHighlights } from "./entity-highlights"
 import { EntityStorage } from "./EntityStorage"
 import { Project } from "./ProjectDef"
 import { WorldUpdates } from "./world-updates"
+
+export interface WorldEntityLookup {
+  getWorldOrPreviewEntity(entity: ProjectEntity, stage: StageNumber): LuaEntity | nil
+  getWorldEntity(entity: ProjectEntity, stage: StageNumber): LuaEntity | nil
+  hasErrorAt(entity: ProjectEntity, stage: StageNumber): boolean
+}
 
 export interface WorldEntityTypes {
   worldOrPreviewEntity: LuaEntity
@@ -18,6 +26,8 @@ export interface WorldEntityTypes {
   itemRequestHighlightOverlay: LuaRenderObject
 }
 
+const raise_destroy = script.raise_script_destroy
+
 interface Closures {
   worldUpdates: WorldUpdates
   highlights: EntityHighlights
@@ -28,7 +38,7 @@ const closureCache = setmetatable(new LuaMap<WorldPresentation, Closures>(), { _
 function getClosures(wp: WorldPresentation): Closures {
   let cached = closureCache.get(wp)
   if (!cached) {
-    const highlights = EntityHighlights(wp.project)
+    const highlights = EntityHighlights(wp.project, wp, wp.entityStorage)
     const worldUpdates = WorldUpdates(wp.project, highlights)
     cached = { worldUpdates, highlights }
     closureCache.set(wp, cached)
@@ -37,7 +47,7 @@ function getClosures(wp: WorldPresentation): Closures {
 }
 
 @RegisterClass("WorldPresentation")
-export class WorldPresentation {
+export class WorldPresentation implements WorldEntityLookup {
   readonly entityStorage = new EntityStorage<WorldEntityTypes>()
 
   constructor(readonly project: Project) {}
@@ -51,18 +61,83 @@ export class WorldPresentation {
   }
 
   getWorldOrPreviewEntity(entity: ProjectEntity, stage: StageNumber): LuaEntity | nil {
-    return entity.getWorldOrPreviewEntity(stage)
+    const luaEntity = this.entityStorage.get(entity, "worldOrPreviewEntity", stage)
+    if (luaEntity && luaEntity.valid) return luaEntity
+    if (luaEntity) this.entityStorage.delete(entity, "worldOrPreviewEntity", stage)
+    return nil
   }
 
   getWorldEntity(entity: ProjectEntity, stage: StageNumber): LuaEntity | nil {
-    return entity.getWorldEntity(stage)
+    const luaEntity = this.getWorldOrPreviewEntity(entity, stage)
+    if (luaEntity && !isPreviewEntity(luaEntity)) return luaEntity
+    return nil
   }
 
   replaceWorldOrPreviewEntity(entity: ProjectEntity, stage: StageNumber, luaEntity: LuaEntity | nil): void {
-    entity.replaceWorldOrPreviewEntity(stage, luaEntity)
+    const existing = this.entityStorage.get(entity, "worldOrPreviewEntity", stage)
+    if (existing && existing.valid && existing != luaEntity) {
+      raise_destroy({ entity: existing })
+      existing.destroy()
+    }
+    this.entityStorage.set(entity, "worldOrPreviewEntity", stage, luaEntity)
+    if (luaEntity && movableTypes.has(luaEntity.type)) {
+      registerEntity(luaEntity, entity)
+    }
+  }
+
+  destroyWorldOrPreviewEntity(entity: ProjectEntity, stage: StageNumber): void {
+    const existing = this.entityStorage.get(entity, "worldOrPreviewEntity", stage)
+    if (existing && existing.valid) {
+      raise_destroy({ entity: existing })
+      existing.destroy()
+    }
+    this.entityStorage.delete(entity, "worldOrPreviewEntity", stage)
+  }
+
+  destroyAllWorldOrPreviewEntities(entity: ProjectEntity): void {
+    for (const [, luaEntity] of this.entityStorage.iterateType(entity, "worldOrPreviewEntity")) {
+      if (luaEntity.valid) {
+        raise_destroy({ entity: luaEntity })
+        luaEntity.destroy()
+      }
+    }
+    this.entityStorage.deleteAllOfType(entity, "worldOrPreviewEntity")
+  }
+
+  hasWorldEntityInRange(entity: ProjectEntity, start: StageNumber, end: StageNumber): boolean {
+    for (const [stage, luaEntity] of this.entityStorage.iterateType(entity, "worldOrPreviewEntity")) {
+      if (stage >= start && stage <= end) {
+        if (luaEntity.valid && !isPreviewEntity(luaEntity)) return true
+        if (!luaEntity.valid) this.entityStorage.delete(entity, "worldOrPreviewEntity", stage)
+      }
+    }
+    return false
   }
 
   hasErrorAt(entity: ProjectEntity, stage: StageNumber): boolean {
-    return entity.hasErrorAt(stage)
+    if (!entity.isInStage(stage)) return false
+    const worldEntity = this.getWorldEntity(entity, stage)
+    if (worldEntity == nil) return true
+    if (worldEntity.type == "underground-belt") {
+      const expectedType = (entity as UndergroundBeltProjectEntity).firstValue.type
+      return worldEntity.belt_to_ground_type != expectedType
+    }
+    return false
+  }
+
+  deleteAllForEntity(entity: ProjectEntity): void {
+    this.entityStorage.deleteAllForEntity(entity)
+  }
+
+  onStageInserted(stageNumber: StageNumber): void {
+    for (const entity of this.project.content.allEntities()) {
+      this.entityStorage.shiftStageKeysUp(entity, stageNumber)
+    }
+  }
+
+  onStageDeleted(stageNumber: StageNumber): void {
+    for (const entity of this.project.content.allEntities()) {
+      this.entityStorage.shiftStageKeysDown(entity, stageNumber)
+    }
   }
 }

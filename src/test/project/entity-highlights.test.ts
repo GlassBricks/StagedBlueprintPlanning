@@ -14,6 +14,7 @@ import { Project } from "../../project/ProjectDef"
 import { simpleInsertPlan } from "../entity/entity-util"
 import { moduleMock } from "../module-mock"
 import { simpleMock } from "../simple-mock"
+import { createWorldPresentationQueries, TestWorldQueries } from "../integration/test-world-queries"
 import {
   assertConfigChangedHighlightsCorrect,
   assertErrorHighlightsCorrect,
@@ -34,9 +35,19 @@ const highlightCreator = moduleMock(_highlightCreator, false)
 
 const surfaces = setupTestSurfaces(5)
 let entityHighlights: EntityHighlights
+let wq: TestWorldQueries
+
+function wp() {
+  return project.worldPresentation
+}
+function es() {
+  return project.worldPresentation.entityStorage
+}
+
 before_each(() => {
   project = createMockProject(surfaces)
-  entityHighlights = EntityHighlights(project)
+  entityHighlights = EntityHighlights(project, project.worldPresentation, project.worldPresentation.entityStorage)
+  wq = createWorldPresentationQueries(project.worldPresentation)
   highlightCreator.createSprite.invokes((params) => simpleMock(params as any))
   entity = newProjectEntity({ name: "stone-furnace" }, Pos(1, 1), 0, 2)
 })
@@ -61,29 +72,29 @@ function createPreview(stage: StageNumber, params: Partial<SurfaceCreateEntity> 
 }
 
 function removeInStage(stage: StageNumber) {
-  entity.replaceWorldOrPreviewEntity(stage, createPreview(stage))
+  wp().replaceWorldOrPreviewEntity(entity, stage, createPreview(stage))
 }
 function addInStage(stage: StageNumber) {
-  entity.replaceWorldOrPreviewEntity(stage, createEntity(stage))
+  wp().replaceWorldOrPreviewEntity(entity, stage, createEntity(stage))
 }
 describe("error highlights", () => {
   before_each(() => {
     for (const i of $range(1, 5)) addInStage(i)
   })
   after_each(() => {
-    assertErrorHighlightsCorrect(entity, 5)
+    assertErrorHighlightsCorrect(entity, 5, wq)
   })
   test("creates highlight when world entity missing", () => {
     removeInStage(2)
     entityHighlights.updateAllHighlights(entity)
-    expect(entity.getExtraEntity("errorOutline", 2)!).toBeAny()
+    expect(es().get(entity, "errorOutline", 2)!).toBeAny()
   })
   test("deletes highlight when entity revived", () => {
     removeInStage(2)
     entityHighlights.updateAllHighlights(entity)
     addInStage(2)
     entityHighlights.updateAllHighlights(entity)
-    expect(entity.getExtraEntity("errorOutline", 2)).toBeNil()
+    expect(es().get(entity, "errorOutline", 2)).toBeNil()
   })
 
   test.each<[readonly number[]]>([[[2]], [[2, 3]], [[2, 4]], [[3]]])(
@@ -98,9 +109,9 @@ describe("error highlights", () => {
 
       for (let i = 1; i < 5; i++) {
         if (stageSet.has(i)) {
-          expect(entity.getExtraEntity("errorElsewhereIndicator", i)).toBeNil()
+          expect(es().get(entity, "errorElsewhereIndicator", i)).toBeNil()
         } else {
-          expect(entity.getExtraEntity("errorElsewhereIndicator", i)).toBeAny()
+          expect(es().get(entity, "errorElsewhereIndicator", i)).toBeAny()
         }
       }
     },
@@ -110,18 +121,18 @@ describe("error highlights", () => {
     removeInStage(2)
     removeInStage(3)
     entityHighlights.updateAllHighlights(entity)
-    for (let i = 4; i <= 5; i++) expect(entity.getExtraEntity("errorElsewhereIndicator", i)).toBeAny()
+    for (let i = 4; i <= 5; i++) expect(es().get(entity, "errorElsewhereIndicator", i)).toBeAny()
     addInStage(3)
     entityHighlights.updateAllHighlights(entity)
-    for (let i = 3; i <= 5; i++) expect(entity.getExtraEntity("errorElsewhereIndicator", i)).toBeAny()
+    for (let i = 3; i <= 5; i++) expect(es().get(entity, "errorElsewhereIndicator", i)).toBeAny()
     addInStage(2)
     entityHighlights.updateAllHighlights(entity)
-    for (let i = 1; i <= 5; i++) expect(entity.getExtraEntity("errorElsewhereIndicator", i)).toBeNil()
+    for (let i = 1; i <= 5; i++) expect(es().get(entity, "errorElsewhereIndicator", i)).toBeNil()
   })
 
   test("does nothing if created in lower than first stage", () => {
     entityHighlights.updateAllHighlights(entity)
-    expect(entity.getExtraEntity("errorOutline", 1)).toBeNil()
+    expect(es().get(entity, "errorOutline", 1)).toBeNil()
   })
 })
 describe("undergrounds", () => {
@@ -140,7 +151,8 @@ describe("undergrounds", () => {
       2,
     )
     project.content.addEntity(undergroundEntity)
-    undergroundEntity.replaceWorldOrPreviewEntity(
+    wp().replaceWorldOrPreviewEntity(
+      undergroundEntity,
       1,
       createPreview(1, {
         name: "underground-belt",
@@ -148,7 +160,8 @@ describe("undergrounds", () => {
       }),
     )
     for (const i of $range(2, 5)) {
-      undergroundEntity.replaceWorldOrPreviewEntity(
+      wp().replaceWorldOrPreviewEntity(
+        undergroundEntity,
         i,
         createEntity(i, {
           name: "underground-belt",
@@ -159,14 +172,14 @@ describe("undergrounds", () => {
       )
     }
     entityHighlights.updateAllHighlights(undergroundEntity)
-    expect(undergroundEntity.getExtraEntity("errorOutline", 2)).toBeAny()
-    assertErrorHighlightsCorrect(undergroundEntity, 5)
+    expect(es().get(undergroundEntity, "errorOutline", 2)).toBeAny()
+    assertErrorHighlightsCorrect(undergroundEntity, 5, wq)
   })
 })
 
 describe("config changed highlight", () => {
   before_each(() => {
-    for (const i of $range(1, 5)) entity.replaceWorldEntity(i, createEntity(i))
+    for (const i of $range(1, 5)) wp().replaceWorldOrPreviewEntity(entity, i, createEntity(i))
   })
   function setAt(stage: StageNumber) {
     assert(stage >= 2)
@@ -184,7 +197,7 @@ describe("config changed highlight", () => {
   }
   function assertCorrect() {
     entityHighlights.updateAllHighlights(entity)
-    assertConfigChangedHighlightsCorrect(entity, 5)
+    assertConfigChangedHighlightsCorrect(entity, 5, wq)
   }
   test("single", () => {
     setAt(3)
@@ -223,7 +236,7 @@ describe("config changed highlight", () => {
     assertCorrect()
     entity.setFirstStageUnchecked(2)
     assertCorrect()
-    expect(entity.getExtraEntity("configChangedLaterHighlight", 1)).toBeNil()
+    expect(es().get(entity, "configChangedLaterHighlight", 1)).toBeNil()
   })
 })
 
@@ -231,7 +244,7 @@ describe("stage delete highlights", () => {
   test("sets highlight if lastStage is set", () => {
     entity.setLastStageUnchecked(3)
     entityHighlights.updateAllHighlights(entity)
-    assertLastStageHighlightCorrect(entity)
+    assertLastStageHighlightCorrect(entity, wq)
   })
 
   test("removes highlight if lastStage is cleared", () => {
@@ -239,14 +252,14 @@ describe("stage delete highlights", () => {
     entityHighlights.updateAllHighlights(entity)
     entity.setLastStageUnchecked(nil)
     entityHighlights.updateAllHighlights(entity)
-    assertLastStageHighlightCorrect(entity)
+    assertLastStageHighlightCorrect(entity, wq)
   })
 
   test("does not create highlight if entity is movable", () => {
     const movableEntity = newProjectEntity({ name: "locomotive" }, Pos(1, 1), 0, 2)
     movableEntity.setLastStageUnchecked(3)
     entityHighlights.updateAllHighlights(movableEntity)
-    assertLastStageHighlightCorrect(movableEntity)
+    assertLastStageHighlightCorrect(movableEntity, wq)
   })
 })
 
@@ -263,7 +276,7 @@ describe("settings remnants", () => {
     createSettingsRemnant()
     entityHighlights.makeSettingsRemnantHighlights(entity)
     for (let i = 1; i <= 5; i++) {
-      expect(entity.getExtraEntity("settingsRemnantHighlight", i)).toBeAny()
+      expect(es().get(entity, "settingsRemnantHighlight", i)).toBeAny()
     }
   })
   test("tryReviveSettingsRemnant removes highlights and sets entities correct", () => {
@@ -272,7 +285,7 @@ describe("settings remnants", () => {
     reviveSettingsRemnant()
     entityHighlights.updateHighlightsOnReviveSettingsRemnant(entity)
     for (let i = 1; i <= 5; i++) {
-      expect(entity.getExtraEntity("settingsRemnantHighlight", i)).toBeNil()
+      expect(es().get(entity, "settingsRemnantHighlight", i)).toBeNil()
     }
   })
 })
@@ -282,18 +295,18 @@ describe("stage request highlights", () => {
       items: [simpleInsertPlan(defines.inventory.item_main, "iron-plate", 0)],
     })
     entityHighlights.updateAllHighlights(entity)
-    assertItemRequestHighlightsCorrect(entity, 5)
+    assertItemRequestHighlightsCorrect(entity, 5, wq)
   })
 })
 
 test("deleteAllHighlights", () => {
-  entity.destroyWorldOrPreviewEntity(2)
-  entity.destroyWorldOrPreviewEntity(3)
+  wp().destroyWorldOrPreviewEntity(entity, 2)
+  wp().destroyWorldOrPreviewEntity(entity, 3)
   entityHighlights.updateAllHighlights(entity)
   entityHighlights.deleteAllHighlights(entity)
   for (let i = 1; i <= 5; i++) {
     for (const type of keys<HighlightEntities>()) {
-      expect(entity.getExtraEntity(type, i)).toBeNil()
+      expect(es().get(entity, type, i)).toBeNil()
     }
   }
 })

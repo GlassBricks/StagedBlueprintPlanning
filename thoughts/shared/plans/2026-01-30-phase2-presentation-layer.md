@@ -432,14 +432,14 @@ No individual test files change.
 ### Success Criteria
 
 #### Automated
-- [ ] `pnpm run test` — all tests pass
-- [ ] `pnpm run lint && pnpm run format:fix` — clean
-- [ ] Grep for `\.getWorldEntity\(` on `ProjectEntity` references returns zero results outside of `WorldPresentation`
-- [ ] Grep for `\.getWorldOrPreviewEntity\(` on `ProjectEntity` references returns zero results
-- [ ] Grep for `\.replaceWorldEntity\(` returns zero results
-- [ ] Grep for `\.hasErrorAt\(` on `ProjectEntity` references returns zero results
-- [ ] Grep for `\.destroyWorldOrPreviewEntity\(` on `ProjectEntity` references returns zero results
-- [ ] Grep for `\.destroyAllWorldOrPreviewEntities\(` returns zero results
+- [x] `pnpm run test` — all tests pass
+- [x] `pnpm run lint && pnpm run format:fix` — clean
+- [x] Grep for `\.getWorldEntity\(` on `ProjectEntity` references returns zero results outside of `WorldPresentation`
+- [x] Grep for `\.getWorldOrPreviewEntity\(` on `ProjectEntity` references returns zero results
+- [x] Grep for `\.replaceWorldEntity\(` returns zero results
+- [x] Grep for `\.hasErrorAt\(` on `ProjectEntity` references returns zero results
+- [x] Grep for `\.destroyWorldOrPreviewEntity\(` on `ProjectEntity` references returns zero results
+- [x] Grep for `\.destroyAllWorldOrPreviewEntities\(` returns zero results
 
 ---
 

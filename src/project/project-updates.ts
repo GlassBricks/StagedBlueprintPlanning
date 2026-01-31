@@ -103,6 +103,7 @@ export interface ProjectUpdates {
 
 export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): ProjectUpdates {
   const content = project.content
+  const wp = project.worldPresentation
 
   const {
     deleteWorldEntities,
@@ -179,7 +180,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   ): ProjectEntity | nil {
     const projectEntity = createNewProjectEntity(entity, stage, stageInfo, items)
     if (!projectEntity) return nil
-    projectEntity.replaceWorldEntity(stage, entity)
+    wp.replaceWorldOrPreviewEntity(projectEntity, stage, entity)
     content.addEntity(projectEntity)
 
     fixNewUndergroundBelt(projectEntity, entity, stage)
@@ -189,7 +190,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     }
 
     updateNewWorldEntitiesWithoutWires(projectEntity)
-    const hasDiff = saveWireConnections(content, projectEntity, stage, project.lastStageFor(projectEntity))
+    const hasDiff = saveWireConnections(content, projectEntity, stage, project.lastStageFor(projectEntity), wp)
     if (hasDiff) {
       updateWireConnections(projectEntity)
     }
@@ -204,7 +205,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     if (!connections) return false
     const stage = entity.firstStage
     for (const [otherEntity] of connections) {
-      if (otherEntity.getWorldEntity(stage) == nil) {
+      if (wp.getWorldEntity(otherEntity, stage) == nil) {
         // has a connection at the first stage, but not one in the world
         return true
       }
@@ -275,13 +276,13 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     stage: StageNumber,
     items: BlueprintInsertPlan[] | nil,
   ): EntityUpdateResult {
-    const entitySource = entity.getWorldEntity(stage)
+    const entitySource = wp.getWorldEntity(entity, stage)
     if (!entitySource) return EntityUpdateResult.NoChange
     return handleUpdate(entity, entitySource, stage, entitySource.direction, nil, true, items)
   }
 
   function tryRotateEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult {
-    const entitySource = entity.getWorldEntity(stage)
+    const entitySource = wp.getWorldEntity(entity, stage)
     if (!entitySource) return EntityUpdateResult.NoChange
     return handleUpdate(entity, entitySource, stage, entitySource.direction, nil, false, nil)
   }
@@ -292,7 +293,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   }
 
   function tryUpgradeEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult {
-    const entitySource = entity.getWorldEntity(stage)
+    const entitySource = wp.getWorldEntity(entity, stage)
     if (!entitySource) return EntityUpdateResult.NoChange
 
     const [upgradeName, upgradeQuality] = entitySource.get_upgrade_target()
@@ -492,10 +493,10 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     const pair = findUndergroundPair(content, entity, stage)
     const updateResult = doUndergroundBeltUpdate(entity, worldEntity, pair, stage, targetDirection, targetUpgrade)
 
-    const newWorldEntity = entity.getWorldEntity(stage)
+    const newWorldEntity = wp.getWorldEntity(entity, stage)
     if (newWorldEntity) {
       const worldPair = newWorldEntity.neighbours as LuaEntity | nil
-      if (worldPair && (!pair || pair.getWorldEntity(stage) != worldPair)) {
+      if (worldPair && (!pair || wp.getWorldEntity(pair, stage) != worldPair)) {
         // this pair is not the expected pair, so doUndergroundBeltUpdate didn't update it
         // this is an error state, just update highlights
         const worldPairEntity = content.findCompatibleWithLuaEntity(worldPair, nil, stage)
@@ -507,7 +508,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   }
 
   function updateWiresFromWorld(entity: ProjectEntity, stage: StageNumber): WireUpdateResult {
-    const connectionsChanged = saveWireConnections(content, entity, stage, stage)
+    const connectionsChanged = saveWireConnections(content, entity, stage, stage, wp)
     if (!connectionsChanged) return WireUpdateResult.NoChange
 
     updateWorldEntities(entity, entity.firstStage)
@@ -716,7 +717,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
 
   function resetVehicleLocation(entity: MovableProjectEntity): void {
     const stage = entity.firstStage
-    const luaEntity = entity.getWorldEntity(stage)
+    const luaEntity = wp.getWorldEntity(entity, stage)
     if (!luaEntity) {
       refreshWorldEntityAtStage(entity, stage)
       return
@@ -725,7 +726,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     const train = luaEntity.train
     if (train) {
       const projectEntities = train.carriages.map((e) => content.findCompatibleWithLuaEntity(e, nil, stage)!)
-      for (const entity of projectEntities) entity.destroyAllWorldOrPreviewEntities() // destroy entire train, before rebuild
+      for (const entity of projectEntities) wp.destroyAllWorldOrPreviewEntities(entity)
       for (const entity of projectEntities) rebuildWorldEntityAtStage(entity, stage)
     } else {
       rebuildWorldEntityAtStage(entity, stage)
@@ -734,7 +735,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
 
   function setVehicleLocationHere(entity: MovableProjectEntity): void {
     const stage = entity.firstStage
-    const luaEntity = entity.getWorldEntity(stage)
+    const luaEntity = wp.getWorldEntity(entity, stage)
     if (!luaEntity) return
 
     const train = luaEntity.train

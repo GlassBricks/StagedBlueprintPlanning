@@ -303,7 +303,7 @@ describe("underground belt inconsistencies", () => {
           direction: defines.direction.east,
           position: pos.add(1, 0),
         })
-        middle.destroyAllWorldOrPreviewEntities()
+        ctx.project.worldPresentation.destroyAllWorldOrPreviewEntities(middle)
       }
       rightUnderground = ctx.buildEntity<UndergroundBeltBlueprintEntity>(1, {
         name: "underground-belt",
@@ -493,7 +493,7 @@ describe("underground belt inconsistencies", () => {
           direction: defines.direction.east,
           position: pos.add(1, 0),
         })
-        entity.destroyAllWorldOrPreviewEntities()
+        ctx.project.worldPresentation.destroyAllWorldOrPreviewEntities(entity)
       }
       ctx.player.build_from_cursor({
         position: pos.add(2, 0),

@@ -96,7 +96,8 @@ test("includes only entities present in last x stages or in additionalWhitelist 
 
   createEntity(stage1) // not included
   const e1 = createEntity(stage1, [1.5, 1.5]) // included, as has changed in stage 2
-  const e1Stage2 = project.content.findCompatibleWithLuaEntity(e1, nil, 1)!.getWorldEntity(2)!
+  const e1Proj = project.content.findCompatibleWithLuaEntity(e1, nil, 1)!
+  const e1Stage2 = project.worldPresentation.getWorldEntity(e1Proj, 2)!
   e1Stage2.get_inventory(defines.inventory.chest)!.set_bar(3)
   checkForEntityUpdates(e1Stage2, nil)
   const e2 = createEntity(stage2, [2.5, 2.5]) // included
@@ -106,7 +107,10 @@ test("includes only entities present in last x stages or in additionalWhitelist 
   const e4 = createEntity(stage1, [5.5, 5.5], "steel-chest") // included, in additional whitelist
 
   const e5 = createEntity(stage1, [6.5, 6.5], "iron-chest") // included, has wire-connection with e3
-  const e5stage3 = project.content.findCompatibleWithLuaEntity(e5, nil, 1)!.getWorldEntity(3)!
+  const e5stage3 = project.worldPresentation.getWorldEntity(
+    project.content.findCompatibleWithLuaEntity(e5, nil, 1)!,
+    3,
+  )!
   e5stage3
     .get_wire_connector(defines.wire_connector_id.circuit_red, true)
     .connect_to(e3.get_wire_connector(defines.wire_connector_id.circuit_red, true))

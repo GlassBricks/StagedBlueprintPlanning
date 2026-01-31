@@ -15,6 +15,7 @@ Events.on_player_setup_blueprint((event) => {
   if (!stage) return
   const projectContent = stage.project.content
   const stageNumber = stage.stageNumber
+  const wp = stage.project.worldPresentation
 
   const unstagedValues: PRecord<
     number,
@@ -27,7 +28,7 @@ Events.on_player_setup_blueprint((event) => {
 
   for (const [entityNumber, entity] of pairs(event.mapping.get())) {
     const position = entity.position
-    const projectEntity = projectContent.findEntityExact(entity, position, stageNumber)
+    const projectEntity = projectContent.findEntityExact(entity, position, stageNumber, wp)
     if (!projectEntity) continue
     const requests = projectEntity.getUnstagedValue(stageNumber)?.items
     if (requests) {

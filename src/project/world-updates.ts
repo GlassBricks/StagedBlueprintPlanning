@@ -144,6 +144,7 @@ OnPrototypeInfoLoaded.addListener((info) => {
 
 export function WorldUpdates(project: Project, highlights: EntityHighlights): WorldUpdates {
   const content = project.content
+  const wp = project.worldPresentation
   const {
     updateAllHighlights,
     deleteAllHighlights,
@@ -196,12 +197,12 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     direction: defines.direction,
     previewName: string, // preview name is passed to avoid extra string concatenation
   ): void {
-    const existing = entity.getWorldOrPreviewEntity(stage)
+    const existing = wp.getWorldOrPreviewEntity(entity, stage)
     if (existing && existing.name == previewName) {
       existing.direction = direction
     } else {
       const previewEntity = createPreviewEntity(project.getSurface(stage)!, entity.position, direction, previewName)
-      entity.replaceWorldOrPreviewEntity(stage, previewEntity)
+      wp.replaceWorldOrPreviewEntity(entity, stage, previewEntity)
     }
   }
 
@@ -235,7 +236,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     let lastUnstagedValue: UnstagedEntityProps | nil = nil
     for (const [stage, value, diffChanged] of entity.iterateValues(startStage, endStage)) {
       const surface = project.getSurface(stage)!
-      const existing = entity.getWorldOrPreviewEntity(stage)
+      const existing = wp.getWorldOrPreviewEntity(entity, stage)
       const wasPreviewEntity = existing && isPreviewEntity(existing)
       const existingNormalEntity = !wasPreviewEntity && existing
 
@@ -265,7 +266,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
 
         if (luaEntity) {
           setEntityUpdateable(luaEntity, stage == firstStage)
-          entity.replaceWorldOrPreviewEntity(stage, luaEntity)
+          wp.replaceWorldOrPreviewEntity(entity, stage, luaEntity)
           // now is not preview entity, so error state changed
           if (wasPreviewEntity) hasOrResolvedError = true
 
@@ -300,7 +301,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     if (worldUpdatesBlocked) return
     const lastStage = project.lastStageFor(entity)
     for (const stage of $range(startStage, lastStage)) {
-      updateWireConnectionsAtStage(content, entity, stage)
+      updateWireConnectionsAtStage(content, entity, stage, wp)
     }
   }
 
@@ -325,7 +326,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
 
   function refreshWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void {
     if (entity.isPastLastStage(stage)) {
-      entity.destroyWorldOrPreviewEntity(stage)
+      wp.destroyWorldOrPreviewEntity(entity, stage)
       return
     }
 
@@ -339,21 +340,21 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
       return
     }
     if (entity.isSettingsRemnant) {
-      entity.destroyWorldOrPreviewEntity(stage)
+      wp.destroyWorldOrPreviewEntity(entity, stage)
       makePreviewEntity(stage, entity, entity.getPreviewDirection(), entity.getPropAtStage(stage, "name")[0])
       makeSettingsRemnantHighlights(entity)
       return
     }
 
     updateWorldEntitiesInRange(entity, stage, stage)
-    updateWireConnectionsAtStage(content, entity, stage)
+    updateWireConnectionsAtStage(content, entity, stage, wp)
     updateAllHighlights(entity)
   }
   /**
    * Forces change even if that would make the pair incorrect
    */
   function resetUnderground(entity: UndergroundBeltProjectEntity, stage: StageNumber): void {
-    const worldEntity = entity.getWorldOrPreviewEntity(stage)
+    const worldEntity = wp.getWorldOrPreviewEntity(entity, stage)
     if (worldEntity && worldEntity.belt_to_ground_type != entity.firstValue.type) {
       forceFlipUnderground(worldEntity)
     }
@@ -362,7 +363,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
   }
 
   function rebuildWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void {
-    entity.destroyWorldOrPreviewEntity(stage)
+    wp.destroyWorldOrPreviewEntity(entity, stage)
     refreshWorldEntityAtStage(entity, stage)
   }
 
@@ -371,7 +372,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     const movedDown = entity.lastStage != nil && (oldLastStage == nil || entity.lastStage < oldLastStage)
     if (movedDown) {
       for (const stage of $range(entity.lastStage + 1, oldLastStage ?? project.settings.stageCount())) {
-        entity.destroyWorldOrPreviewEntity(stage)
+        wp.destroyWorldOrPreviewEntity(entity, stage)
       }
     } else if (oldLastStage) {
       updateWorldEntities(entity, oldLastStage + 1)
@@ -389,7 +390,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
 
   function makeSettingsRemnant(entity: ProjectEntity): void {
     assert(entity.isSettingsRemnant)
-    entity.destroyAllWorldOrPreviewEntities()
+    wp.destroyAllWorldOrPreviewEntities(entity)
     const direction = entity.getPreviewDirection()
     const previewName = Prototypes.PreviewEntityPrefix + entity.firstValue.name
     for (const stage of $range(1, project.lastStageFor(entity))) {
@@ -410,14 +411,14 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
   function deleteUndergroundBelt(entity: ProjectEntity, project: Project): void {
     const pairsToUpdate = new LuaSet<UndergroundBeltProjectEntity>()
     for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
-      const worldEntity = entity.getWorldEntity(stage)
+      const worldEntity = wp.getWorldEntity(entity, stage)
       if (!worldEntity) continue
       const pair = worldEntity.neighbours as LuaEntity | nil
       if (!pair) continue
       const pairProjectEntity = content.findCompatibleWithLuaEntity(pair, nil, stage)
       if (pairProjectEntity) pairsToUpdate.add(pairProjectEntity as UndergroundBeltProjectEntity)
     }
-    entity.destroyAllWorldOrPreviewEntities()
+    wp.destroyAllWorldOrPreviewEntities(entity)
     for (const pair of pairsToUpdate) {
       updateAllHighlights(pair)
     }
@@ -426,7 +427,7 @@ export function WorldUpdates(project: Project, highlights: EntityHighlights): Wo
     if (entity.isUndergroundBelt()) {
       deleteUndergroundBelt(entity, project)
     } else {
-      entity.destroyAllWorldOrPreviewEntities()
+      wp.destroyAllWorldOrPreviewEntities(entity)
     }
     deleteAllHighlights(entity)
   }

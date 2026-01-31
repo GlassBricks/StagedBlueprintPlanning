@@ -5,6 +5,7 @@
 
 import { LuaEntity, LuaWireConnector } from "factorio:runtime"
 import { isEmpty } from "../lib"
+import { WorldEntityLookup } from "../project/WorldPresentation"
 import { MutableProjectContent, ProjectContent } from "./ProjectContent"
 import { addWireConnection, ProjectEntity, removeWireConnection, StageNumber, WireConnections } from "./ProjectEntity"
 import { getDirectionalInfo, ProjectWireConnection, wireConnectionMatches } from "./wire-connection"
@@ -14,8 +15,13 @@ interface WireSourceAndTarget {
   target: LuaWireConnector
 }
 
-function updateWireConnectionsAtStage(content: MutableProjectContent, entity: ProjectEntity, stage: StageNumber): void {
-  const luaEntity = entity.getWorldEntity(stage)
+function updateWireConnectionsAtStage(
+  content: MutableProjectContent,
+  entity: ProjectEntity,
+  stage: StageNumber,
+  worldEntities: WorldEntityLookup,
+): void {
+  const luaEntity = worldEntities.getWorldEntity(entity, stage)
   if (!luaEntity) return
   const projectConnections = entity.wireConnections
 
@@ -31,7 +37,7 @@ function updateWireConnectionsAtStage(content: MutableProjectContent, entity: Pr
 
   if (projectConnections) {
     for (const [otherEntity, connections] of projectConnections) {
-      const otherLuaEntity = otherEntity.getWorldEntity(stage)
+      const otherLuaEntity = worldEntities.getWorldEntity(otherEntity, stage)
       if (!otherLuaEntity) continue
       for (const connection of connections) {
         if (matchingConnections.has(connection)) continue
@@ -46,9 +52,10 @@ function saveWireConnections(
   content: MutableProjectContent,
   entity: ProjectEntity,
   stage: StageNumber,
-  higherStageForMerging?: StageNumber,
+  higherStageForMerging: StageNumber | nil,
+  worldEntities: WorldEntityLookup,
 ): boolean {
-  const luaEntity = entity.getWorldEntity(stage)
+  const luaEntity = worldEntities.getWorldEntity(entity, stage)
   if (!luaEntity) return false
 
   const projectConnections = entity.wireConnections
@@ -61,10 +68,9 @@ function saveWireConnections(
 
   let hasDiff = !isEmpty(extraConnections)
 
-  // remove before adding, so don't remove just added connections
   if (projectConnections) {
     for (const [otherEntity, connections] of projectConnections) {
-      const otherLuaEntity = otherEntity.getWorldEntity(stage)
+      const otherLuaEntity = worldEntities.getWorldEntity(otherEntity, stage)
       if (!otherLuaEntity) continue
       for (const connection of connections) {
         if (!matchingConnections.has(connection)) {
@@ -85,7 +91,7 @@ function saveWireConnections(
   }
 
   if (higherStageForMerging) {
-    const higherEntity = entity.getWorldEntity(higherStageForMerging)
+    const higherEntity = worldEntities.getWorldEntity(entity, higherStageForMerging)
     if (higherEntity) {
       const [, extraConnectionsHigher] = partitionExistingWireConnections(
         projectConnections,

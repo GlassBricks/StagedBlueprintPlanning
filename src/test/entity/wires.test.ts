@@ -6,17 +6,39 @@
 import { LuaEntity, LuaSurface } from "factorio:runtime"
 import expect from "tstl-expect"
 import { MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
-import { addWireConnection, newProjectEntity, ProjectEntity } from "../../entity/ProjectEntity"
+import { addWireConnection, newProjectEntity, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { ProjectWireConnection, wireConnectionEquals } from "../../entity/wire-connection"
+import { WorldEntityLookup } from "../../project/WorldPresentation"
 import { shallowCompare } from "../../lib"
 
 let content: MutableProjectContent
 let surface: LuaSurface
+let worldEntities: LuaMap<ProjectEntity, LuaMap<StageNumber, LuaEntity>>
+
+function setWorldEntity(entity: ProjectEntity, stage: StageNumber, luaEntity: LuaEntity | nil): void {
+  if (luaEntity == nil) {
+    worldEntities.get(entity)?.delete(stage)
+    return
+  }
+  let byStage = worldEntities.get(entity)
+  if (!byStage) {
+    byStage = new LuaMap()
+    worldEntities.set(entity, byStage)
+  }
+  byStage.set(stage, luaEntity)
+}
+
+const mockWorldEntityLookup: WorldEntityLookup = {
+  getWorldEntity: (entity, stage) => worldEntities.get(entity)?.get(stage) ?? nil,
+  getWorldOrPreviewEntity: (entity, stage) => worldEntities.get(entity)?.get(stage) ?? nil,
+  hasErrorAt: () => false,
+}
 
 before_each(() => {
   content = newProjectContent()
   surface = game.surfaces[1]
   surface.find_entities().forEach((e) => e.destroy())
+  worldEntities = new LuaMap()
 })
 
 import Wires = require("../../entity/wires")
@@ -31,8 +53,8 @@ describe("circuit wires", () => {
     luaEntity2 = surface.create_entity({ name: "arithmetic-combinator", position: { x: 7.5, y: 6 } })!
     entity1 = newProjectEntity({ name: "arithmetic-combinator" }, { x: 5.5, y: 6 }, 0, 1)
     entity2 = newProjectEntity({ name: "arithmetic-combinator" }, { x: 7.5, y: 6 }, 0, 1)
-    entity1.replaceWorldEntity(1, luaEntity1)
-    entity2.replaceWorldEntity(1, luaEntity2)
+    setWorldEntity(entity1, 1, luaEntity1)
+    setWorldEntity(entity2, 1, luaEntity2)
     content.addEntity(entity1)
     content.addEntity(entity2)
   })
@@ -82,7 +104,7 @@ describe("circuit wires", () => {
     test("can remove wires", () => {
       addWire1()
       addWire2()
-      Wires.updateWireConnectionsAtStage(content, entity1, 1)
+      Wires.updateWireConnectionsAtStage(content, entity1, 1, mockWorldEntityLookup)
       for (const [, connector] of pairs(luaEntity1.get_wire_connectors(false))) {
         expect(connector.connection_count).toEqual(0)
       }
@@ -94,20 +116,20 @@ describe("circuit wires", () => {
     }
     test("can add wires", () => {
       addWireConnection(getExpectedWire1())
-      Wires.updateWireConnectionsAtStage(content, entity1, 1)
+      Wires.updateWireConnectionsAtStage(content, entity1, 1, mockWorldEntityLookup)
       assertWire1Matches()
     })
     test("can update wires", () => {
       addWire1()
       addWire2()
       addWireConnection(getExpectedWire1())
-      Wires.updateWireConnectionsAtStage(content, entity1, 1)
+      Wires.updateWireConnectionsAtStage(content, entity1, 1, mockWorldEntityLookup)
       assertWire1Matches()
     })
     test("ignores entities not in the project", () => {
       addWire1() // entity1 -> entity2
       content.deleteEntity(entity2)
-      Wires.updateWireConnectionsAtStage(content, entity1, 1)
+      Wires.updateWireConnectionsAtStage(content, entity1, 1, mockWorldEntityLookup)
       // wire should still be there
       assertWire1Matches()
     })
@@ -120,7 +142,7 @@ describe("circuit wires", () => {
         toId: defines.wire_connector_id.combinator_output_red,
       }
       addWireConnection(wire1)
-      Wires.updateWireConnectionsAtStage(content, entity1, 1)
+      Wires.updateWireConnectionsAtStage(content, entity1, 1, mockWorldEntityLookup)
 
       expect(
         luaEntity1.get_wire_connector(defines.wire_connector_id.combinator_input_red, true).connections[0].target,
@@ -143,7 +165,7 @@ describe("circuit wires", () => {
       for (const number of existing) addWireConnection(wires[number - 1])
       for (const number of world) [addWire1, addWire2, addWire3][number - 1]()
 
-      const hasDiff = Wires.saveWireConnections(content, entity1, 1)
+      const hasDiff = Wires.saveWireConnections(content, entity1, 1, nil, mockWorldEntityLookup)
       expect(hasDiff).toBe(!shallowCompare(existing, world))
 
       const connections = entity1.wireConnections?.get(entity2)
@@ -168,8 +190,8 @@ describe("power switch connections", () => {
     powerSwitch = surface.create_entity({ name: "power-switch", position: { x: 6, y: 7 } })!
     poleEntity = newProjectEntity({ name: "medium-electric-pole" }, pole.position, 0, 1)
     powerSwitchEntity = newProjectEntity({ name: "power-switch" }, powerSwitch.position, 0, 1)
-    poleEntity.replaceWorldEntity(1, pole)
-    powerSwitchEntity.replaceWorldEntity(1, powerSwitch)
+    setWorldEntity(poleEntity, 1, pole)
+    setWorldEntity(powerSwitchEntity, 1, powerSwitch)
     content.addEntity(poleEntity)
     content.addEntity(powerSwitchEntity)
   })
@@ -179,7 +201,12 @@ describe("power switch connections", () => {
       pole
         .get_wire_connector(defines.wire_connector_id.pole_copper, true)
         .connect_to(powerSwitch.get_wire_connector(defines.wire_connector_id.power_switch_right_copper, true))
-      Wires.updateWireConnectionsAtStage(content, from == "pole" ? poleEntity : powerSwitchEntity, 1)
+      Wires.updateWireConnectionsAtStage(
+        content,
+        from == "pole" ? poleEntity : powerSwitchEntity,
+        1,
+        mockWorldEntityLookup,
+      )
       for (const [, connector] of pairs(pole.get_wire_connectors(false))) {
         expect(connector.connections).toEqual([])
       }
@@ -196,7 +223,12 @@ describe("power switch connections", () => {
         toId: defines.wire_connector_id.power_switch_right_copper,
       })
 
-      Wires.updateWireConnectionsAtStage(content, from == "pole" ? poleEntity : powerSwitchEntity, 1)
+      Wires.updateWireConnectionsAtStage(
+        content,
+        from == "pole" ? poleEntity : powerSwitchEntity,
+        1,
+        mockWorldEntityLookup,
+      )
       expect(pole.get_wire_connector(defines.wire_connector_id.pole_copper, true).connections[0].target).toEqual(
         powerSwitch.get_wire_connector(defines.wire_connector_id.power_switch_right_copper, true),
       )
@@ -214,7 +246,12 @@ describe("power switch connections", () => {
         toId: defines.wire_connector_id.pole_copper,
       })
 
-      Wires.updateWireConnectionsAtStage(content, from == "pole" ? poleEntity : powerSwitchEntity, 1)
+      Wires.updateWireConnectionsAtStage(
+        content,
+        from == "pole" ? poleEntity : powerSwitchEntity,
+        1,
+        mockWorldEntityLookup,
+      )
       expect(pole.get_wire_connector(defines.wire_connector_id.pole_copper, true).connections[0].target).toEqual(
         powerSwitch.get_wire_connector(defines.wire_connector_id.power_switch_right_copper, true),
       )
@@ -224,7 +261,13 @@ describe("power switch connections", () => {
         .get_wire_connector(defines.wire_connector_id.pole_copper, true)
         .connect_to(powerSwitch.get_wire_connector(defines.wire_connector_id.power_switch_right_copper, true))
 
-      const hasDiff = Wires.saveWireConnections(content, from == "pole" ? poleEntity : powerSwitchEntity, 1)
+      const hasDiff = Wires.saveWireConnections(
+        content,
+        from == "pole" ? poleEntity : powerSwitchEntity,
+        1,
+        nil,
+        mockWorldEntityLookup,
+      )
       expect(hasDiff).toBe(true)
       const connections = poleEntity.wireConnections?.get(powerSwitchEntity)
       const connection = Object.keys(connections ?? newLuaSet())
@@ -247,7 +290,7 @@ describe("power switch connections", () => {
   test("can remove connection if connected to different but not existing pole", () => {
     const pole2 = surface.create_entity({ name: "medium-electric-pole", position: { x: 5.5, y: 6.5 } })!
     const pole2Entity = newProjectEntity({ name: "medium-electric-pole" }, pole2.position, 0, 1)
-    pole2Entity.replaceWorldEntity(1, pole2)
+    setWorldEntity(pole2Entity, 1, pole2)
     content.addEntity(pole2Entity)
 
     pole2
@@ -260,9 +303,10 @@ describe("power switch connections", () => {
       fromId: defines.wire_connector_id.pole_copper,
       toId: defines.wire_connector_id.power_switch_right_copper,
     })
-    poleEntity.destroyWorldOrPreviewEntity(1)
+    setWorldEntity(poleEntity, 1, nil)
+    pole.destroy()
 
-    Wires.updateWireConnectionsAtStage(content, powerSwitchEntity, 1)
+    Wires.updateWireConnectionsAtStage(content, powerSwitchEntity, 1, mockWorldEntityLookup)
     expect(pole2.get_wire_connector(defines.wire_connector_id.pole_copper, true).connections).toEqual([])
   })
 })

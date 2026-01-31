@@ -4,6 +4,7 @@
 
 import { LuaEntity } from "factorio:runtime"
 import { ExtraEntities, ExtraEntityType, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
+import { WorldPresentation } from "../../project/WorldPresentation"
 
 export interface TestWorldQueries {
   getWorldEntity(entity: ProjectEntity, stage: StageNumber): LuaEntity | nil
@@ -17,12 +18,14 @@ export interface TestWorldQueries {
   hasAnyExtraEntities(entity: ProjectEntity, type: ExtraEntityType): boolean
 }
 
-export function createOldPipelineWorldQueries(): TestWorldQueries {
+export function createWorldPresentationQueries(wp: WorldPresentation): TestWorldQueries {
+  const es = wp.entityStorage
   return {
-    getWorldEntity: (entity, stage) => entity.getWorldEntity(stage),
-    getWorldOrPreviewEntity: (entity, stage) => entity.getWorldOrPreviewEntity(stage),
-    hasErrorAt: (entity, stage) => entity.hasErrorAt(stage),
-    getExtraEntity: (entity, type, stage) => entity.getExtraEntity(type, stage),
-    hasAnyExtraEntities: (entity, type) => entity.hasAnyExtraEntities(type),
+    getWorldEntity: (entity, stage) => wp.getWorldEntity(entity, stage),
+    getWorldOrPreviewEntity: (entity, stage) => wp.getWorldOrPreviewEntity(entity, stage),
+    hasErrorAt: (entity, stage) => wp.hasErrorAt(entity, stage),
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    getExtraEntity: (entity, type, stage) => es.get(entity, type as any, stage) as any,
+    hasAnyExtraEntities: (entity, type) => es.hasAnyOfType(entity, type as any),
   }
 }

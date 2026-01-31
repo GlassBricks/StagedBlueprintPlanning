@@ -162,6 +162,7 @@ const lastStageChangeUndo = UndoHandler(
 
 export function UserActions(project: Project, projectUpdates: ProjectUpdates, WorldUpdates: WorldUpdates): UserActions {
   const content = project.content
+  const wp = project.worldPresentation
   const {
     addNewEntity,
     maybeDeleteProjectEntity,
@@ -245,7 +246,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     stage: StageNumber,
     byPlayer: PlayerIndex | nil,
   ): UndoAction | nil {
-    projectEntity.replaceWorldEntity(stage, luaEntity)
+    wp.replaceWorldOrPreviewEntity(projectEntity, stage, luaEntity)
     if (projectEntity.isSettingsRemnant) {
       userRevivedSettingsRemnant(projectEntity, stage, byPlayer)
       return nil
@@ -304,7 +305,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
       return nil
     }
 
-    compatible.replaceWorldEntity(stage, worldEntity)
+    wp.replaceWorldOrPreviewEntity(compatible, stage, worldEntity)
     return compatible
   }
 
@@ -327,7 +328,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
         // settings remnant, remove
         forceDeleteEntity(existing)
       }
-    } else if (existing.hasErrorAt(stage)) {
+    } else if (wp.hasErrorAt(existing, stage)) {
       refreshAllWorldEntities(existing)
     }
   }
@@ -363,7 +364,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     }
 
     // this line is important, in case we just pasted over a preview
-    compatible.replaceWorldEntity(stage, entity)
+    wp.replaceWorldOrPreviewEntity(compatible, stage, entity)
 
     const result = setValueFromStagedInfo(compatible, stagedInfo, items, entity)
     notifyIfMoveError(result, compatible, byPlayer)
@@ -564,7 +565,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
   function rebuildEntity(worldEntity: LuaEntity, stageNumber: StageNumber): void {
     const projectEntity = getCompatibleAtCurrentStageOrAdd(worldEntity, stageNumber, nil, nil)
     if (projectEntity) {
-      projectEntity.replaceWorldEntity(stageNumber, worldEntity)
+      wp.replaceWorldOrPreviewEntity(projectEntity, stageNumber, worldEntity)
       rebuildWorldEntityAtStage(projectEntity, stageNumber)
     }
   }
@@ -610,7 +611,7 @@ export function UserActions(project: Project, projectUpdates: ProjectUpdates, Wo
     byPlayer: PlayerIndex,
   ): UndoAction | nil {
     if (fromStage == toStage) return
-    const projectEntity = content.findEntityExact(entity, entity.position, fromStage)
+    const projectEntity = content.findEntityExact(entity, entity.position, fromStage, wp)
     if (
       !projectEntity ||
       projectEntity.isSettingsRemnant ||

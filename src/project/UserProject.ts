@@ -139,6 +139,7 @@ class UserProjectImpl implements UserProjectInternal {
     assert(stageNumber >= 1 && stageNumber <= this.settings.stageCount() + 1, "Invalid new stage number")
 
     this.content.insertStage(stageNumber)
+    this.worldPresentation.onStageInserted(stageNumber)
 
     const name = this.settings.getNewStageName(stageNumber)
     this.settings.insertStageSettings(stageNumber, name)
@@ -172,6 +173,7 @@ class UserProjectImpl implements UserProjectInternal {
       this.stages[i].stageNumber = i
     }
 
+    this.worldPresentation.onStageDeleted(index)
     if (isMerge) {
       this.content.mergeStage(index)
       const stageToUpdate = index == 1 ? 1 : index - 1

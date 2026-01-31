@@ -6,12 +6,12 @@
 import expect from "tstl-expect"
 import { ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { getItemRequestSampleItemName, HighlightConstants } from "../../project/entity-highlights"
-import { createOldPipelineWorldQueries, TestWorldQueries } from "../integration/test-world-queries"
+import { TestWorldQueries } from "../integration/test-world-queries"
 
 export function assertConfigChangedHighlightsCorrect(
   entity: ProjectEntity,
   maxStage: StageNumber,
-  wq: TestWorldQueries = createOldPipelineWorldQueries(),
+  wq: TestWorldQueries,
 ): void {
   let i = entity.firstStage
   for (const [stageNumber, changes] of pairs(entity.stageDiffs ?? {})) {
@@ -42,11 +42,7 @@ export function assertConfigChangedHighlightsCorrect(
   }
 }
 
-export function assertErrorHighlightsCorrect(
-  entity: ProjectEntity,
-  maxStage: StageNumber,
-  wq: TestWorldQueries = createOldPipelineWorldQueries(),
-): void {
+export function assertErrorHighlightsCorrect(entity: ProjectEntity, maxStage: StageNumber, wq: TestWorldQueries): void {
   let anyHasError = false
   for (const stage of $range(entity.firstStage, maxStage)) {
     if (wq.hasErrorAt(entity, stage)) {
@@ -74,10 +70,7 @@ export function assertErrorHighlightsCorrect(
   }
 }
 
-export function assertLastStageHighlightCorrect(
-  entity: ProjectEntity,
-  wq: TestWorldQueries = createOldPipelineWorldQueries(),
-): void {
+export function assertLastStageHighlightCorrect(entity: ProjectEntity, wq: TestWorldQueries): void {
   if (entity.lastStage != nil && !entity.isMovable()) {
     const highlight = expect(wq.getExtraEntity(entity, "stageDeleteHighlight", entity.lastStage))
       .toBeAny()
@@ -93,7 +86,7 @@ export function assertLastStageHighlightCorrect(
 export function assertNoHighlightsAfterLastStage(
   entity: ProjectEntity,
   maxStage: StageNumber,
-  wq: TestWorldQueries = createOldPipelineWorldQueries(),
+  wq: TestWorldQueries,
 ): void {
   if (!entity.lastStage) return
   for (const stage of $range(entity.lastStage + 1, maxStage)) {
@@ -108,10 +101,11 @@ export function assertNoHighlightsAfterLastStage(
 export function assertItemRequestHighlightsCorrect(
   entity: ProjectEntity,
   maxStage: StageNumber,
-  wq: TestWorldQueries = createOldPipelineWorldQueries(),
+  wq: TestWorldQueries,
 ): void {
   for (const stage of $range(1, maxStage)) {
-    const sampleItem = getItemRequestSampleItemName(entity, stage)
+    const worldEntity = wq.getWorldEntity(entity, stage)
+    const sampleItem = getItemRequestSampleItemName(entity, stage, nil, worldEntity)
     if (sampleItem == nil) {
       expect(wq.getExtraEntity(entity, "itemRequestHighlight", stage)).toBeNil()
       expect(wq.getExtraEntity(entity, "itemRequestHighlightOverlay", stage)).toBeNil()

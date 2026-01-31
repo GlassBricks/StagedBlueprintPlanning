@@ -45,6 +45,10 @@ const origPos = { x: 0.5, y: 0.5 }
 const origDir = defines.direction.east
 const surfaces: LuaSurface[] = setupTestSurfaces(4)
 
+function wp() {
+  return project.worldPresentation
+}
+
 let worldUpdates: WorldUpdates
 before_each(() => {
   project = createMockProject(surfaces)
@@ -82,11 +86,11 @@ function findAnyEntity(i: StageNumber): LuaEntity | nil {
 function assertNothingPresent(i: StageNumber): void {
   if (i <= 0 || i > surfaces.length) return
   expect(findAnyEntity(i)).toBeNil()
-  expect(entity.getWorldOrPreviewEntity(i)).toBeNil()
+  expect(wp().getWorldOrPreviewEntity(entity, i)).toBeNil()
 }
 function assertHasPreview(i: StageNumber): void {
   expect(findMainEntity(i)).toBeNil()
-  expect(findPreviewEntity(i)).toBeAny().and.toEqual(entity.getWorldOrPreviewEntity(i))
+  expect(findPreviewEntity(i)).toBeAny().and.toEqual(wp().getWorldOrPreviewEntity(entity, i))
 }
 
 function assertEntityCorrect(i: StageNumber): LuaEntity {
@@ -139,7 +143,7 @@ describe("updateWorldEntities()", () => {
         } as TestEntity,
         nil,
       )!
-      entity.replaceWorldEntity(2, replaced)
+      wp().replaceWorldOrPreviewEntity(entity, 2, replaced)
       worldUpdates.refreshWorldEntityAtStage(entity, 2)
       const val = assertEntityCorrect(2)
       expect(replaced).toEqual(val)
@@ -147,14 +151,14 @@ describe("updateWorldEntities()", () => {
 
     test("attempting to refresh world entity past last stage deletes entity if it exists", () => {
       entity.setLastStageUnchecked(3)
-      entity.replaceWorldOrPreviewEntity(4, {} as any)
+      wp().replaceWorldOrPreviewEntity(entity, 4, {} as any)
       worldUpdates.refreshWorldEntityAtStage(entity, 4)
       assertNothingPresent(4)
     })
 
     test("replaces deleted entity", () => {
       worldUpdates.refreshWorldEntityAtStage(entity, 3)
-      entity.getWorldEntity(3)!.destroy()
+      wp().getWorldEntity(entity, 3)!.destroy()
       assertNothingPresent(3)
       worldUpdates.refreshWorldEntityAtStage(entity, 3)
       assertEntityCorrect(3)
@@ -184,7 +188,12 @@ describe("updateWorldEntities()", () => {
   test("calls wireUpdater", () => {
     worldUpdates.updateWorldEntities(entity, 1)
     for (let i = 1; i <= 3; i++)
-      expect(wireUpdater.updateWireConnectionsAtStage).toHaveBeenCalledWith(project.content, entity, i)
+      expect(wireUpdater.updateWireConnectionsAtStage).toHaveBeenCalledWith(
+        project.content,
+        entity,
+        i,
+        expect.anything(),
+      )
   })
 
   function assertDestructible(luaEntity: LuaEntity, value: boolean) {
@@ -206,7 +215,7 @@ describe("updateWorldEntities()", () => {
         } as TestEntity,
         nil,
       )!
-      entity.replaceWorldEntity(3, luaEntity)
+      wp().replaceWorldOrPreviewEntity(entity, 3, luaEntity)
     }
     worldUpdates.updateWorldEntities(entity, 1)
 
@@ -235,7 +244,7 @@ describe("updateWorldEntities()", () => {
 
   test("can un-rotate entities", () => {
     worldUpdates.updateWorldEntities(entity, 1)
-    entity.getWorldEntity(2)!.direction = defines.direction.west
+    wp().getWorldEntity(entity, 2)!.direction = defines.direction.west
     worldUpdates.refreshWorldEntityAtStage(entity, 2)
     for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
   })
@@ -324,7 +333,7 @@ describe("updateWorldEntitiesOnLastStageChanged()", () => {
     assertEntityCorrect(3)
     assertNothingPresent(4)
 
-    expect(wireUpdater.updateWireConnectionsAtStage).toHaveBeenCalledWith(project.content, entity, 3)
+    expect(wireUpdater.updateWireConnectionsAtStage).toHaveBeenCalledWith(project.content, entity, 3, expect.anything())
     expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(entity)
   })
 
@@ -355,7 +364,7 @@ describe("updateNewEntityWithoutWires()", () => {
     worldUpdates.updateNewWorldEntitiesWithoutWires(entity)
     expect(entityHighlights.updateAllHighlights).not.toHaveBeenCalled()
     expect(wireUpdater.updateWireConnectionsAtStage).not.toHaveBeenCalled()
-    expect(entity.getWorldOrPreviewEntity(2)).not.toBeNil()
+    expect(wp().getWorldOrPreviewEntity(entity, 2)).not.toBeNil()
   })
   test("updates highlights if there are errors", () => {
     const entity = newProjectEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
@@ -364,7 +373,7 @@ describe("updateNewEntityWithoutWires()", () => {
     worldUpdates.updateNewWorldEntitiesWithoutWires(entity)
     expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(entity)
     expect(wireUpdater.updateWireConnectionsAtStage).not.toHaveBeenCalled()
-    expect(entity.getWorldOrPreviewEntity(2)).not.toBeNil()
+    expect(wp().getWorldOrPreviewEntity(entity, 2)).not.toBeNil()
     expect(findPreviewEntity(3)).not.toBeNil()
   })
 })
@@ -376,7 +385,7 @@ test("updateWireConnections", () => {
   worldUpdates.updateNewWorldEntitiesWithoutWires(entity) //
   worldUpdates.updateWireConnections(entity)
   for (const i of $range(2, project.lastStageFor(entity))) {
-    expect(wireUpdater.updateWireConnectionsAtStage).toHaveBeenCalledWith(project.content, entity, i)
+    expect(wireUpdater.updateWireConnectionsAtStage).toHaveBeenCalledWith(project.content, entity, i, expect.anything())
   }
 })
 
@@ -418,7 +427,7 @@ describe("underground pair", () => {
       1,
     ) as UndergroundBeltProjectEntity
     worldUpdates.updateWorldEntities(middleUg, 1)
-    const middleWorldEntity = middleUg.getWorldEntity(1)!
+    const middleWorldEntity = wp().getWorldEntity(middleUg, 1)!
     assert(middleWorldEntity)
 
     rightUg = newProjectEntity(
@@ -430,12 +439,13 @@ describe("underground pair", () => {
     project.content.addEntity(rightUg)
     worldUpdates.updateWorldEntities(rightUg, 1)
 
-    expect(rightUg.getWorldEntity(1)).toMatchTable({
+    expect(wp().getWorldEntity(rightUg, 1)).toMatchTable({
       neighbours: middleWorldEntity,
     })
   })
   test("deleteWorldEntities on underground belt calls update highlights on all pairs", () => {
-    middleUg.replaceWorldEntity(
+    wp().replaceWorldOrPreviewEntity(
+      middleUg,
       1,
       createPreviewEntity(
         surfaces[0],
@@ -445,22 +455,22 @@ describe("underground pair", () => {
       ),
     )
     worldUpdates.deleteWorldEntities(middleUg)
-    expect(middleUg.getWorldOrPreviewEntity(1)).toBeNil()
+    expect(wp().getWorldOrPreviewEntity(middleUg, 1)).toBeNil()
   })
   test("bug: deleteWorldEntities on underground belt does not crash if is preview", () => {
     worldUpdates.deleteWorldEntities(middleUg)
-    expect(rightUg.getWorldEntity(1)).toMatchTable({
+    expect(wp().getWorldEntity(rightUg, 1)).toMatchTable({
       neighbours: leftWorldEntity,
     })
-    expect(rightUg.hasErrorAt(1)).toBe(true)
+    expect(wp().hasErrorAt(rightUg, 1)).toBe(true)
   })
   test("refreshWorldEntityAtStage with force=true still rotates underground even if errored", () => {
     // manually break right underground
     rightUg.setTypeProperty("input")
     rightUg.direction = defines.direction.west
-    expect(rightUg.hasErrorAt(1)).toBe(true)
+    expect(wp().hasErrorAt(rightUg, 1)).toBe(true)
 
-    middleUg.getWorldEntity(1)!.rotate()
+    wp().getWorldEntity(middleUg, 1)!.rotate()
     worldUpdates.refreshWorldEntityAtStage(middleUg, 1)
 
     // expect rotated back
@@ -473,11 +483,11 @@ describe("underground pair", () => {
       direction: defines.direction.east,
     })
     // still broken
-    expect(rightUg.getWorldEntity(1)).toMatchTable({
+    expect(wp().getWorldEntity(rightUg, 1)).toMatchTable({
       belt_to_ground_type: "output",
       direction: defines.direction.east,
     })
-    expect(middleUg.getWorldEntity(1)).toMatchTable({
+    expect(wp().getWorldEntity(middleUg, 1)).toMatchTable({
       belt_to_ground_type: "input",
       direction: defines.direction.east,
     })
@@ -533,10 +543,10 @@ test("rebuildStage", () => {
   worldUpdates.rebuildStage(2)
 
   expect(chest.valid).toBe(false)
-  expect(entity1.getWorldEntity(2)).toBeAny()
-  expect(entity2.getWorldEntity(2)).toBeAny()
-  expect(entity3.getWorldOrPreviewEntity(2)).toBeAny()
-  expect(entity3.getWorldEntity(2)).toBeNil()
+  expect(wp().getWorldEntity(entity1, 2)).toBeAny()
+  expect(wp().getWorldEntity(entity2, 2)).toBeAny()
+  expect(wp().getWorldOrPreviewEntity(entity3, 2)).toBeAny()
+  expect(wp().getWorldEntity(entity3, 2)).toBeNil()
 
   expect(surface.get_tile(0, 0).name).toBe("concrete")
 })
@@ -558,8 +568,8 @@ describe("circuit wires", () => {
   function doAdd() {
     worldUpdates.updateWorldEntities(entity1, 1)
     worldUpdates.updateWorldEntities(entity2, 1)
-    const luaEntity1 = entity1.getWorldEntity(1)!
-    const luaEntity2 = entity2.getWorldEntity(1)!
+    const luaEntity1 = wp().getWorldEntity(entity1, 1)!
+    const luaEntity2 = wp().getWorldEntity(entity2, 1)!
     return { luaEntity1, luaEntity2 }
   }
 

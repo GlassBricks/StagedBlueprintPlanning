@@ -17,12 +17,14 @@ import {
   SpritePath,
 } from "factorio:runtime"
 import { Entity } from "../entity/Entity"
-import { ExtraEntities, ProjectEntity, StageNumber } from "../entity/ProjectEntity"
+import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import { OnPrototypeInfoLoaded, PrototypeInfo } from "../entity/prototype-info"
 import { assertNever } from "../lib"
 import { BBox, Position } from "../lib/geometry"
 import { createHighlightBox, createSprite } from "./create-highlight"
+import { EntityStorage } from "./EntityStorage"
 import { Project } from "./ProjectDef"
+import { WorldEntityLookup, WorldEntityTypes } from "./WorldPresentation"
 
 export type HighlightEntity = HighlightBoxEntity | LuaRenderObject
 export interface HighlightEntities {
@@ -143,70 +145,6 @@ const prototypesToSkipRequestHighlight = newLuaSet(
   "railgun-turret",
 )
 
-function createHighlight<T extends keyof HighlightEntities>(
-  entity: ProjectEntity,
-  stage: StageNumber,
-  surface: LuaSurface,
-  type: T,
-  spriteNameOverride?: string,
-): HighlightEntities[T] {
-  const config = highlightConfigs[type]
-  const existing = entity.getExtraEntity(type, stage)
-  const entityTarget = entity.getWorldOrPreviewEntity(stage)
-  if (
-    existing &&
-    config.type == "sprite" &&
-    existing.valid &&
-    existing.object_name == "LuaRenderObject" &&
-    existing.target == entityTarget
-  )
-    return existing
-
-  const prototypeName = entity.firstValue.name
-  let result: LuaEntity | LuaRenderObject | nil
-  if (config.type == "highlight") {
-    const { renderType } = config
-    result = entityTarget && createHighlightBox(entityTarget, renderType)
-  } else if (config.type == "sprite") {
-    const localSelectionBox = selectionBoxes.get(prototypeName)
-    if (localSelectionBox) {
-      const selectionBox = BBox.rotateAboutOrigin(localSelectionBox, entity.direction)
-      const size = selectionBox.size()
-      const relativePosition = size.emul(config.offset).plus(selectionBox.left_top)
-      // const worldPosition = relativePosition.plus(entity.position)
-      const target: ScriptRenderTargetTableWrite = entityTarget
-        ? {
-            entity: entityTarget,
-            offset: [relativePosition.x, relativePosition.y],
-          }
-        : {
-            position: relativePosition.plus(entity.position),
-          }
-      const scale = config.scaleRelative ? (config.scale * (size.x + size.y)) / 2 : config.scale
-      result = createSprite({
-        surface,
-        target,
-        x_scale: scale,
-        y_scale: scale,
-        sprite: spriteNameOverride ?? config.sprite,
-        tint: config.tint,
-        render_layer: config.renderLayer,
-      })
-    }
-  } else {
-    assertNever(config)
-  }
-
-  entity.replaceExtraEntity(type, stage, result as ExtraEntities[T])
-  return result as HighlightEntities[T]
-}
-function removeHighlight(entity: ProjectEntity, stageNumber: StageNumber, type: keyof HighlightEntities): void {
-  entity.destroyExtraEntity(type, stageNumber)
-}
-function removeHighlightFromAllStages(entity: ProjectEntity, type: keyof HighlightEntities): void {
-  entity.destroyAllExtraEntities(type)
-}
-
 /** @noSelf */
 export interface EntityHighlights {
   updateAllHighlights(entity: ProjectEntity): void
@@ -214,7 +152,116 @@ export interface EntityHighlights {
   makeSettingsRemnantHighlights(entity: ProjectEntity): void
   updateHighlightsOnReviveSettingsRemnant(entity: ProjectEntity): void
 }
-export function EntityHighlights(project: Project): EntityHighlights {
+export function EntityHighlights(
+  project: Project,
+  worldEntities: WorldEntityLookup,
+  entityStorage: EntityStorage<WorldEntityTypes>,
+): EntityHighlights {
+  function getExtraEntity<T extends keyof HighlightEntities>(
+    entity: ProjectEntity,
+    type: T,
+    stage: StageNumber,
+  ): HighlightEntities[T] | nil {
+    const value = entityStorage.get(entity, type, stage) as HighlightEntities[T] | nil
+    if (value && value.valid) return value
+    if (value) entityStorage.delete(entity, type, stage)
+    return nil
+  }
+
+  function replaceExtraEntity<T extends keyof HighlightEntities>(
+    entity: ProjectEntity,
+    type: T,
+    stage: StageNumber,
+    value: HighlightEntities[T] | nil,
+  ): void {
+    if (value == nil) {
+      destroyExtraEntity(entity, type, stage)
+      return
+    }
+    const existing = entityStorage.get(entity, type, stage) as HighlightEntities[T] | nil
+    if (existing && existing.valid && existing != value) existing.destroy()
+    entityStorage.set(entity, type, stage, value as WorldEntityTypes[T & keyof WorldEntityTypes])
+  }
+
+  function destroyExtraEntity(entity: ProjectEntity, type: keyof HighlightEntities, stage: StageNumber): void {
+    const existing = entityStorage.get(entity, type, stage) as HighlightEntity | nil
+    if (existing && existing.valid) existing.destroy()
+    entityStorage.delete(entity, type, stage)
+  }
+
+  function destroyAllExtraEntities(entity: ProjectEntity, type: keyof HighlightEntities): void {
+    for (const [, value] of entityStorage.iterateType(entity, type)) {
+      const highlight = value as unknown as HighlightEntity
+      if (highlight && highlight.valid) highlight.destroy()
+    }
+    entityStorage.deleteAllOfType(entity, type)
+  }
+
+  function createHighlight<T extends keyof HighlightEntities>(
+    entity: ProjectEntity,
+    stage: StageNumber,
+    surface: LuaSurface,
+    type: T,
+    spriteNameOverride?: string,
+  ): HighlightEntities[T] {
+    const config = highlightConfigs[type]
+    const existing = getExtraEntity(entity, type, stage)
+    const entityTarget = worldEntities.getWorldOrPreviewEntity(entity, stage)
+    if (
+      existing &&
+      config.type == "sprite" &&
+      existing.valid &&
+      existing.object_name == "LuaRenderObject" &&
+      existing.target == entityTarget
+    )
+      return existing
+
+    const prototypeName = entity.firstValue.name
+    let result: LuaEntity | LuaRenderObject | nil
+    if (config.type == "highlight") {
+      const { renderType } = config
+      result = entityTarget && createHighlightBox(entityTarget, renderType)
+    } else if (config.type == "sprite") {
+      const localSelectionBox = selectionBoxes.get(prototypeName)
+      if (localSelectionBox) {
+        const selectionBox = BBox.rotateAboutOrigin(localSelectionBox, entity.direction)
+        const size = selectionBox.size()
+        const relativePosition = size.emul(config.offset).plus(selectionBox.left_top)
+        const target: ScriptRenderTargetTableWrite = entityTarget
+          ? {
+              entity: entityTarget,
+              offset: [relativePosition.x, relativePosition.y],
+            }
+          : {
+              position: relativePosition.plus(entity.position),
+            }
+        const scale = config.scaleRelative ? (config.scale * (size.x + size.y)) / 2 : config.scale
+        result = createSprite({
+          surface,
+          target,
+          x_scale: scale,
+          y_scale: scale,
+          sprite: spriteNameOverride ?? config.sprite,
+          tint: config.tint,
+          render_layer: config.renderLayer,
+        })
+      }
+    } else {
+      assertNever(config)
+    }
+
+    replaceExtraEntity(entity, type, stage, result as HighlightEntities[T])
+    return result as HighlightEntities[T]
+  }
+
+  function removeHighlight(entity: ProjectEntity, stageNumber: StageNumber, type: keyof HighlightEntities): void {
+    destroyExtraEntity(entity, type, stageNumber)
+  }
+
+  function removeHighlightFromAllStages(entity: ProjectEntity, type: keyof HighlightEntities): void {
+    destroyAllExtraEntities(entity, type)
+  }
+
   return {
     updateAllHighlights,
     deleteAllHighlights,
@@ -235,16 +282,16 @@ export function EntityHighlights(project: Project): EntityHighlights {
   function updateErrorOutlines(entity: ProjectEntity): void {
     let hasErrorAnywhere = false
     for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
-      const hasError = entity.hasErrorAt(stage)
+      const hasError = worldEntities.hasErrorAt(entity, stage)
       updateHighlight(entity, stage, "errorOutline", hasError)
       hasErrorAnywhere ||= hasError
     }
 
     if (!hasErrorAnywhere) {
-      entity.destroyAllExtraEntities("errorElsewhereIndicator")
+      destroyAllExtraEntities(entity, "errorElsewhereIndicator")
     } else {
       for (const stage of $range(1, project.lastStageFor(entity))) {
-        const shouldHaveIndicator = !entity.hasErrorAt(stage)
+        const shouldHaveIndicator = !worldEntities.hasErrorAt(entity, stage)
         updateHighlight(entity, stage, "errorElsewhereIndicator", shouldHaveIndicator)
       }
     }
@@ -252,8 +299,8 @@ export function EntityHighlights(project: Project): EntityHighlights {
 
   function updateStageDiffHighlights(entity: ProjectEntity): void {
     if (!entity.hasStageDiff()) {
-      entity.destroyAllExtraEntities("configChangedHighlight")
-      entity.destroyAllExtraEntities("configChangedLaterHighlight")
+      destroyAllExtraEntities(entity, "configChangedHighlight")
+      destroyAllExtraEntities(entity, "configChangedLaterHighlight")
       return
     }
     const firstStage = entity.firstStage
@@ -295,7 +342,7 @@ export function EntityHighlights(project: Project): EntityHighlights {
   }
 
   function updateStageDeleteIndicator(entity: ProjectEntity): void {
-    entity.destroyAllExtraEntities("stageDeleteHighlight")
+    destroyAllExtraEntities(entity, "stageDeleteHighlight")
     if (entity.lastStage != nil && !entity.isMovable()) {
       const stage = entity.lastStage
       const surface = project.getSurface(stage)!
@@ -304,8 +351,8 @@ export function EntityHighlights(project: Project): EntityHighlights {
   }
 
   function updateStageRequestIndicator(entity: ProjectEntity): void {
-    entity.destroyAllExtraEntities("itemRequestHighlight")
-    entity.destroyAllExtraEntities("itemRequestHighlightOverlay")
+    destroyAllExtraEntities(entity, "itemRequestHighlight")
+    destroyAllExtraEntities(entity, "itemRequestHighlightOverlay")
     const unstagedValue = entity.getPropertyAllStages("unstagedValue")
     if (!unstagedValue) return
     if (entity.firstValue.name in prototypesToSkipRequestHighlight) return
@@ -319,7 +366,12 @@ export function EntityHighlights(project: Project): EntityHighlights {
     stage: number,
     insertPlans: BlueprintInsertPlan[] | nil,
   ) {
-    const sampleItemName = getItemRequestSampleItemName(entity, stage, insertPlans)
+    const sampleItemName = getItemRequestSampleItemName(
+      entity,
+      stage,
+      insertPlans,
+      worldEntities.getWorldEntity(entity, stage),
+    )
     if (sampleItemName != nil) {
       createHighlight(entity, stage, project.getSurface(stage)!, "itemRequestHighlight")
       createHighlight(
@@ -340,18 +392,18 @@ export function EntityHighlights(project: Project): EntityHighlights {
   }
 
   function deleteAllHighlights(entity: ProjectEntity): void {
-    for (const type of keys<HighlightEntities>()) entity.destroyAllExtraEntities(type)
+    for (const type of keys<HighlightEntities>()) destroyAllExtraEntities(entity, type)
   }
   function makeSettingsRemnantHighlights(entity: ProjectEntity): void {
     if (!entity.isSettingsRemnant) return
-    for (const type of keys<HighlightEntities>()) entity.destroyAllExtraEntities(type)
+    for (const type of keys<HighlightEntities>()) destroyAllExtraEntities(entity, type)
     for (const stage of $range(1, project.lastStageFor(entity))) {
       updateHighlight(entity, stage, "settingsRemnantHighlight", true)
     }
   }
   function updateHighlightsOnReviveSettingsRemnant(entity: ProjectEntity): void {
     if (entity.isSettingsRemnant) return
-    entity.destroyAllExtraEntities("settingsRemnantHighlight")
+    destroyAllExtraEntities(entity, "settingsRemnantHighlight")
     updateAllHighlights(entity)
   }
 }
@@ -359,9 +411,10 @@ export function getItemRequestSampleItemName(
   projectEntity: ProjectEntity,
   stage: StageNumber,
   insertPlans: BlueprintInsertPlan[] | nil = projectEntity.getUnstagedValue(stage)?.items,
+  worldEntity?: LuaEntity,
 ): string | nil {
   if (!insertPlans) return
-  const fuelInventory = projectEntity.getWorldEntity(stage)?.get_fuel_inventory()?.index
+  const fuelInventory = worldEntity?.get_fuel_inventory()?.index
   return insertPlans.find((p) => p.items.in_inventory?.some((i) => i.inventory != fuelInventory))?.id
     .name as unknown as string | nil
 }

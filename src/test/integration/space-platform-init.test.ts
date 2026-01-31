@@ -11,7 +11,7 @@ import { UserProject } from "../../project/ProjectDef"
 import { SpacePlatformSettings } from "../../project/surfaces"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import { assertEntityCorrect, createOldPipelineProjectOps } from "./integration-test-util"
-import { createOldPipelineWorldQueries } from "./test-world-queries"
+import { createWorldPresentationQueries } from "./test-world-queries"
 
 before_each(() => {
   _deleteAllProjects()
@@ -49,7 +49,7 @@ describe("space platform hub", () => {
       expect(hubEntity.firstStage).toBe(1)
       expect(hubEntity.lastStage).toBeNil()
 
-      const wq = createOldPipelineWorldQueries()
+      const wq = createWorldPresentationQueries(project.worldPresentation)
       for (const stage of $range(1, project.settings.stageCount())) {
         const worldEntity = wq.getWorldEntity(hubEntity, stage)
         expect(worldEntity).toBeAny()
@@ -58,7 +58,7 @@ describe("space platform hub", () => {
         expect(worldEntity!.quality.name).toEqual(quality)
       }
 
-      assertEntityCorrect(project, hubEntity, false)
+      assertEntityCorrect(project, hubEntity, false, wq)
     },
   )
 
@@ -75,7 +75,7 @@ describe("space platform hub", () => {
     expect(projectEntity.lastStage).toBe(nil)
 
     expect(newWorldEntity.name).toBe("space-platform-hub")
-    assertEntityCorrect(project, projectEntity, false)
+    assertEntityCorrect(project, projectEntity, false, createWorldPresentationQueries(project.worldPresentation))
   })
 })
 

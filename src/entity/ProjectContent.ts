@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import { BoundingBox, LuaEntity, MapPosition } from "factorio:runtime"
+import { WorldEntityLookup } from "../project/WorldPresentation"
 import { oppositedirection } from "util"
 import { Prototypes } from "../constants"
 import { isEmpty, PRecord, RegisterClass } from "../lib"
@@ -43,7 +44,12 @@ export interface ProjectContent {
     stage: StageNumber,
   ): ProjectEntity | nil
   findCompatibleWithExistingEntity(entity: ProjectEntity, stage: StageNumber): ProjectEntity | nil
-  findEntityExact(entity: LuaEntity, position: Position, stage: StageNumber): ProjectEntity | nil
+  findEntityExact(
+    entity: LuaEntity,
+    position: Position,
+    stage: StageNumber,
+    worldEntities: WorldEntityLookup,
+  ): ProjectEntity | nil
 
   findCompatibleFromPreview(previewEntity: LuaEntity, stage: StageNumber): ProjectEntity | nil
   findCompatibleFromPreviewOrLuaEntity(entity: LuaEntity, stage: StageNumber): ProjectEntity | nil
@@ -195,10 +201,15 @@ class ProjectContentImpl implements MutableProjectContent {
     return this.findCompatibleWithLuaEntity(entity, nil, stage)
   }
 
-  findEntityExact(entity: LuaEntity, position: Position, stage: StageNumber): ProjectEntity | nil {
+  findEntityExact(
+    entity: LuaEntity,
+    position: Position,
+    stage: StageNumber,
+    worldEntities: WorldEntityLookup,
+  ): ProjectEntity | nil {
     let cur = this.byPosition.get(position.x, position.y)
     while (cur != nil) {
-      if (cur.getWorldOrPreviewEntity(stage) == entity) return cur
+      if (worldEntities.getWorldOrPreviewEntity(cur, stage) == entity) return cur
       cur = cur._next
     }
     return nil

@@ -49,7 +49,7 @@ PlayerChangedStageEvent.addListener((player, stage, oldStage) => {
   if (stage == nil || oldStage.project != stage.project) {
     player.opened = nil
   } else {
-    player.opened = projectEntity.getWorldOrPreviewEntity(stage.stageNumber)
+    player.opened = stage.project.worldPresentation.getWorldOrPreviewEntity(projectEntity, stage.stageNumber)
   }
 })
 
@@ -95,7 +95,8 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
 
     const lastStageDisplay = isRollingStock ? nil : entity.lastStage
 
-    const isErrorEntity = entity.isInStage(currentStageNum) && entity.getWorldEntity(currentStageNum) == nil
+    const isErrorEntity =
+      entity.isInStage(currentStageNum) && project.worldPresentation.getWorldEntity(entity, currentStageNum) == nil
 
     function StageButton(buttonStage: Stage): Element {
       return (
@@ -256,7 +257,10 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
   private rerender(reopen: boolean) {
     const player = game.get_player(this.playerIndex)
     if (!player) return
-    const worldEntity = this.entity.getWorldOrPreviewEntity(this.stage.stageNumber)
+    const worldEntity = this.stage.project.worldPresentation.getWorldOrPreviewEntity(
+      this.entity,
+      this.stage.stageNumber,
+    )
     if (!worldEntity) {
       player.opened = nil
       return

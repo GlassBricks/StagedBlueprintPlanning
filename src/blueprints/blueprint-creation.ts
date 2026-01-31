@@ -135,17 +135,18 @@ class ComputeUnitNumberFilterStep implements BlueprintStep {
     const changedEntities = this.projectPlan.changedEntities!.get()
     const firstStageEntities = this.projectPlan.firstStageEntities!.get()
 
+    const wp = this.projectPlan.project.worldPresentation
     const result = new LuaSet<UnitNumber>()
     for (const stage of $range(minStage, maxStage)) {
       for (const entity of changedEntities.get(stage)!) {
-        const luaEntity = entity.getWorldOrPreviewEntity(stageNumber)
+        const luaEntity = wp.getWorldOrPreviewEntity(entity, stageNumber)
         if (!luaEntity) continue
         const unitNumber = luaEntity.unit_number
         if (unitNumber) result.add(unitNumber)
       }
       if (stage == stageNumber || !this.projectPlan.excludeFromFutureBlueprintStages.has(stage)) {
         for (const entity of firstStageEntities.get(stage)!) {
-          const luaEntity = entity.getWorldOrPreviewEntity(stageNumber)
+          const luaEntity = wp.getWorldOrPreviewEntity(entity, stageNumber)
           if (!luaEntity) continue
           const unitNumber = luaEntity.unit_number
           if (unitNumber) result.add(unitNumber)
@@ -241,6 +242,7 @@ class ComputeAdditionalSettingsStep implements BlueprintStep {
     const stageNumber = stage.stageNumber
     const project = stage.project
     const content = project.content
+    const wp = project.worldPresentation
 
     const additionalSettings = new LuaMap<UnitNumber, UnstagedEntityProps>()
     for (const entity of content.allEntities()) {
@@ -248,7 +250,7 @@ class ComputeAdditionalSettingsStep implements BlueprintStep {
 
       const unstagedValue = entity.getUnstagedValue(stageNumber)
       if (unstagedValue) {
-        const luaEntity = entity.getWorldOrPreviewEntity(stageNumber)
+        const luaEntity = wp.getWorldOrPreviewEntity(entity, stageNumber)
         if (luaEntity && luaEntity.unit_number) {
           additionalSettings.set(luaEntity.unit_number, unstagedValue)
         }

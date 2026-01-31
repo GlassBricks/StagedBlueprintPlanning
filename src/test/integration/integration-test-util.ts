@@ -22,9 +22,9 @@ import {
   assertLastStageHighlightCorrect,
   assertNoHighlightsAfterLastStage,
 } from "../project/entity-highlight-test-util"
-import { createOldPipelineWorldQueries, TestWorldQueries } from "./test-world-queries"
+import { createWorldPresentationQueries, TestWorldQueries } from "./test-world-queries"
 
-export { createOldPipelineWorldQueries, TestWorldQueries } from "./test-world-queries"
+export { TestWorldQueries } from "./test-world-queries"
 
 export type Pipeline = "old" | "new"
 
@@ -95,7 +95,7 @@ export function assertEntityCorrect(
   project: UserProject,
   entity: ProjectEntity,
   expectError: number | false,
-  wq: TestWorldQueries = createOldPipelineWorldQueries(),
+  wq: TestWorldQueries,
 ): void {
   expect(entity.isSettingsRemnant).toBeFalsy()
   const found = project.content.findCompatibleEntity(entity.firstValue.name, entity.position, entity.direction, 1)
@@ -201,11 +201,7 @@ export function assertEntityCorrect(
   }
 }
 
-export function assertEntityNotPresent(
-  project: UserProject,
-  entity: ProjectEntity,
-  wq: TestWorldQueries = createOldPipelineWorldQueries(),
-): void {
+export function assertEntityNotPresent(project: UserProject, entity: ProjectEntity, wq: TestWorldQueries): void {
   const found = project.content.findCompatibleEntity(entity.firstValue.name, entity.position, entity.direction, 1)
   expect(found).toBeNil()
 
@@ -216,11 +212,7 @@ export function assertEntityNotPresent(
   expect(wq.hasAnyExtraEntities(entity, "errorElsewhereIndicator")).toBe(false)
 }
 
-export function assertIsSettingsRemnant(
-  project: UserProject,
-  entity: ProjectEntity,
-  wq: TestWorldQueries = createOldPipelineWorldQueries(),
-): void {
+export function assertIsSettingsRemnant(project: UserProject, entity: ProjectEntity, wq: TestWorldQueries): void {
   expect(entity.isSettingsRemnant).toBe(true)
   for (const stage of $range(1, project.lastStageFor(entity))) {
     const preview = wq.getWorldOrPreviewEntity(entity, stage)!
@@ -331,7 +323,7 @@ export function setupEntityIntegrationTest(numStages = 6): EntityTestContext {
       resyncWithWorld: () => ctx.project.worldUpdates.resyncWithWorld(),
     }
     ctx.projectOps = createOldPipelineProjectOps(ctx.project)
-    ctx.worldQueries = createOldPipelineWorldQueries()
+    ctx.worldQueries = createWorldPresentationQueries(ctx.project.worldPresentation)
   })
 
   before_each(() => {
