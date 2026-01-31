@@ -41,6 +41,7 @@ Since Typescript code compiles to Lua:
 
 - Use `==` instead of `===`, `!=` instead of `!==`
 - Use `nil` instead of `undefined`, avoid `null`
+- Avoid properties like `get foo()`, not performant; use `getFoo(), setFoo()` instead.
 
 ## Architecture
 
@@ -94,8 +95,11 @@ in `src/project/`:
 
 ### Migrations
 
-**IMPORTANT**: when editing anything that ends up in the `storage` global (project data, player data, etc.), always add a migration. 
+**IMPORTANT**: when editing anything that ends up in the `storage` global (project data, player data, etc.), always add a migration.
 See [docs/Migrations.md](docs/Migrations.md) for full reference and patterns.
+
+- Place project-related migrations in: `src/project/index.ts`
+- use `Migrations.to($CURRENT_VERSION, ...)` as a placeholder for current version. Global var will be substituted by a script later.
 
 ### Testing
 
