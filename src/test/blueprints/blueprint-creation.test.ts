@@ -253,7 +253,7 @@ test("blueprint with unstaged values includes item requests", () => {
   const unstagedValue = {
     items: [simpleInsertPlan(defines.inventory.crafter_input, "iron-ore", 0, 10)],
   }
-  projectEntity.setUnstagedValue(2, unstagedValue)
+  projectEntity._asMut().setUnstagedValue(2, unstagedValue)
 
   const stack = player.cursor_stack!
   const ret = takeStageBlueprint(stage2, stack)

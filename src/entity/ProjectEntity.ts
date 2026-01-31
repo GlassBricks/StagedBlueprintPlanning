@@ -35,7 +35,7 @@ import {
   PrototypeInfo,
 } from "./prototype-info"
 import { applyDiffToEntity, getDiffDiff, getEntityDiff, StageDiff, StageDiffInternal } from "./stage-diff"
-import { BaseStagedValue, StagedValue } from "./StagedValue"
+import { BaseStagedValue, ReadonlyStagedValue, StagedValue } from "./StagedValue"
 import { getDirectionalInfo, ProjectWireConnection, wireConnectionEquals } from "./wire-connection"
 import floor = math.floor
 
@@ -63,97 +63,77 @@ export function getNameAndQuality(name: string, quality?: string): NameAndQualit
 
 /**
  * All the data about one entity in a project, across all stages.
+ * Read-only public interface.
  */
-export interface ProjectEntity<out T extends Entity = Entity> extends StagedValue<T, StageDiff<T>> {
+export interface ProjectEntity<out T extends Entity = Entity> extends ReadonlyStagedValue<T, StageDiff<T>> {
   readonly position: Position
-  setPositionUnchecked(position: Position): void
-
-  direction: defines.direction
-
-  isSettingsRemnant?: true
-
+  readonly direction: defines.direction
+  readonly isSettingsRemnant?: true
   readonly wireConnections?: WireConnections
-
-  addOneWayWireConnection(connection: ProjectWireConnection): boolean
-  removeOneWayWireConnection(connection: ProjectWireConnection): void
-
-  syncIngoingConnections(existingEntities: ReadonlyLuaSet<ProjectEntity>): void
-  removeIngoingConnections(): void
 
   isUndergroundBelt(): this is UndergroundBeltProjectEntity
   isInserter(): this is InserterProjectEntity
   getType(): EntityType | nil
-
   isMovable(): this is MovableProjectEntity
-
-  // Should be in all stages always
   isPersistent(): boolean
+  getPreviewDirection(): defines.direction
 
-  isNewRollingStock?: true
+  getFirstStageDiffForProp<K extends keyof T>(prop: K): LuaMultiReturn<[] | [StageNumber | nil, T[K]]>
+  getUnstagedValue(stage: StageNumber): UnstagedEntityProps | nil
+
+  getPropAtStage<K extends keyof T>(stage: StageNumber, prop: K): LuaMultiReturn<[T[K], StageNumber]>
+  getUpgradeAtStage(stage: StageNumber): NameAndQuality
+
+  getProperty<T extends keyof StageProperties>(key: T, stage: StageNumber): StageProperties[T] | nil
+  getPropertyAllStages<T extends keyof StageProperties>(key: T): Record<StageNumber, StageProperties[T]> | nil
+  propertySetInAnyStage(key: keyof StageProperties): boolean
+
+  _asMut(): InternalProjectEntity<T>
+
+  /** Linked list for Map2D */
+  _next: ProjectEntity | nil
+}
+
+/**
+ * Internal mutable interface for ProjectEntity.
+ * Used by MutableProjectContent and entity-internal code.
+ */
+export interface InternalProjectEntity<T extends Entity = Entity>
+  extends ProjectEntity<T>, StagedValue<T, StageDiff<T>> {
+  position: Position
+  direction: defines.direction
+  setPositionUnchecked(position: Position): void
+
+  isSettingsRemnant: true | nil
+  isNewRollingStock: true | nil
+
+  adjustValueAtStage(stage: StageNumber, value: T): boolean
+  setPropAtStage<K extends keyof T>(stage: StageNumber, prop: K, value: T[K]): boolean
+  applyUpgradeAtStage(stage: StageNumber, newValue: NameAndQuality): boolean
+  resetValue(stage: StageNumber): boolean
+  resetProp<K extends keyof T>(stage: StageNumber, prop: K): boolean
+  moveValueDown(stage: StageNumber): StageNumber | nil
+  movePropDown<K extends keyof T>(stage: StageNumber, prop: K): StageNumber | nil
+
+  setFirstValueDirectly(value: T): void
+  setStageDiffsDirectly(stageDiffs: PRRecord<StageNumber, StageDiff<T>> | nil): void
+  setFirstStageUnchecked(stage: StageNumber): void
+  setLastStageUnchecked(stage: StageNumber | nil): void
+  clearPropertyInAllStages<T extends keyof StageProperties>(key: T): void
+
+  setUnstagedValue(stage: StageNumber, value: UnstagedEntityProps | nil): boolean
 
   setTypeProperty(this: UndergroundBeltProjectEntity, direction: "input" | "output"): void
   setDropPosition(this: InserterProjectEntity, position: Position | nil): void
   setPickupPosition(this: InserterProjectEntity, position: Position | nil): void
 
-  /** If this is a rolling stock, the direction is based off of orientation instead. */
-  getPreviewDirection(): defines.direction
-
-  getFirstStageDiffForProp<K extends keyof T>(prop: K): LuaMultiReturn<[] | [StageNumber | nil, T[K]]>
-  _applyDiffAtStage(stage: StageNumber, diff: StageDiffInternal<T>): void
-
-  /** Linked list for Map2D */
-  _next: ProjectEntity | nil
-
-  /** @return the value of a property at a given stage, or at the first stage if below the first stage. Also returns the stage in which the property is affected. */
-  getPropAtStage<K extends keyof T>(stage: StageNumber, prop: K): LuaMultiReturn<[T[K], StageNumber]>
-  getUpgradeAtStage(stage: StageNumber): NameAndQuality
-
-  /**
-   * Adjusts stage diffs so that the value at the given stage matches the given value.
-   * Rolling stock entities are ignored if not at the first stage.
-   * Trims stage diffs in higher stages if they no longer have any effect.
-   * @return true if the value changed.
-   */
-  adjustValueAtStage(stage: StageNumber, value: T): boolean
-  /**
-   * Adjusts stage diffs to set a property at the given stage to the given value.
-   * Rolling stock is not supported.
-   * See {@link adjustValueAtStage} for more info.
-   * @return true if the value changed.
-   */
-  setPropAtStage<K extends keyof T>(stage: StageNumber, prop: K, value: T[K]): boolean
-  /** Same as `setPropAtStage("name", stage, name)`. */
-  applyUpgradeAtStage(stage: StageNumber, newValue: NameAndQuality): boolean
-
-  /**
-   * Removes all stage-diffs at the given stage.
-   * @return true if there was a stage diff at the given stage.
-   */
-  resetValue(stage: StageNumber): boolean
-  /**
-   * Applies stage diffs at the give stage to the next lower applicable stage.
-   * @return The stage to which the diffs were applied, or `nil` if no diffs were applied.
-   */
-  moveValueDown(stage: StageNumber): StageNumber | nil
-  /**
-   * Removes a property from a stage diff property.
-   * @return true if the property was removed.
-   */
-  resetProp<K extends keyof T>(stage: StageNumber, prop: K): boolean
-  /**
-   * Applies a stage diff property to the next lower applicable stage.
-   * @return the stage number that the property was applied to, or nil if no property or applicable stage.
-   */
-  movePropDown<K extends keyof T>(stage: StageNumber, prop: K): StageNumber | nil
-
-  setUnstagedValue(stage: StageNumber, value: UnstagedEntityProps | nil): boolean
-  getUnstagedValue(stage: StageNumber): UnstagedEntityProps | nil
+  addOneWayWireConnection(connection: ProjectWireConnection): boolean
+  removeOneWayWireConnection(connection: ProjectWireConnection): void
+  syncIngoingConnections(existingEntities: ReadonlyLuaSet<ProjectEntity>): void
+  removeIngoingConnections(): void
 
   setProperty<T extends keyof StageProperties>(key: T, stage: StageNumber, value: StageProperties[T] | nil): boolean
-  getProperty<T extends keyof StageProperties>(key: T, stage: StageNumber): StageProperties[T] | nil
-  getPropertyAllStages<T extends keyof StageProperties>(key: T): Record<StageNumber, StageProperties[T]> | nil
-  propertySetInAnyStage(key: keyof StageProperties): boolean
-  clearPropertyInAllStages<T extends keyof StageProperties>(key: T): void
+  _applyDiffAtStage(stage: StageNumber, diff: StageDiffInternal<T>): void
 }
 
 export type StageDiffs<E extends Entity = Entity> = PRRecord<StageNumber, StageDiff<E>>
@@ -164,8 +144,10 @@ export interface StageProperties {
 }
 
 export type UndergroundBeltProjectEntity = ProjectEntity<UndergroundBeltEntity>
+export type InternalUndergroundBeltProjectEntity = InternalProjectEntity<UndergroundBeltEntity>
 export type LoaderProjectEntity = ProjectEntity<LoaderEntity>
 export type InserterProjectEntity = ProjectEntity<InserterEntity>
+export type InternalInserterProjectEntity = InternalProjectEntity<InserterEntity>
 export type MovableProjectEntity = ProjectEntity<MovableEntity>
 export type TrainProjectEntity = ProjectEntity<TrainEntity>
 
@@ -179,12 +161,13 @@ export function orientationToDirection(orientation: RealOrientation | nil): defi
 @RegisterClass("AssemblyEntity")
 class ProjectEntityImpl<T extends Entity = Entity>
   extends BaseStagedValue<T, StageDiff<T>>
-  implements ProjectEntity<T>
+  implements InternalProjectEntity<T>
 {
   position: Position
   direction: defines.direction
 
   isSettingsRemnant: true | nil
+  isNewRollingStock: true | nil
 
   wireConnections?: LuaMap<ProjectEntity, LuaSet<ProjectWireConnection>>
 
@@ -201,6 +184,10 @@ class ProjectEntityImpl<T extends Entity = Entity>
     if (this.oneStageOnly()) {
       this.lastStage = firstStage
     }
+  }
+
+  _asMut(): InternalProjectEntity<T> {
+    return this
   }
 
   getPreviewDirection(): defines.direction {
@@ -273,7 +260,7 @@ class ProjectEntityImpl<T extends Entity = Entity>
           wireConnections.delete(otherEntity)
         } else {
           for (const connection of connections) {
-            otherEntity.addOneWayWireConnection(connection)
+            otherEntity._asMut().addOneWayWireConnection(connection)
           }
         }
       }
@@ -285,7 +272,7 @@ class ProjectEntityImpl<T extends Entity = Entity>
     if (wireConnections)
       for (const [otherEntity, connections] of wireConnections) {
         for (const connection of connections) {
-          otherEntity.removeOneWayWireConnection(connection)
+          otherEntity._asMut().removeOneWayWireConnection(connection)
         }
       }
   }
@@ -610,14 +597,16 @@ class ProjectEntityImpl<T extends Entity = Entity>
 ProjectEntityImpl.prototype.applyDiff = applyDiffToEntity
 
 export function addWireConnection(connection: ProjectWireConnection): void {
-  const { fromEntity, toEntity } = connection
-  fromEntity.addOneWayWireConnection(connection)
-  toEntity.addOneWayWireConnection(connection)
+  const from = connection.fromEntity._asMut()
+  const to = connection.toEntity._asMut()
+  from.addOneWayWireConnection(connection)
+  to.addOneWayWireConnection(connection)
 }
 export function removeWireConnection(connection: ProjectWireConnection): void {
-  const { fromEntity, toEntity } = connection
-  fromEntity.removeOneWayWireConnection(connection)
-  toEntity.removeOneWayWireConnection(connection)
+  const from = connection.fromEntity._asMut()
+  const to = connection.toEntity._asMut()
+  from.removeOneWayWireConnection(connection)
+  to.removeOneWayWireConnection(connection)
 }
 
 export function newProjectEntity<E extends Entity>(
@@ -626,7 +615,7 @@ export function newProjectEntity<E extends Entity>(
   direction: defines.direction,
   stageNumber: StageNumber,
   unstagedValue?: UnstagedEntityProps,
-): ProjectEntity<E> {
+): InternalProjectEntity<E> {
   const result = new ProjectEntityImpl(stageNumber, entity, position, direction)
   if (unstagedValue) result.setUnstagedValue(stageNumber, unstagedValue)
   return result

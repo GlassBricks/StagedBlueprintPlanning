@@ -134,7 +134,7 @@ describe.each([
 
   test("deleting entity may create settings remnant", () => {
     const entity = buildEntity(3)
-    entity._applyDiffAtStage(4, { override_stack_size: 2 })
+    entity._asMut()._applyDiffAtStage(4, { override_stack_size: 2 })
     const worldEntity = ctx.worldQueries.getWorldEntity(entity, 3)!
     ctx.player.mine_entity(worldEntity, true)
     expect(worldEntity.valid).toBe(false)
@@ -145,8 +145,8 @@ describe.each([
     describe("reviving settings remnants", () => {
       test.each([1, 2, 3, 4, 5, 6])("settings remnant 1->3->5, revive at stage %d", (reviveStage) => {
         const entity = buildEntity<InserterBlueprintEntity>(1)
-        entity._applyDiffAtStage(3, { override_stack_size: 2 })
-        entity._applyDiffAtStage(5, { override_stack_size: 3 })
+        entity._asMut()._applyDiffAtStage(3, { override_stack_size: 2 })
+        entity._asMut()._applyDiffAtStage(5, { override_stack_size: 3 })
         ctx.projectOps.deleteEntityOrCreateSettingsRemnant(entity)
         ctx.assertIsSettingsRemnant(entity)
 
@@ -170,7 +170,7 @@ describe.each([
 
       test("settings remnant 2->3, revive at stage 1", () => {
         const entity = buildEntity<InserterBlueprintEntity>(2)
-        entity._applyDiffAtStage(3, { override_stack_size: 3 })
+        entity._asMut()._applyDiffAtStage(3, { override_stack_size: 3 })
         ctx.projectOps.deleteEntityOrCreateSettingsRemnant(entity)
         ctx.assertIsSettingsRemnant(entity)
 
@@ -188,7 +188,7 @@ describe.each([
 
   test("can force delete an entity at any stage", () => {
     const entity = buildEntity(3)
-    entity._applyDiffAtStage(4, { override_stack_size: 2 })
+    entity._asMut()._applyDiffAtStage(4, { override_stack_size: 2 })
     Events.raiseFakeEventNamed("on_player_selected_area", {
       player_index: ctx.player.index,
       item: Prototypes.ForceDeleteTool,
@@ -334,8 +334,8 @@ describe.each([
 
     test("refreshing and rebuilding an entity with diffs", () => {
       const entity = buildEntity(2)
-      entity._applyDiffAtStage(5, { name: upgradeName })
-      entity._applyDiffAtStage(3, diff)
+      entity._asMut()._applyDiffAtStage(5, { name: upgradeName })
+      entity._asMut()._applyDiffAtStage(3, diff)
       ctx.worldOps.refreshAllEntities(entity)
       for (const stage of $range(1, 6)) {
         ctx.worldOps.refreshEntity(entity, stage)
@@ -356,7 +356,7 @@ describe.each([
 
     test("resetProp", () => {
       const entity = buildEntity(3)
-      entity._applyDiffAtStage(4, diff)
+      entity._asMut()._applyDiffAtStage(4, diff)
       for (const key of keys) {
         ctx.projectOps.resetProp(entity, 4, key as keyof BlueprintEntity)
       }
@@ -368,7 +368,7 @@ describe.each([
 
     test("movePropDown", () => {
       const entity = buildEntity(3)
-      entity._applyDiffAtStage(4, diff)
+      entity._asMut()._applyDiffAtStage(4, diff)
       for (const key of keys) {
         ctx.projectOps.movePropDown(entity, 4, key as keyof BlueprintEntity)
       }
@@ -379,7 +379,7 @@ describe.each([
 
     test("resetAllProps", () => {
       const entity = buildEntity(3)
-      entity._applyDiffAtStage(4, diff)
+      entity._asMut()._applyDiffAtStage(4, diff)
       ctx.projectOps.resetAllProps(entity, 4)
       expect(entity.hasStageDiff()).toBe(false)
       expect(entity.firstValue).not.toMatchTable(diff)
@@ -388,7 +388,7 @@ describe.each([
 
     test("moveAllPropsDown", () => {
       const entity = buildEntity(3)
-      entity._applyDiffAtStage(4, diff)
+      entity._asMut()._applyDiffAtStage(4, diff)
       ctx.projectOps.moveAllPropsDown(entity, 4)
       expect(entity.hasStageDiff()).toBe(false)
       expect(entity.firstValue).toMatchTable(diff)

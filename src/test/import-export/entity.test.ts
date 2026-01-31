@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import expect from "tstl-expect"
-import { addWireConnection, newProjectEntity, StageDiffs } from "../../entity/ProjectEntity"
+import { addWireConnection, newProjectEntity, ProjectEntity, StageDiffs } from "../../entity/ProjectEntity"
 import {
   EntityExport,
   exportAllEntities,
@@ -136,7 +136,8 @@ test("exportAllEntities", () => {
     toId,
   })
 
-  const [export1, export2] = exportAllEntities(newLuaSet(entity1, entity2))
+  const entities = newLuaSet<ProjectEntity>(entity1, entity2)
+  const [export1, export2] = exportAllEntities(entities)
 
   expect(export1).toMatchTable({ entityNumber: 1 })
   expect(export2).toMatchTable({ entityNumber: 2 })

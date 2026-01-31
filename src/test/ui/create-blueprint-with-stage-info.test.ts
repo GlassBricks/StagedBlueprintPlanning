@@ -40,7 +40,7 @@ test("create blueprint of simple entity", () => {
     position: Pos(0, 0),
     force: "player",
   })
-  entity.setLastStageUnchecked(3)
+  entity._asMut().setLastStageUnchecked(3)
 
   const stack = createBlueprintWithStageInfo(player, project.getStage(3)!, {
     left_top: Pos(-1, -1),
@@ -63,11 +63,11 @@ test("create blueprint of entity with stage diff and unstaged value", () => {
     force: "player",
     recipe: "iron-gear-wheel",
   })
-  entity._applyDiffAtStage(3, {
+  entity._asMut()._applyDiffAtStage(3, {
     name: "assembling-machine-2",
     recipe: getNilPlaceholder(),
   })
-  entity.setUnstagedValue(2, {
+  entity._asMut().setUnstagedValue(2, {
     _forTest: "foo",
   })
 

@@ -186,7 +186,7 @@ describe("item-requests", () => {
 
   test("rebuilding an entity with item requests", () => {
     const projectChest = buildChest()
-    projectChest.setUnstagedValue(2, { items: [chestPlateInsertPlan] })
+    projectChest._asMut().setUnstagedValue(2, { items: [chestPlateInsertPlan] })
     ctx.worldOps.updateWorldEntities(projectChest, 2)
 
     const chest = ctx.worldQueries.getWorldEntity(projectChest, 2)!

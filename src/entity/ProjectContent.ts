@@ -253,7 +253,7 @@ class ProjectContentImpl implements MutableProjectContent {
     const { x, y } = entity.position
     this.byPosition.add(x, y, entity)
 
-    entity.syncIngoingConnections(entities)
+    entity._asMut().syncIngoingConnections(entities)
   }
 
   deleteEntity(entity: ProjectEntity): void {
@@ -263,7 +263,7 @@ class ProjectContentImpl implements MutableProjectContent {
     const { x, y } = entity.position
     this.byPosition.delete(x, y, entity)
 
-    entity.removeIngoingConnections()
+    entity._asMut().removeIngoingConnections()
   }
 
   setTile(position: Position, tile: ProjectTile): void {
@@ -286,14 +286,14 @@ class ProjectContentImpl implements MutableProjectContent {
     if (x == newX && y == newY) return false
     const { byPosition } = this
     byPosition.delete(x, y, entity)
-    entity.setPositionUnchecked(position)
+    entity._asMut().setPositionUnchecked(position)
     byPosition.add(newX, newY, entity)
     return true
   }
 
   insertStage(stageNumber: StageNumber): void {
     for (const entity of this.entities) {
-      entity.insertStage(stageNumber)
+      entity._asMut().insertStage(stageNumber)
     }
     for (const [, r] of pairs<PRecord<number, PRecord<number, ProjectTile>>>(this.tiles)) {
       for (const [, tile] of pairs(r)) {
@@ -303,7 +303,7 @@ class ProjectContentImpl implements MutableProjectContent {
   }
   mergeStage(stageNumber: StageNumber): void {
     for (const entity of this.entities) {
-      entity.mergeStage(stageNumber)
+      entity._asMut().mergeStage(stageNumber)
     }
     for (const [, r] of pairs<PRecord<number, PRecord<number, ProjectTile>>>(this.tiles)) {
       for (const [, tile] of pairs(r)) {
@@ -323,7 +323,7 @@ class ProjectContentImpl implements MutableProjectContent {
         this.deleteEntity(entity)
         deleted.push(entity)
       } else {
-        if (entity.discardStage(stageNumber)) {
+        if (entity._asMut().discardStage(stageNumber)) {
           updated.push(entity)
         }
       }

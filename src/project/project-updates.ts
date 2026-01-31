@@ -152,8 +152,9 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     if (pair) {
       const expectedType = pair.firstValue.type == "output" ? "input" : "output"
       if (expectedType != projectEntity.firstValue.type) {
-        projectEntity.setTypeProperty(expectedType)
-        projectEntity.direction = pair.direction
+        const mut = projectEntity._asMut()
+        mut.setTypeProperty(expectedType)
+        mut.direction = pair.direction
       }
     }
   }
@@ -186,7 +187,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     fixNewUndergroundBelt(projectEntity, entity, stage)
 
     if (projectEntity.getType() == "locomotive") {
-      projectEntity.isNewRollingStock = true
+      projectEntity._asMut().isNewRollingStock = true
     }
 
     updateNewWorldEntitiesWithoutWires(projectEntity)
@@ -227,7 +228,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   }
   function deleteEntityOrCreateSettingsRemnant(entity: ProjectEntity): void {
     if (shouldMakeSettingsRemnant(entity)) {
-      entity.isSettingsRemnant = true
+      entity._asMut().isSettingsRemnant = true
       makeSettingsRemnant(entity)
     } else {
       deleteWorldEntities(entity)
@@ -250,8 +251,9 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     if (entity.isPersistent()) return StageMoveResult.EntityIsPersistent
     const result = checkCanSetFirstStage(entity, stage)
     if (result == StageMoveResult.Updated || result == StageMoveResult.NoChange) {
-      entity.setFirstStageUnchecked(stage)
-      entity.isSettingsRemnant = nil
+      const mut = entity._asMut()
+      mut.setFirstStageUnchecked(stage)
+      mut.isSettingsRemnant = nil
       reviveSettingsRemnant(entity)
     }
     return result
@@ -266,8 +268,9 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     const [value, unstagedValue] = saveEntity(entitySource, items)
     if (value == nil) return false
 
-    const hasDiff = entity.adjustValueAtStage(stage, value)
-    const hasUnstagedDiff = entity.setUnstagedValue(stage, unstagedValue)
+    const mut = entity._asMut()
+    const hasDiff = mut.adjustValueAtStage(stage, value)
+    const hasUnstagedDiff = mut.setUnstagedValue(stage, unstagedValue)
     return hasDiff || hasUnstagedDiff
   }
 
@@ -324,20 +327,21 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     if (rotated) {
       const rotateAllowed = stage == entity.firstStage
       if (rotateAllowed) {
-        entity.direction = targetDirection
+        entity._asMut().direction = targetDirection
         const entityType = entitySource.type
         if (entityType == "loader" || entityType == "loader-1x1") {
           assume<LoaderProjectEntity>(entity)
-          entity.setTypeProperty(entitySource.loader_type)
+          entity._asMut().setTypeProperty(entitySource.loader_type)
         } else if (entityType == "inserter") {
           assume<InserterProjectEntity>(entity)
           // also update pickup and drop positions
           // Need a relative position when setting the positions, but we only get an absolute when retrieving them from
           // the source, so we need to translate them
+          const inserterMut = entity._asMut()
           if (entity.firstValue.pickup_position)
-            entity.setPickupPosition(Pos.minus(entitySource.pickup_position, entitySource.position))
+            inserterMut.setPickupPosition(Pos.minus(entitySource.pickup_position, entitySource.position))
           if (entity.firstValue.drop_position)
-            entity.setDropPosition(Pos.minus(entitySource.drop_position, entitySource.position))
+            inserterMut.setDropPosition(Pos.minus(entitySource.drop_position, entitySource.position))
         }
       } else {
         refreshWorldEntityAtStage(entity, stage)
@@ -349,7 +353,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
       hasDiff = true
     } else if (targetUpgrade) {
       checkUpgradeType(entity, targetUpgrade.name)
-      if (entity.applyUpgradeAtStage(stage, targetUpgrade)) {
+      if (entity._asMut().applyUpgradeAtStage(stage, targetUpgrade)) {
         hasDiff = true
       }
     }
@@ -402,9 +406,10 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
       return EntityUpdateResult.CannotRotate
     }
     // rotate pair
-    pair.direction = worldEntity.direction
+    const pairMut = pair._asMut()
+    pairMut.direction = worldEntity.direction
     const oppositeType = worldEntity.belt_to_ground_type == "input" ? "output" : "input"
-    pair.setTypeProperty(oppositeType)
+    pairMut.setTypeProperty(oppositeType)
     updatePair(entity, entity.firstStage, pair, pair.firstStage)
     return EntityUpdateResult.Updated
   }
@@ -437,13 +442,15 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
         return EntityUpdateResult.CannotRotate
       }
 
-      thisUg.direction = targetDirection
+      const thisUgMut = thisUg._asMut()
+      thisUgMut.direction = targetDirection
       const oldType = thisUg.firstValue.type
       const newType = oldType == "input" ? "output" : "input"
-      thisUg.setTypeProperty(newType)
+      thisUgMut.setTypeProperty(newType)
       if (pair) {
-        pair.direction = targetDirection
-        pair.setTypeProperty(oldType)
+        const pairMut = pair._asMut()
+        pairMut.direction = targetDirection
+        pairMut.setTypeProperty(oldType)
       }
     }
 
@@ -452,7 +459,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     let cannotUpgradeChangedPair = false
     let newPair: UndergroundBeltProjectEntity | nil = nil
     if (upgraded) {
-      thisUg.applyUpgradeAtStage(applyStage, targetUpgrade)
+      thisUg._asMut().applyUpgradeAtStage(applyStage, targetUpgrade)
       newPair = findUndergroundPair(content, thisUg, stage, targetUpgrade.name)
       if (pair == nil) {
         if (newPair != nil) {
@@ -463,10 +470,10 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
         cannotUpgradeChangedPair = newPair != nil && newPair != pair
       }
       if (cannotUpgradeChangedPair) {
-        thisUg.applyUpgradeAtStage(stage, oldUpgrade)
+        thisUg._asMut().applyUpgradeAtStage(stage, oldUpgrade)
       } else if (pair) {
         if (undergroundCanReach(thisUg, pair, targetUpgrade.name)) {
-          pair.applyUpgradeAtStage(pairApplyStage, targetUpgrade)
+          pair._asMut().applyUpgradeAtStage(pairApplyStage, targetUpgrade)
         } else {
           pair = nil
         }
@@ -573,14 +580,14 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     if (targetStage != entity.firstStage) {
       const result = checkCanSetFirstStage(entity, targetStage)
       if (result != StageMoveResult.Updated) return result
-      entity.setFirstStageUnchecked(targetStage)
+      entity._asMut().setFirstStageUnchecked(targetStage)
     }
     const lastStage = info.lastStage
     const oldLastStage = entity.lastStage
     if (lastStage != oldLastStage) {
       const result = checkCanSetLastStage(entity, lastStage)
       if (result != StageMoveResult.Updated) return result
-      entity.setLastStageUnchecked(lastStage)
+      entity._asMut().setLastStageUnchecked(lastStage)
 
       // delete entities from oldLastStage to newLastStage if applicable
       if (lastStage != nil && (oldLastStage == nil || lastStage < oldLastStage))
@@ -589,9 +596,10 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
 
     const oldStageDiffs = entity.stageDiffs
 
-    entity.setFirstValueDirectly(firstValue)
+    const entityMut = entity._asMut()
+    entityMut.setFirstValueDirectly(firstValue)
     const stageDiffs = info.stageDiffs ? fromExportStageDiffs(info.stageDiffs) : nil
-    entity.setStageDiffsDirectly(stageDiffs)
+    entityMut.setStageDiffsDirectly(stageDiffs)
     replaceUnstagedValue(entity, info)
 
     updateWorldEntities(entity, 1)
@@ -605,11 +613,12 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   function replaceUnstagedValue(entity: ProjectEntity<Entity>, info: StageInfoExport<Entity>) {
     const unstagedValues = info.unstagedValue
     if (unstagedValues != nil) {
-      entity.clearPropertyInAllStages("unstagedValue")
+      const entityMut = entity._asMut()
+      entityMut.clearPropertyInAllStages("unstagedValue")
       for (const [stage, value] of pairs(unstagedValues)) {
         const stageNumber = tonumber(stage)
         if (stageNumber == nil) continue
-        entity.setUnstagedValue(stageNumber, value)
+        entityMut.setUnstagedValue(stageNumber, value)
       }
     }
   }
@@ -651,7 +660,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
       const oldFirstStage = entity.firstStage
       const stageToUpdate = min(oldFirstStage, stage)
       const oldLastStage = entity.lastStage
-      entity.setFirstStageUnchecked(stage)
+      entity._asMut().setFirstStageUnchecked(stage)
       if (entity.isMovable() && stage < oldFirstStage) {
         updateWorldEntitiesOnLastStageChanged(entity, oldLastStage)
       }
@@ -679,20 +688,20 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
     const result = checkCanSetLastStage(entity, stage)
     if (result == StageMoveResult.Updated) {
       const oldLastStage = entity.lastStage
-      entity.setLastStageUnchecked(stage)
+      entity._asMut().setLastStageUnchecked(stage)
       updateWorldEntitiesOnLastStageChanged(entity, oldLastStage)
     }
     return result
   }
 
   function resetProp<T extends Entity>(entity: ProjectEntity<T>, stageNumber: StageNumber, prop: keyof T): boolean {
-    const moved = entity.resetProp(stageNumber, prop)
+    const moved = entity._asMut().resetProp(stageNumber, prop)
     if (moved) updateWorldEntities(entity, stageNumber)
     return moved
   }
 
   function movePropDown<T extends Entity>(entity: ProjectEntity<T>, stageNumber: StageNumber, prop: keyof T): boolean {
-    const movedStage = entity.movePropDown(stageNumber, prop)
+    const movedStage = entity._asMut().movePropDown(stageNumber, prop)
     if (movedStage) {
       updateWorldEntities(entity, movedStage)
       return true
@@ -701,13 +710,13 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
   }
 
   function resetAllProps(entity: ProjectEntity, stageNumber: StageNumber): boolean {
-    const moved = entity.resetValue(stageNumber)
+    const moved = entity._asMut().resetValue(stageNumber)
     if (moved) updateWorldEntities(entity, stageNumber)
     return moved
   }
 
   function moveAllPropsDown(entity: ProjectEntity, stageNumber: StageNumber): boolean {
-    const movedStage = entity.moveValueDown(stageNumber)
+    const movedStage = entity._asMut().moveValueDown(stageNumber)
     if (movedStage) {
       updateWorldEntities(entity, movedStage)
       return true
@@ -755,7 +764,7 @@ export function ProjectUpdates(project: Project, WorldUpdates: WorldUpdates): Pr
       if (projectEntity) {
         content.changeEntityPosition(projectEntity, luaEntity.position)
         assume<ProjectEntity<TrainEntity>>(projectEntity)
-        projectEntity.setPropAtStage(projectEntity.firstStage, "orientation", luaEntity.orientation)
+        projectEntity._asMut().setPropAtStage(projectEntity.firstStage, "orientation", luaEntity.orientation)
         rebuildWorldEntityAtStage(projectEntity, stage)
       } else {
         // add

@@ -6,7 +6,7 @@ import { LuaSurface, nil, SurfaceIndex } from "factorio:runtime"
 import { remove_from_list } from "util"
 import { newProjectContent } from "../entity/ProjectContent"
 import { StageNumber } from "../entity/ProjectEntity"
-import { StagedValue } from "../entity/StagedValue"
+import { ReadonlyStagedValue } from "../entity/StagedValue"
 import { Events, globalEvent, ibind, Mutable, RegisterClass, SimpleEvent, Subscription } from "../lib"
 import { BBox } from "../lib/geometry"
 import { LazyLoadClass } from "../lib/LazyLoad"
@@ -107,7 +107,7 @@ class UserProjectImpl implements UserProjectInternal {
   getStage(stageNumber: StageNumber): Stage | nil {
     return this.stages[stageNumber]
   }
-  lastStageFor(value: StagedValue<any, any>): StageNumber {
+  lastStageFor(value: ReadonlyStagedValue<any, any>): StageNumber {
     const numStages = this.settings.stageCount()
     if (value.lastStage != nil) return min(value.lastStage, numStages)
     return numStages

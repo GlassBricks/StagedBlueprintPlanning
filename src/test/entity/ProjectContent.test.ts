@@ -6,7 +6,7 @@
 import expect, { mock } from "tstl-expect"
 import { LuaEntityInfo } from "../../entity/Entity"
 import { _assertCorrect, MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
-import { newProjectEntity, ProjectEntity } from "../../entity/ProjectEntity"
+import { InternalProjectEntity, newProjectEntity, ProjectEntity } from "../../entity/ProjectEntity"
 import { createProjectTile } from "../../tiles/ProjectTile"
 import { getPrototypeRotationType, RotationType } from "../../entity/prototype-info"
 import { registerEntity } from "../../entity/registration"
@@ -95,7 +95,7 @@ describe("findCompatible", () => {
   })
 
   test("not compatible", () => {
-    const entity: ProjectEntity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
+    const entity: InternalProjectEntity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
     entity.setLastStageUnchecked(2)
     expect(content.findCompatibleEntity("test2", entity.position, defines.direction.north, 2)).toBeNil()
     expect(content.findCompatibleEntity("foo", entity.position, defines.direction.south, 2)).toBeNil()
@@ -281,7 +281,7 @@ test("deletes tile and returns success status", () => {
 })
 
 test("inserts stage for all entities and tiles", () => {
-  const entity: ProjectEntity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
+  const entity: InternalProjectEntity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
   const pos = { x: 1, y: 2 }
   const tile = createProjectTile()
   tile.setTileAtStage(1, "bar")
@@ -295,7 +295,7 @@ test("inserts stage for all entities and tiles", () => {
 })
 
 test("deletes stage for all entities and tiles", () => {
-  const entity: ProjectEntity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
+  const entity: InternalProjectEntity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
   const pos = { x: 1, y: 2 }
   const tile = createProjectTile()
   tile.setTileAtStage(1, "bar")

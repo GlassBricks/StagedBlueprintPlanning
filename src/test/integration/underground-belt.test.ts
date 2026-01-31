@@ -260,7 +260,7 @@ describe("underground belt inconsistencies", () => {
       ctx.assertEntityCorrect(middleUnderground, false)
     })
     test("when deleting an underground causing old pair to flip, project.updates highlights on old pair", () => {
-      middleUnderground.setFirstStageUnchecked(1)
+      middleUnderground._asMut().setFirstStageUnchecked(1)
       ctx.worldOps.updateWorldEntities(middleUnderground, 1)
 
       ctx.worldQueries.getWorldEntity(middleUnderground, 1)!.rotate({ by_player: ctx.player })
@@ -317,8 +317,9 @@ describe("underground belt inconsistencies", () => {
         direction: defines.direction.east,
         neighbours: ctx.worldQueries.getWorldEntity(rightUnderground, 1)!,
       })
-      rightUnderground.setTypeProperty("input")
-      rightUnderground.direction = defines.direction.west
+      const mut = rightUnderground._asMut()
+      mut.setTypeProperty("input")
+      mut.direction = defines.direction.west
 
       expect(ctx.worldQueries.hasErrorAt(rightUnderground, 1)).toBe(true)
       expect(ctx.worldQueries.hasErrorAt(rightUnderground, 2)).toBe(true)
@@ -582,7 +583,7 @@ describe("underground belt inconsistencies", () => {
       })
     })
     test("does not upgrade underground belt in wrong direction", () => {
-      underground.setTypeProperty("output")
+      underground._asMut().setTypeProperty("output")
       ctx.worldOps.refreshAllEntities(underground)
       ctx.player.build_from_cursor({ position: pos, build_mode: defines.build_mode.superforced })
 

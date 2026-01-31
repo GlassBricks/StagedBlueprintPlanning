@@ -183,17 +183,17 @@ describe("config changed highlight", () => {
   })
   function setAt(stage: StageNumber) {
     assert(stage >= 2)
-    entity._applyDiffAtStage(stage, { foo: stage })
+    entity._asMut()._applyDiffAtStage(stage, { foo: stage })
   }
   function setUpgradeAt(stage: StageNumber) {
     assert(stage >= 2)
     // ;(entity._stageDiffs as any)[stage] = { name: "test" + stage.toString() }
-    entity._applyDiffAtStage(stage, { name: "test" + stage.toString() })
+    entity._asMut()._applyDiffAtStage(stage, { name: "test" + stage.toString() })
   }
   function clearAt(stage: StageNumber) {
     assert(stage >= 2)
     // ;(entity._stageDiffs as any)[stage] = nil
-    entity.adjustValueAtStage(stage, entity.getValueAtStage(stage - 1)!)
+    entity._asMut().adjustValueAtStage(stage, entity.getValueAtStage(stage - 1)!)
   }
   function assertCorrect() {
     entityHighlights.updateAllHighlights(entity)
@@ -234,7 +234,7 @@ describe("config changed highlight", () => {
   test("clears when moved to higher stage", () => {
     setAt(3)
     assertCorrect()
-    entity.setFirstStageUnchecked(2)
+    entity._asMut().setFirstStageUnchecked(2)
     assertCorrect()
     expect(es().get(entity, "configChangedLaterHighlight", 1)).toBeNil()
   })
@@ -242,22 +242,22 @@ describe("config changed highlight", () => {
 
 describe("stage delete highlights", () => {
   test("sets highlight if lastStage is set", () => {
-    entity.setLastStageUnchecked(3)
+    entity._asMut().setLastStageUnchecked(3)
     entityHighlights.updateAllHighlights(entity)
     assertLastStageHighlightCorrect(entity, wq)
   })
 
   test("removes highlight if lastStage is cleared", () => {
-    entity.setLastStageUnchecked(3)
+    entity._asMut().setLastStageUnchecked(3)
     entityHighlights.updateAllHighlights(entity)
-    entity.setLastStageUnchecked(nil)
+    entity._asMut().setLastStageUnchecked(nil)
     entityHighlights.updateAllHighlights(entity)
     assertLastStageHighlightCorrect(entity, wq)
   })
 
   test("does not create highlight if entity is movable", () => {
     const movableEntity = newProjectEntity({ name: "locomotive" }, Pos(1, 1), 0, 2)
-    movableEntity.setLastStageUnchecked(3)
+    movableEntity._asMut().setLastStageUnchecked(3)
     entityHighlights.updateAllHighlights(movableEntity)
     assertLastStageHighlightCorrect(movableEntity, wq)
   })
@@ -265,11 +265,11 @@ describe("stage delete highlights", () => {
 
 describe("settings remnants", () => {
   function createSettingsRemnant() {
-    entity.isSettingsRemnant = true
+    entity._asMut().isSettingsRemnant = true
     for (let i = 1; i <= 5; i++) removeInStage(i)
   }
   function reviveSettingsRemnant() {
-    entity.isSettingsRemnant = nil
+    entity._asMut().isSettingsRemnant = nil
     for (let i = 1; i <= 5; i++) addInStage(i)
   }
   test("makeSettingsRemnant creates highlights", () => {
@@ -291,7 +291,7 @@ describe("settings remnants", () => {
 })
 describe("stage request highlights", () => {
   test("sets highlight when stage is requested", () => {
-    entity.setUnstagedValue(3, {
+    entity._asMut().setUnstagedValue(3, {
       items: [simpleInsertPlan(defines.inventory.item_main, "iron-plate", 0)],
     })
     entityHighlights.updateAllHighlights(entity)

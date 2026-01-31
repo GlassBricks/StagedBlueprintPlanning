@@ -106,7 +106,7 @@ describe("poles and wire connections", () => {
     const worldEntity = ctx.worldQueries.getWorldEntity(inserter, 3)!
     const inserterValue = saveEntity(worldEntity)[0]! as Mutable<InserterBlueprintEntity>
     if (inserterValue.control_behavior) {
-      inserter._applyDiffAtStage(3, {
+      inserter._asMut()._applyDiffAtStage(3, {
         control_behavior: inserterValue.control_behavior,
       })
     } else {

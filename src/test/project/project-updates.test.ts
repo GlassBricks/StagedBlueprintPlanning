@@ -282,7 +282,7 @@ test("moving entity on preview replace", () => {
 
 test("tryReviveSettingsRemnant", () => {
   const { entity } = addEntity(2)
-  entity.isSettingsRemnant = true
+  entity._asMut().isSettingsRemnant = true
 
   projectUpdates.tryReviveSettingsRemnant(entity, 1)
 
@@ -311,7 +311,7 @@ describe("deleteEntityOrCreateSettingsRemnant()", () => {
 
   test("creates settings remnant if entity has stage diffs", () => {
     const { entity } = addEntity(1)
-    entity._applyDiffAtStage(2, { override_stack_size: 2 })
+    entity._asMut()._applyDiffAtStage(2, { override_stack_size: 2 })
 
     projectUpdates.deleteEntityOrCreateSettingsRemnant(entity)
 
@@ -367,7 +367,7 @@ describe("deleteEntityOrCreateSettingsRemnant()", () => {
 
 test("forceDeleteEntity always deletes", () => {
   const { entity } = addEntity(1)
-  entity.isSettingsRemnant = true
+  entity._asMut().isSettingsRemnant = true
 
   projectUpdates.forceDeleteEntity(entity)
 
@@ -426,7 +426,7 @@ describe("tryUpdateEntityFromWorld()", () => {
   test.each([false, true])("integration: in higher stage, with changes: %s", (withExistingChanges) => {
     const { luaEntity, entity } = addEntity<InserterBlueprintEntity>(1)
     if (withExistingChanges) {
-      entity._applyDiffAtStage(2, { override_stack_size: 2, filter_mode: "blacklist" })
+      entity._asMut()._applyDiffAtStage(2, { override_stack_size: 2, filter_mode: "blacklist" })
       luaEntity.inserter_filter_mode = "blacklist"
     }
 
@@ -448,7 +448,7 @@ describe("tryUpdateEntityFromWorld()", () => {
 
   test("integration: updating to match removes stage diff", () => {
     const { luaEntity, entity } = addEntity(1)
-    entity._applyDiffAtStage(2, { override_stack_size: 2 })
+    entity._asMut()._applyDiffAtStage(2, { override_stack_size: 2 })
     expect(entity.hasStageDiff()).toBe(true)
     luaEntity.inserter_stack_size_override = 1
 
@@ -638,7 +638,7 @@ describe("setValueFromStagedInfo()", () => {
 
   test("clears stage diff if info has no diffs", () => {
     const { entity, luaEntity } = addEntity(1)
-    entity._applyDiffAtStage(2, { name: "fast-inserter" })
+    entity._asMut()._applyDiffAtStage(2, { name: "fast-inserter" })
     const info: StageInfoExport = { firstStage: 2, lastStage: 5 }
     const ret = projectUpdates.setValueFromStagedInfo(entity, info, nil, luaEntity)
     expect(ret).toBe(StageMoveResult.Updated)
@@ -674,7 +674,7 @@ describe("trySetFirstStage()", () => {
 
   test("ignores settings remnants", () => {
     const { entity } = addEntity(1)
-    entity.isSettingsRemnant = true
+    entity._asMut().isSettingsRemnant = true
     const result = projectUpdates.trySetFirstStage(entity, 2)
     expect(result).toBe(StageMoveResult.NoChange)
     expect(entity.firstStage).toBe(1)
@@ -690,7 +690,7 @@ describe("trySetFirstStage()", () => {
 
   test("cannot move down if will intersect another entity", () => {
     const { entity: entity1 } = addEntity(1)
-    entity1.setLastStageUnchecked(2)
+    entity1._asMut().setLastStageUnchecked(2)
     const { entity: entity2 } = addEntity(3) // prevents moving up
 
     const result = projectUpdates.trySetFirstStage(entity2, 2)
@@ -699,7 +699,7 @@ describe("trySetFirstStage()", () => {
 
   test("cannot move past last stage", () => {
     const { entity } = addEntity(1)
-    entity.setLastStageUnchecked(2)
+    entity._asMut().setLastStageUnchecked(2)
     const result = projectUpdates.trySetFirstStage(entity, 5)
     expect(result).toBe(StageMoveResult.CannotMovePastLastStage)
   })
@@ -729,7 +729,7 @@ describe("trySetFirstStage()", () => {
 describe("trySetLastStage()", () => {
   test("can move down", () => {
     const { entity } = addEntity(2)
-    entity.setLastStageUnchecked(3)
+    entity._asMut().setLastStageUnchecked(3)
     const result = projectUpdates.trySetLastStage(entity, 2)
     expect(result).toBe("updated")
     expect(entity.lastStage).toBe(2)
@@ -738,7 +738,7 @@ describe("trySetLastStage()", () => {
   })
   test("can move up", () => {
     const { entity } = addEntity(2)
-    entity.setLastStageUnchecked(3)
+    entity._asMut().setLastStageUnchecked(3)
     const result = projectUpdates.trySetLastStage(entity, 4)
     expect(result).toBe("updated")
     expect(entity.lastStage).toBe(4)
@@ -748,7 +748,7 @@ describe("trySetLastStage()", () => {
 
   test("can set to nil", () => {
     const { entity } = addEntity(2)
-    entity.setLastStageUnchecked(3)
+    entity._asMut().setLastStageUnchecked(3)
     const result = projectUpdates.trySetLastStage(entity, nil)
     expect(result).toBe("updated")
     expect(entity.lastStage).toBe(nil)
@@ -758,7 +758,7 @@ describe("trySetLastStage()", () => {
 
   test("ignores settings remnants", () => {
     const { entity } = addEntity(1)
-    entity.isSettingsRemnant = true
+    entity._asMut().isSettingsRemnant = true
     const result = projectUpdates.trySetLastStage(entity, 2)
     expect(result).toBe(StageMoveResult.NoChange)
     expect(entity.lastStage).toBe(nil)
@@ -777,14 +777,14 @@ describe("trySetLastStage()", () => {
 
   test("returns no-change if already at stage", () => {
     const { entity } = addEntity(1)
-    entity.setLastStageUnchecked(2)
+    entity._asMut().setLastStageUnchecked(2)
     const result = projectUpdates.trySetLastStage(entity, 2)
     expect(result).toBe(StageMoveResult.NoChange)
   })
 
   test("cannot move up if will intersect another entity", () => {
     const { entity: entity1 } = addEntity(1)
-    entity1.setLastStageUnchecked(2)
+    entity1._asMut().setLastStageUnchecked(2)
     addEntity(3) // prevents moving down
 
     const result = projectUpdates.trySetLastStage(entity1, 3)
@@ -793,7 +793,7 @@ describe("trySetLastStage()", () => {
 
   test("cannot move before first stage", () => {
     const { entity } = addEntity(1)
-    entity.setLastStageUnchecked(2)
+    entity._asMut().setLastStageUnchecked(2)
     const result = projectUpdates.trySetLastStage(entity, 0)
     expect(result).toBe(StageMoveResult.CannotMoveBeforeFirstStage)
   })
@@ -1168,8 +1168,9 @@ describe("undergrounds", () => {
     wp().replaceWorldOrPreviewEntity(entity1, 2, luaEntity1)
     wp().replaceWorldOrPreviewEntity(entity2, 2, luaEntity2)
     // break entity2
-    entity2.direction = direction.east
-    entity2.setTypeProperty("input")
+    const mut2 = entity2._asMut()
+    mut2.direction = direction.east
+    mut2.setTypeProperty("input")
     expect(wp().hasErrorAt(entity2, 2)).toBe(true)
 
     assert(luaEntity2.rotate())
@@ -1196,8 +1197,9 @@ describe("undergrounds", () => {
     wp().replaceWorldOrPreviewEntity(entity1, 2, luaEntity1)
     wp().replaceWorldOrPreviewEntity(entity2, 2, luaEntity2)
     // break entity2
-    entity2.direction = direction.east
-    entity2.setTypeProperty("input")
+    const mut2 = entity2._asMut()
+    mut2.direction = direction.east
+    mut2.setTypeProperty("input")
     expect(wp().hasErrorAt(entity2, 2)).toBe(true)
 
     assert(luaEntity2.rotate())

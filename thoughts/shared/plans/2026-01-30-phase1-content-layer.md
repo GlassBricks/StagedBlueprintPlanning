@@ -245,10 +245,10 @@ Export `InternalProjectEntity` from `ProjectEntity.ts` for use by internal modul
 ### Success Criteria
 
 #### Automated Verification
-- [ ] `pnpm run build:test` compiles cleanly
-- [ ] `pnpm run test` — all existing tests pass
-- [ ] `pnpm run lint` passes
-- [ ] `pnpm run format:fix` applied
+- [x] `pnpm run build:test` compiles cleanly
+- [x] `pnpm run test` — all existing tests pass
+- [x] `pnpm run lint` passes
+- [x] `pnpm run format:fix` applied
 
 ---
 

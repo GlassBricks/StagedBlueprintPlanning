@@ -6,7 +6,7 @@
 import { LuaEntity, ScriptRaisedBuiltEvent, ScriptRaisedDestroyEvent } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Entity } from "../../entity/Entity"
-import { newProjectEntity, ProjectEntity } from "../../entity/ProjectEntity"
+import { InternalProjectEntity, newProjectEntity } from "../../entity/ProjectEntity"
 import { getRegisteredProjectEntity, registerEntity } from "../../entity/registration"
 import { getEntityDiff } from "../../entity/stage-diff"
 import { deepCompare, deepCopy, Events, shallowCopy } from "../../lib"
@@ -50,7 +50,7 @@ Events.script_raised_destroy((e) => {
 })
 
 let entity: InserterEntity
-let projectEntity: ProjectEntity<InserterEntity>
+let projectEntity: InternalProjectEntity<InserterEntity>
 before_each(() => {
   entity = {
     name: "fast-inserter",

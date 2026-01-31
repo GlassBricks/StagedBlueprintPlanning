@@ -56,8 +56,8 @@ describe("copy item requests when creating blueprint", () => {
     const itemRequest1 = simpleInsertPlan(defines.inventory.chest, "iron-plate", 1, 50)
     const itemRequest2 = simpleInsertPlan(defines.inventory.chest, "copper-plate", 2, 100)
 
-    projectEntity1.setUnstagedValue(1, { items: [itemRequest1] })
-    projectEntity2.setUnstagedValue(1, { items: [itemRequest2] })
+    projectEntity1._asMut().setUnstagedValue(1, { items: [itemRequest1] })
+    projectEntity2._asMut().setUnstagedValue(1, { items: [itemRequest2] })
 
     const stack = player.cursor_stack!
     stack.set_stack("blueprint")
@@ -104,7 +104,7 @@ describe("copy item requests when creating blueprint", () => {
     const itemRequest1 = simpleInsertPlan(defines.inventory.chest, "iron-plate", 1, 50)
     const itemRequest2 = simpleInsertPlan(defines.inventory.chest, "copper-plate", 2, 100)
 
-    projectEntity.setUnstagedValue(1, { items: [itemRequest1, itemRequest2] })
+    projectEntity._asMut().setUnstagedValue(1, { items: [itemRequest1, itemRequest2] })
 
     const stack = player.cursor_stack!
     stack.set_stack("blueprint")

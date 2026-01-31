@@ -1419,9 +1419,10 @@ Events.on_train_changed_state((e) => {
   let shouldStop = false
   function checkLocomotive(locomotive: LuaEntity) {
     const projectEntity = getRegisteredProjectEntity(locomotive)
-    if (projectEntity?.isNewRollingStock) {
+    const mut = projectEntity?._asMut()
+    if (mut?.isNewRollingStock) {
       shouldStop = true
-      projectEntity.isNewRollingStock = nil
+      mut.isNewRollingStock = nil
     }
   }
   for (const locomotive of stocks.front_movers) {

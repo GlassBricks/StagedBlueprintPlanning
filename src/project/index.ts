@@ -31,7 +31,7 @@ Migrations.to("2.2.0", () => {
       if (entity.isMovable()) {
         const oldLastStage = entity.lastStage
         if (oldLastStage != entity.firstStage) {
-          entity.setLastStageUnchecked(entity.firstStage)
+          entity._asMut().setLastStageUnchecked(entity.firstStage)
           project.worldUpdates.updateWorldEntitiesOnLastStageChanged(entity, oldLastStage)
           project.updates.resetVehicleLocation(entity)
         }

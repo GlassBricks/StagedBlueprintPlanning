@@ -106,8 +106,9 @@ describe("updateWorldEntities()", () => {
   describe.each([false, true])("with entity changes %s", (withChanges) => {
     if (withChanges) {
       before_each(() => {
-        entity._applyDiffAtStage(entity.firstStage, { override_stack_size: 2 })
-        entity._applyDiffAtStage(3, { override_stack_size: 1 })
+        const mut = entity._asMut()
+        mut._applyDiffAtStage(entity.firstStage, { override_stack_size: 2 })
+        mut._applyDiffAtStage(3, { override_stack_size: 1 })
       })
     }
     test.each([1, 2, 3, 4])("can create one entity at stage %d", (stage) => {
@@ -120,14 +121,14 @@ describe("updateWorldEntities()", () => {
     })
 
     test("does not create entities past lastStage", () => {
-      entity.setLastStageUnchecked(3)
+      entity._asMut().setLastStageUnchecked(3)
       worldUpdates.updateWorldEntities(entity, 1)
       for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
       assertNothingPresent(4)
     })
 
     test("if first stage passed is past last stage, does nothing", () => {
-      entity.setLastStageUnchecked(3)
+      entity._asMut().setLastStageUnchecked(3)
       worldUpdates.updateWorldEntities(entity, 4)
       for (let i = 1; i <= 4; i++) assertNothingPresent(i)
     })
@@ -150,7 +151,7 @@ describe("updateWorldEntities()", () => {
     })
 
     test("attempting to refresh world entity past last stage deletes entity if it exists", () => {
-      entity.setLastStageUnchecked(3)
+      entity._asMut().setLastStageUnchecked(3)
       wp().replaceWorldOrPreviewEntity(entity, 4, {} as any)
       worldUpdates.refreshWorldEntityAtStage(entity, 4)
       assertNothingPresent(4)
@@ -166,7 +167,7 @@ describe("updateWorldEntities()", () => {
 
     test("can upgrade entities", () => {
       worldUpdates.refreshWorldEntityAtStage(entity, 1)
-      entity._applyDiffAtStage(1, { name: "fast-inserter" })
+      entity._asMut()._applyDiffAtStage(1, { name: "fast-inserter" })
       worldUpdates.refreshWorldEntityAtStage(entity, 1)
       assertEntityCorrect(1)
     })
@@ -178,7 +179,7 @@ describe("updateWorldEntities()", () => {
   })
 
   test("creates preview entities in stages below first stage", () => {
-    entity.setFirstStageUnchecked(3)
+    entity._asMut().setFirstStageUnchecked(3)
     worldUpdates.updateWorldEntities(entity, 1)
     assertHasPreview(1)
     assertHasPreview(2)
@@ -203,7 +204,7 @@ describe("updateWorldEntities()", () => {
   }
 
   test.each([true, false])("entities not in first stage are indestructible, with existing: %s", (withExisting) => {
-    entity.setFirstStageUnchecked(2)
+    entity._asMut().setFirstStageUnchecked(2)
     if (withExisting) {
       const luaEntity = createEntity(
         project.surfaces.getSurface(3)!,
@@ -226,7 +227,7 @@ describe("updateWorldEntities()", () => {
 
   test("can handle entity moving up", () => {
     worldUpdates.updateWorldEntities(entity, 1)
-    entity.setFirstStageUnchecked(2)
+    entity._asMut().setFirstStageUnchecked(2)
     worldUpdates.updateWorldEntities(entity, 1)
 
     expect(findMainEntity(1)).toBeNil()
@@ -237,7 +238,7 @@ describe("updateWorldEntities()", () => {
 
   test("can rotate entities", () => {
     worldUpdates.updateWorldEntities(entity, 1)
-    entity.direction = defines.direction.west
+    entity._asMut().direction = defines.direction.west
     worldUpdates.updateWorldEntities(entity, 1)
     for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
   })
@@ -270,13 +271,13 @@ describe("updateWorldEntities()", () => {
   })
 
   test("refreshWorldEntityAtStage also builds previews", () => {
-    entity.setFirstStageUnchecked(2)
+    entity._asMut().setFirstStageUnchecked(2)
     worldUpdates.refreshWorldEntityAtStage(entity, 1)
     assertHasPreview(1)
   })
 
   test("can insert modules", () => {
-    entity.setFirstValueDirectly({
+    entity._asMut().setFirstValueDirectly({
       name: "assembling-machine-3",
       items: [moduleInsertPlan(defines.inventory.crafter_modules, 4, 0, "productivity-module-3")],
     })
@@ -288,13 +289,14 @@ describe("updateWorldEntities()", () => {
   })
 
   test("can insert modules and item requests", () => {
-    entity.setFirstValueDirectly({
+    const mut = entity._asMut()
+    mut.setFirstValueDirectly({
       name: "assembling-machine-3",
       recipe: "iron-gear-wheel",
       items: [moduleInsertPlan(defines.inventory.crafter_modules, 4, 0, "productivity-module-3")],
     })
     const plateInsertPlan = simpleInsertPlan(defines.inventory.crafter_input, "iron-plate", 0)
-    entity.setUnstagedValue(2, {
+    mut.setUnstagedValue(2, {
       items: [plateInsertPlan],
     })
 
@@ -316,8 +318,9 @@ test("rebuildWorldEntityAtStage replaces old value", () => {
 
 describe("updateWorldEntitiesOnLastStageChanged()", () => {
   test("moving up creates entities", () => {
-    entity.setFirstStageUnchecked(2)
-    entity.setLastStageUnchecked(2)
+    const mut = entity._asMut()
+    mut.setFirstStageUnchecked(2)
+    mut.setLastStageUnchecked(2)
     worldUpdates.updateWorldEntities(entity, 1)
     assertHasPreview(1)
     assertEntityCorrect(2)
@@ -326,7 +329,7 @@ describe("updateWorldEntitiesOnLastStageChanged()", () => {
 
     clearModuleMock(_wireHandler)
 
-    entity.setLastStageUnchecked(3)
+    mut.setLastStageUnchecked(3)
     worldUpdates.updateWorldEntitiesOnLastStageChanged(entity, 2)
     assertHasPreview(1)
     assertEntityCorrect(2)
@@ -338,15 +341,16 @@ describe("updateWorldEntitiesOnLastStageChanged()", () => {
   })
 
   test("moving down destroys entities", () => {
-    entity.setFirstStageUnchecked(2)
-    entity.setLastStageUnchecked(3)
+    const mut = entity._asMut()
+    mut.setFirstStageUnchecked(2)
+    mut.setLastStageUnchecked(3)
     worldUpdates.updateWorldEntities(entity, 1)
     assertHasPreview(1)
     assertEntityCorrect(2)
     assertEntityCorrect(3)
     assertNothingPresent(4)
 
-    entity.setLastStageUnchecked(2)
+    mut.setLastStageUnchecked(2)
     worldUpdates.updateWorldEntitiesOnLastStageChanged(entity, 3)
     assertHasPreview(1)
     assertEntityCorrect(2)
@@ -390,7 +394,7 @@ test("updateWireConnections", () => {
 })
 
 test("clearWorldEntityAtStage", () => {
-  entity.applyUpgradeAtStage(2, { name: "fast-inserter" })
+  entity._asMut().applyUpgradeAtStage(2, { name: "fast-inserter" })
   worldUpdates.updateWorldEntities(entity, 1)
   worldUpdates.clearWorldEntityAtStage(entity, 2)
   expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(entity)
@@ -466,8 +470,9 @@ describe("underground pair", () => {
   })
   test("refreshWorldEntityAtStage with force=true still rotates underground even if errored", () => {
     // manually break right underground
-    rightUg.setTypeProperty("input")
-    rightUg.direction = defines.direction.west
+    const rightMut = rightUg._asMut()
+    rightMut.setTypeProperty("input")
+    rightMut.direction = defines.direction.west
     expect(wp().hasErrorAt(rightUg, 1)).toBe(true)
 
     wp().getWorldEntity(middleUg, 1)!.rotate()
@@ -495,25 +500,26 @@ describe("underground pair", () => {
 })
 
 test("makeSettingsRemnant makes all previews and calls highlighter.makeSettingsRemnant", () => {
-  entity.isSettingsRemnant = true
+  entity._asMut().isSettingsRemnant = true
   worldUpdates.makeSettingsRemnant(entity)
   for (let i = 1; i <= 3; i++) assertHasPreview(i)
   expect(entityHighlights.makeSettingsRemnantHighlights).toHaveBeenCalledWith(entity)
 })
 
 test("updateWorldEntities calls makeSettingsRemnant", () => {
-  entity.isSettingsRemnant = true
+  entity._asMut().isSettingsRemnant = true
   worldUpdates.updateWorldEntities(entity, 1)
   for (let i = 1; i <= 3; i++) assertHasPreview(i)
   expect(entityHighlights.makeSettingsRemnantHighlights).toHaveBeenCalledWith(entity)
 })
 
 test("tryReviveSettingsRemnant revives correct entities and calls highlighter.tryReviveSettingsRemnant", () => {
-  entity.setFirstStageUnchecked(2)
-  entity.isSettingsRemnant = true
+  const mut = entity._asMut()
+  mut.setFirstStageUnchecked(2)
+  mut.isSettingsRemnant = true
   worldUpdates.makeSettingsRemnant(entity)
 
-  entity.isSettingsRemnant = nil
+  mut.isSettingsRemnant = nil
   worldUpdates.reviveSettingsRemnant(entity)
   assertHasPreview(1)
   assertEntityCorrect(2)

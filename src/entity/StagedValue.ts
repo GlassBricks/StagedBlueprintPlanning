@@ -15,70 +15,38 @@ import {
 } from "../lib"
 import { StageNumber } from "./ProjectEntity"
 
-export interface StagedValue<T, D> {
+export interface ReadonlyStagedValue<T, D> {
   readonly firstValue: T
-  /** May not correctly update diffs. */
-  setFirstValueDirectly(value: T): void
-
   readonly firstStage: StageNumber
   readonly lastStage: StageNumber | nil
-  /** Sets the first stage. If moving up, deletes/merges stage diffs from old stage to new stage. */
-  setFirstStageUnchecked(stage: StageNumber): void
-  /** Sets the last stage. If moving down, delete all diffs after the new last stage. */
-  setLastStageUnchecked(stage: StageNumber | nil): void
 
   isInStage(stage: StageNumber): boolean
   isPastLastStage(stage: StageNumber): boolean
 
   readonly stageDiffs?: PRRecord<StageNumber, D>
-  /** Does not validate stage diffs. */
-  setStageDiffsDirectly(stageDiffs: PRRecord<StageNumber, D> | nil): void
-  /** @return if this entity has any changes at the given stage, or any stage if nil */
   hasStageDiff(stage?: StageNumber): boolean
   getStageDiff(stage: StageNumber): D | nil
 
-  /** Returns the first stage after the given stage number with a stage diff, or `nil` if none. */
   nextStageWithDiff(stage: StageNumber): StageNumber | nil
-  /** Returns the first stage before the given stage number with a stage diff, or `nil` if none. */
   prevStageWithDiff(stage: StageNumber): StageNumber | nil
 
-  /** @return the value at a given stage. Nil if below the first stage. The result is a new table. */
   getValueAtStage(stage: StageNumber): Readonly<T> | nil
-
   iterateValues(
     start: StageNumber,
     end: StageNumber,
   ): LuaIterable<LuaMultiReturn<[StageNumber, Readonly<T> | nil, changed: boolean]>>
+}
 
-  /**
-   * Adjusts stage diffs so that the value at the given stage matches the given value.
-   * @return true if the value changed.
-   */
-  // todo: can there be a shared default impl of this?
-  // see also: moveDownWithValue in ProjectTile
+export interface StagedValue<T, D> extends ReadonlyStagedValue<T, D> {
+  setFirstValueDirectly(value: T): void
+  setFirstStageUnchecked(stage: StageNumber): void
+  setLastStageUnchecked(stage: StageNumber | nil): void
+  setStageDiffsDirectly(stageDiffs: PRRecord<StageNumber, D> | nil): void
+
   adjustValueAtStage(stage: StageNumber, value: T): boolean
-
-  /** Modifies to be consistent with an inserted stage. */
   insertStage(stageNumber: StageNumber): void
-
-  /**
-   * Resets the value at a stage to match the previous stage.
-   * May merge/trim diffs as part of the operation.
-   * @return true if changes were made, false otherwise.
-   */
   resetValue(stage: StageNumber): boolean
-
-  /**
-   * Modifies to be consistent with a deleted stage.
-   * Stage contents will be merged with a previous stage. If stage is 1, will be merged with the next stage instead.
-   */
   mergeStage(stageNumber: StageNumber): void
-
-  /**
-   * Modifies to be consistent with a deleted stage.
-   * Stage contents will be discarded without merging.
-   * Return true if there were any changes in future stages.
-   */
   discardStage(stageNumber: StageNumber): boolean
 }
 

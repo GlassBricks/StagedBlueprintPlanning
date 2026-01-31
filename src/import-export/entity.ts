@@ -150,7 +150,7 @@ export function importUnstagedValues(entity: ProjectEntity, unstagedValues: Unst
   for (const [stage, unstagedValue] of pairs(unstagedValues)) {
     const stageNumber = tonumber(stage)
     if (stageNumber != nil) {
-      entity.setUnstagedValue(stageNumber, unstagedValue)
+      entity._asMut().setUnstagedValue(stageNumber, unstagedValue)
     }
   }
 }

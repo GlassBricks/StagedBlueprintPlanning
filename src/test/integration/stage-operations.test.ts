@@ -43,7 +43,7 @@ test("rebuildStage", () => {
     direction: direction.west,
   })
   expect(ctx.projectOps.trySetLastStage(entityPastLastStage, 1)).toEqual(StageMoveResult.Updated)
-  entityPresent._applyDiffAtStage(4, { name: "bulk-inserter" })
+  entityPresent._asMut()._applyDiffAtStage(4, { name: "bulk-inserter" })
   ctx.worldOps.refreshAllEntities(entityPresent)
   ctx.assertEntityCorrect(entityPresent, false)
 
@@ -138,7 +138,7 @@ describe("stage deletion", () => {
       name: "inserter",
       position: pos.add(0, 0),
     })
-    entityBeforeWithDiff._applyDiffAtStage(3, { override_stack_size: 3 })
+    entityBeforeWithDiff._asMut()._applyDiffAtStage(3, { override_stack_size: 3 })
     ctx.worldOps.updateWorldEntities(entityBeforeWithDiff, 3)
 
     return { entityBeforeWithDiff, ...createBaseEntities() }
@@ -149,8 +149,8 @@ describe("stage deletion", () => {
       name: "inserter",
       position: pos.add(0, 0),
     })
-    entityBeforeWithDiff._applyDiffAtStage(3, { override_stack_size: 3 })
-    entityBeforeWithDiff._applyDiffAtStage(4, { override_stack_size: 4 })
+    entityBeforeWithDiff._asMut()._applyDiffAtStage(3, { override_stack_size: 3 })
+    entityBeforeWithDiff._asMut()._applyDiffAtStage(4, { override_stack_size: 4 })
     ctx.worldOps.updateWorldEntities(entityBeforeWithDiff, 3)
     ctx.worldOps.updateWorldEntities(entityBeforeWithDiff, 4)
 

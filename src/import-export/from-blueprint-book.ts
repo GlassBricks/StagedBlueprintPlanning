@@ -52,7 +52,7 @@ export function convertBookToProjectDataOnly(stack: LuaItemStack): UserProject {
       )
       let curEntity: ProjectEntity
       if (existingEntity) {
-        existingEntity.applyUpgradeAtStage(curStageNum, thisValue)
+        existingEntity._asMut().applyUpgradeAtStage(curStageNum, thisValue)
         unaccountedLastStageEntities.delete(existingEntity)
         curEntity = existingEntity
       } else {
@@ -78,7 +78,7 @@ export function convertBookToProjectDataOnly(stack: LuaItemStack): UserProject {
     }
     // set lastStage for entities that have disappeared
     for (const entity of unaccountedLastStageEntities) {
-      entity.setLastStageUnchecked(curStageNum - 1)
+      entity._asMut().setLastStageUnchecked(curStageNum - 1)
     }
     // set stage blueprint settings
     const stage = project.getStage(curStageNum)!

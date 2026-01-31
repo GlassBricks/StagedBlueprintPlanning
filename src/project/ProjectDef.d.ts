@@ -7,7 +7,7 @@ import { LuaEntity, LuaSurface } from "factorio:runtime"
 import { BlueprintSettingsTable } from "../blueprints/blueprint-settings"
 import { MutableProjectContent } from "../entity/ProjectContent"
 import { StageNumber } from "../entity/ProjectEntity"
-import { StagedValue } from "../entity/StagedValue"
+import { ReadonlyStagedValue } from "../entity/StagedValue"
 import { SimpleSubscribable } from "../lib"
 import { BBox } from "../lib/geometry"
 import { ProjectUpdates } from "./project-updates"
@@ -29,7 +29,7 @@ export interface Project {
   readonly settings: ProjectSettings
   readonly surfaces: ProjectSurfaces
 
-  lastStageFor(entity: StagedValue<AnyNotNil, AnyNotNil>): StageNumber
+  lastStageFor(entity: ReadonlyStagedValue<AnyNotNil, AnyNotNil>): StageNumber
 
   readonly content: MutableProjectContent
 
