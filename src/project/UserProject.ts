@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 import { LuaSurface, nil, SurfaceIndex } from "factorio:runtime"
-import { remove_from_list } from "util"
 import { newProjectContent } from "../entity/ProjectContent"
 import { StageNumber } from "../entity/ProjectEntity"
 import { ReadonlyStagedValue } from "../entity/StagedValue"
@@ -13,6 +12,7 @@ import { LazyLoadClass } from "../lib/LazyLoad"
 import { getStageAtSurface } from "./project-refs"
 import { ProjectUpdates } from "./project-updates"
 import { GlobalProjectEvent, LocalProjectEvent, ProjectId, Stage, StageId, UserProject } from "./ProjectDef"
+import { addProject, removeProject } from "./ProjectList"
 import { ProjectSettings, StageSettingsData } from "./ProjectSettings"
 import { ProjectSurfaces } from "./ProjectSurfaces"
 import { getDefaultSurfaceSettings, SurfaceSettings } from "./surfaces"
@@ -37,6 +37,8 @@ Events.on_init(() => {
 
 const GlobalProjectEvents = globalEvent<[GlobalProjectEvent]>()
 export { GlobalProjectEvents as ProjectEvents }
+
+export { getAllProjects, moveProjectUp, moveProjectDown } from "./ProjectList"
 
 declare const luaLength: LuaLength<Record<number, any>, number>
 
@@ -85,7 +87,8 @@ class UserProjectImpl implements UserProjectInternal {
     surfaceSettings: SurfaceSettings = getDefaultSurfaceSettings(),
   ): UserProjectImpl {
     const project = new UserProjectImpl(storage.nextProjectId++ as ProjectId, name, initialNumStages, surfaceSettings)
-    UserProjectImpl.onProjectCreated(project)
+    addProject(project)
+    GlobalProjectEvents.raise({ type: "project-created", project })
     project.registerEvents()
 
     return project
@@ -206,7 +209,6 @@ class UserProjectImpl implements UserProjectInternal {
 
   delete(): void {
     if (!this.valid) return
-    remove_from_list(storage.projects, this)
     this.settings.blueprintBookTemplate.destroy()
     this.valid = false
     for (const [, stage] of pairs(this.stages)) {
@@ -214,6 +216,7 @@ class UserProjectImpl implements UserProjectInternal {
       ;(stage as Mutable<Stage>).valid = false
     }
     this.surfaces.destroyAll()
+    removeProject(this)
     this.raiseEvent({ type: "project-deleted", project: this })
     this.localEvents.closeAll()
     this.surfaces.close()
@@ -249,11 +252,6 @@ class UserProjectImpl implements UserProjectInternal {
   __tostring(): string {
     return `<Project ${this.id} "${this.settings.projectName.get()}">`
   }
-
-  static onProjectCreated(project: UserProjectImpl): void {
-    storage.projects.push(project)
-    GlobalProjectEvents.raise({ type: "project-created", project })
-  }
 }
 
 interface HasProject {
@@ -282,34 +280,6 @@ export function _deleteAllProjects(): void {
   assert(storage.projects.length == 0)
   storage.nextStageId = nil
   storage.nextProjectId = 1 as ProjectId
-}
-export function getAllProjects(): readonly UserProject[] {
-  return storage.projects
-}
-
-function swapProjects(index1: number, index2: number): void {
-  const projects = storage.projects
-  const temp = projects[index1]
-  projects[index1] = projects[index2]
-  projects[index2] = temp
-  GlobalProjectEvents.raise({
-    type: "projects-reordered",
-    project1: projects[index1],
-    project2: projects[index2],
-  })
-}
-export function moveProjectUp(project: UserProject): boolean {
-  const index = storage.projects.indexOf(project as UserProjectImpl)
-  if (index <= 0) return false
-  swapProjects(index - 1, index)
-  return true
-}
-
-export function moveProjectDown(project: UserProject): boolean {
-  const index = storage.projects.indexOf(project as UserProjectImpl)
-  if (index < 0 || index >= storage.projects.length - 1) return false
-  swapProjects(index, index + 1)
-  return true
 }
 
 export interface StageInternal extends Stage {

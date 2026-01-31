@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { getAllProjects } from "../project/UserProject"
+import { getAllProjects } from "../project/ProjectList"
 
 commands.add_command(
   "clean-broken-entities",

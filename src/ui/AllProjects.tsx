@@ -27,8 +27,15 @@ import {
   TrashButton,
 } from "../lib/factoriojsx/components"
 import { L_Gui, L_GuiProjectSelector, L_GuiProjectSettings } from "../locale"
-import { ProjectCreatedEvent, ProjectDeletedEvent, ProjectsReorderedEvent, UserProject } from "../project/ProjectDef"
-import { getAllProjects, moveProjectDown, moveProjectUp, ProjectEvents } from "../project/UserProject"
+import { UserProject } from "../project/ProjectDef"
+import {
+  getAllProjects,
+  moveProjectDown,
+  moveProjectUp,
+  projectCreated,
+  projectDeleted,
+  projectsReordered,
+} from "../project/ProjectList"
 import { showImportBlueprintWindow } from "./blueprint-string"
 import { openNewProjectDialog } from "./NewProjectDialog"
 import { exitProject, PlayerChangedStageEvent, playerCurrentStage, teleportToProject } from "./player-current-stage"
@@ -224,23 +231,29 @@ class AllProjects extends Component {
     showImportBlueprintWindow(player)
   }
 
-  projectChangedEvent(e: ProjectCreatedEvent | ProjectDeletedEvent | ProjectsReorderedEvent) {
+  onProjectCreated(project: UserProject) {
     const element = this.scrollPane
     if (!element || !element.valid) return
-    if (e.type == "project-created") {
-      render(this.projectButtonFlow(e.project), element)
-      this.scrollToCurrentProject()
-    } else if (e.type == "project-deleted") {
-      const flow = element.children.find((c) => c.tags.projectId == e.project.id)
-      if (flow) destroy(flow)
-    } else if (e.type == "projects-reordered") {
-      const children = element.children
-      const index1 = children.findIndex((c) => c.tags.projectId == e.project1.id)
-      const index2 = children.findIndex((c) => c.tags.projectId == e.project2.id)
-      if (index1 == -1 || index2 == -1) return
-      element.swap_children(index1 + 1, index2 + 1)
-      this.scrollToCurrentProject()
-    }
+    render(this.projectButtonFlow(project), element)
+    this.scrollToCurrentProject()
+  }
+
+  onProjectDeleted(project: UserProject) {
+    const element = this.scrollPane
+    if (!element || !element.valid) return
+    const flow = element.children.find((c) => c.tags.projectId == project.id)
+    if (flow) destroy(flow)
+  }
+
+  onProjectsReordered(project1: UserProject, project2: UserProject) {
+    const element = this.scrollPane
+    if (!element || !element.valid) return
+    const children = element.children
+    const index1 = children.findIndex((c) => c.tags.projectId == project1.id)
+    const index2 = children.findIndex((c) => c.tags.projectId == project2.id)
+    if (index1 == -1 || index2 == -1) return
+    element.swap_children(index1 + 1, index2 + 1)
+    this.scrollToCurrentProject()
   }
 
   private rerenderProject(project: UserProject) {
@@ -270,15 +283,23 @@ export function toggleAllProjects(player: LuaPlayer): void {
   }
 }
 
-ProjectEvents.addListener((e) => {
-  if (e.type == "project-created" || e.type == "project-deleted" || e.type == "projects-reordered") {
-    for (const [, player] of game.players) {
-      const element = mod_gui.get_frame_flow(player)[AllProjectsName]
-      if (!element) continue
-      const component = getComponentInstance<AllProjects>(element)
-      if (component) component.projectChangedEvent(e)
-    }
+function forEachAllProjectsComponent(fn: (component: AllProjects) => void) {
+  for (const [, player] of game.players) {
+    const element = mod_gui.get_frame_flow(player)[AllProjectsName]
+    if (!element) continue
+    const component = getComponentInstance<AllProjects>(element)
+    if (component) fn(component)
   }
+}
+
+projectCreated.addListener((project) => {
+  forEachAllProjectsComponent((c) => c.onProjectCreated(project))
+})
+projectDeleted.addListener((project) => {
+  forEachAllProjectsComponent((c) => c.onProjectDeleted(project))
+})
+projectsReordered.addListener((project1, project2) => {
+  forEachAllProjectsComponent((c) => c.onProjectsReordered(project1, project2))
 })
 PlayerChangedStageEvent.addListener((player, oldStage, newStage) => {
   const oldProject = oldStage?.project

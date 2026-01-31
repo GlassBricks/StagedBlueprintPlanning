@@ -22,7 +22,8 @@ import "./event-handlers"
 import "./project-event-listener"
 import { getDefaultSurfaceSettings, readSurfaceSettings, updateStageSurfaceName } from "./surfaces"
 import "./UserProject"
-import { getAllProjects, StageInternal, UserProjectInternal } from "./UserProject"
+import { getAllProjects } from "./ProjectList"
+import { StageInternal, UserProjectInternal } from "./UserProject"
 import { WorldPresentation } from "./WorldPresentation"
 
 Migrations.to("2.2.0", () => {

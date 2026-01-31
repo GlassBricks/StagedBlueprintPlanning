@@ -12,7 +12,7 @@ import { CustomInputEvent, LocalisedString, LuaPlayer } from "factorio:runtime"
 import { CustomInputs } from "../constants"
 import { ProtectedEvents } from "../lib"
 import { L_Interaction } from "../locale"
-import { getAllProjects } from "../project/UserProject"
+import { getAllProjects } from "../project/ProjectList"
 import { getProjectEntityOfEntity } from "./entity-util"
 import {
   enterLastProject,

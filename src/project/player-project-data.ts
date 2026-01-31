@@ -8,7 +8,7 @@ import { StageNumber } from "../entity/ProjectEntity"
 import { onPlayerInit } from "../lib"
 import { Position } from "../lib/geometry"
 import { ProjectId, UserProject } from "./ProjectDef"
-import { ProjectEvents } from "./UserProject"
+import { projectDeleted } from "./ProjectList"
 
 export interface ProjectPlayerData {
   lastStage?: StageNumber
@@ -27,11 +27,9 @@ onPlayerInit((index) => {
   storage.players[index].projectPlayerData = new LuaMap()
 })
 
-ProjectEvents.addListener((e) => {
-  if (e.type == "project-deleted") {
-    for (const [, player] of game.players) {
-      storage.players[player.index].projectPlayerData.delete(e.project.id)
-    }
+projectDeleted.addListener((project) => {
+  for (const [, player] of game.players) {
+    storage.players[player.index].projectPlayerData.delete(project.id)
   }
 })
 export function getProjectPlayerData(player: PlayerIndex, project: UserProject): ProjectPlayerData | nil {

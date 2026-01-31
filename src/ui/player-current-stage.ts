@@ -5,11 +5,12 @@
 
 import { LuaPlayer, LuaSurface, PlayerIndex, SurfaceIndex } from "factorio:runtime"
 import { StageNumber } from "../entity/ProjectEntity"
-import { assertNever, Events, globalEvent, MutableProperty, onPlayerInit, Property, property } from "../lib"
+import { Events, globalEvent, MutableProperty, onPlayerInit, Property, property } from "../lib"
 import { Position } from "../lib/geometry"
 import { getProjectPlayerData } from "../project/player-project-data"
 import { getStageAtSurface } from "../project/project-refs"
 import { Stage, UserProject } from "../project/ProjectDef"
+import { projectDeleted } from "../project/ProjectList"
 import { ProjectEvents } from "../project/UserProject"
 
 declare global {
@@ -46,22 +47,15 @@ onPlayerInit((index) => {
 })
 
 Events.on_player_changed_surface((e) => updatePlayer(game.get_player(e.player_index)!))
-ProjectEvents.addListener((e) => {
-  switch (e.type) {
-    case "project-deleted":
-    case "stage-deleted":
-      for (const [, player] of game.players) {
-        updatePlayer(player)
-      }
-      break
-    case "project-created":
-    case "pre-stage-deleted":
-    case "stage-added":
-    case "projects-reordered":
-      return
-    default:
-      assertNever(e)
+
+function updateAllPlayers() {
+  for (const [, player] of game.players) {
+    updatePlayer(player)
   }
+}
+projectDeleted.addListener(updateAllPlayers)
+ProjectEvents.addListener((e) => {
+  if (e.type == "stage-deleted") updateAllPlayers()
 })
 
 function teleportPlayer(player: LuaPlayer, surface: LuaSurface, position: Position): void {
