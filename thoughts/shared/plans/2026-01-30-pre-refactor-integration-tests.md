@@ -458,39 +458,7 @@ Use `describeDualPipeline`. All actions triggered via `Events.raiseFakeEventName
 
 ## Phase 5: Fast-Replace at Higher Stages
 
-### Overview
-First-stage fast replace is tested (`entity-lifecycle.test.ts:216-227`). Missing: fast replace at non-first stage creating a stage diff.
-
-### Changes Required:
-
-#### 1. Add to entity-lifecycle.test.ts
-**File**: `src/test/integration/entity-lifecycle.test.ts`
-
-Inside the existing `describe.each` block:
-
-**Fast replace at higher stage creates diff:**
-- Build entity at stage 1
-- Teleport player to stage 3 surface
-- `player.cursor_stack.set_stack(upgradeName)`
-- `player.build_from_cursor({ position: pos, direction: dir })`
-- Verify `entity.firstValue.name == name` (unchanged)
-- Verify `entity.getStageDiff(3)` includes `{ name: upgradeName }`
-- Verify world entity at stage 3 has upgrade name
-- `assertEntityCorrect`
-
-**Fast replace at higher stage with existing diff:**
-- Build entity at stage 1
-- Create diff at stage 3 via `applyDiffViaWorld` (e.g., change a property)
-- Fast replace at stage 3 with upgrade via player simulation
-- Verify diff updated to include name upgrade, `assertEntityCorrect`
-
-### Success Criteria:
-
-#### Automated Verification:
-- [ ] Tests pass: `pnpm run test "entity%-lifecycle"`
-- [ ] All existing tests pass: `pnpm run test`
-
-**Implementation Note**: Pause for manual confirmation before proceeding.
+Skipped -- not actually possible/expected; "entity not minable" prevents fast replace
 
 ---
 
@@ -525,7 +493,7 @@ Add dedicated tests for the full propagation chain across stages.
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] All tests pass: `pnpm run test`
+- [x] All tests pass: `pnpm run test`
 
 **Implementation Note**: Pause for manual confirmation before proceeding.
 
@@ -559,7 +527,7 @@ Add full error → fix → highlights clear cycle tests.
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] All tests pass: `pnpm run test`
+- [x] All tests pass: `pnpm run test`
 
 ---
 

@@ -8,7 +8,7 @@ import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { StageNumber } from "../../entity/ProjectEntity"
 import { isPreviewEntity } from "../../entity/prototype-info"
-import { canBeAnyDirection } from "../../entity/save-load"
+import { canBeAnyDirection, saveEntity } from "../../entity/save-load"
 import { Events } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { runEntireCurrentTask } from "../../lib/task"
@@ -437,5 +437,119 @@ describe.each([
     _simulateUndo(ctx.player)
 
     expect(entity.lastStage).toBe(3)
+  })
+})
+
+describe("multi-stage propagation", () => {
+  const ctx = setupEntityIntegrationTest()
+  const pos = Pos(10.5, 10.5)
+
+  test("entity at stage 1 has correct world entities at all stages", () => {
+    const entity = ctx.buildEntity(1)
+    for (const stage of $range(1, 6)) {
+      const worldEntity = ctx.worldQueries.getWorldEntity(entity, stage)
+      expect(worldEntity).toBeAny()
+      expect(isPreviewEntity(worldEntity!)).toBe(false)
+      const [savedValue] = saveEntity(worldEntity!)
+      expect(savedValue).toEqual(entity.getValueAtStage(stage))
+    }
+    ctx.assertEntityCorrect(entity, false)
+  })
+
+  test("modify at stage 3 propagates to stages 3-6 only", () => {
+    const entity = ctx.buildEntity(1)
+    const originalValue = entity.getValueAtStage(1)!
+
+    const worldEntity3 = ctx.worldQueries.getWorldEntity(entity, 3)!
+    worldEntity3.inserter_stack_size_override = 2
+    checkForEntityUpdates(worldEntity3, nil)
+
+    for (const stage of $range(1, 2)) {
+      const [savedValue] = saveEntity(ctx.worldQueries.getWorldEntity(entity, stage)!)
+      expect(savedValue).toEqual(originalValue)
+    }
+    const modifiedValue = entity.getValueAtStage(3)!
+    for (const stage of $range(3, 6)) {
+      const [savedValue] = saveEntity(ctx.worldQueries.getWorldEntity(entity, stage)!)
+      expect(savedValue).toEqual(modifiedValue)
+    }
+    ctx.assertEntityCorrect(entity, false)
+  })
+
+  test("entity with lastStage has world entities only up to lastStage", () => {
+    const entity = ctx.buildEntity(1)
+    Events.raiseFakeEventNamed("on_player_selected_area", {
+      player_index: ctx.player.index,
+      item: Prototypes.StageDeconstructTool,
+      entities: [ctx.worldQueries.getWorldEntity(entity, 4)!],
+      tiles: [],
+      surface: ctx.surfaces[3],
+      area: { left_top: pos, right_bottom: pos },
+    })
+    expect(entity.lastStage).toBe(3)
+
+    for (const stage of $range(1, 3)) {
+      expect(ctx.worldQueries.getWorldEntity(entity, stage)).toBeAny()
+    }
+    for (const stage of $range(4, 6)) {
+      expect(ctx.worldQueries.getWorldOrPreviewEntity(entity, stage)).toBeNil()
+    }
+    ctx.assertEntityCorrect(entity, false)
+  })
+})
+
+describe("error state lifecycle", () => {
+  const ctx = setupEntityIntegrationTest()
+  const pos = Pos(10.5, 10.5)
+
+  test("error clears when blocker removed and entity rebuilt via cleanup tool", () => {
+    const blocker = ctx.createEntity(4, { name: "stone-wall" })
+    const entity = ctx.buildEntity(3)
+    expect(ctx.worldQueries.hasErrorAt(entity, 4)).toBe(true)
+    ctx.assertEntityCorrect(entity, 4)
+
+    blocker.destroy()
+    Events.raiseFakeEventNamed("on_player_selected_area", {
+      player_index: ctx.player.index,
+      item: Prototypes.CleanupTool,
+      entities: [ctx.worldQueries.getWorldOrPreviewEntity(entity, 4)!],
+      tiles: [],
+      surface: ctx.surfaces[3],
+      area: { left_top: pos, right_bottom: pos },
+    })
+    expect(ctx.worldQueries.hasErrorAt(entity, 4)).toBe(false)
+    ctx.assertEntityCorrect(entity, false)
+  })
+
+  test("error elsewhere indicator appears at non-error stages and clears when error fixed", () => {
+    const blocker = ctx.createEntity(4, { name: "stone-wall" })
+    const entity = ctx.buildEntity(2)
+    expect(ctx.worldQueries.hasErrorAt(entity, 4)).toBe(true)
+
+    for (const stage of $range(2, 6)) {
+      if (stage != 4) {
+        expect(ctx.worldQueries.getExtraEntity(entity, "errorElsewhereIndicator", stage))
+          .comment(`errorElsewhereIndicator at stage ${stage}`)
+          .toBeAny()
+      }
+    }
+
+    blocker.destroy()
+    Events.raiseFakeEventNamed("on_player_selected_area", {
+      player_index: ctx.player.index,
+      item: Prototypes.CleanupTool,
+      entities: [ctx.worldQueries.getWorldOrPreviewEntity(entity, 4)!],
+      tiles: [],
+      surface: ctx.surfaces[3],
+      area: { left_top: pos, right_bottom: pos },
+    })
+    expect(ctx.worldQueries.hasErrorAt(entity, 4)).toBe(false)
+
+    for (const stage of $range(2, 6)) {
+      expect(ctx.worldQueries.getExtraEntity(entity, "errorElsewhereIndicator", stage))
+        .comment(`errorElsewhereIndicator at stage ${stage} should be gone`)
+        .toBeNil()
+    }
+    ctx.assertEntityCorrect(entity, false)
   })
 })
