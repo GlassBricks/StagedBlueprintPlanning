@@ -16,7 +16,7 @@ import { PlayerChangedStageEvent, playerCurrentStage } from "./player-current-st
 const Events = ProtectedEvents
 
 function updateItemLabel(cursor: LuaItemStack, stage: Stage): void {
-  cursor.label = "Send to " + stage.name.get()
+  cursor.label = "Send to " + stage.getSettings().name.get()
 }
 export function updateMoveToolInCursor(player: LuaPlayer): LuaPlayer | nil {
   const cursor = getCursorIfHoldingStageMoveTool(player)

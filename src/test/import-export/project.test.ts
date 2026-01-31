@@ -24,8 +24,8 @@ function createSampleProject() {
   project.settings.defaultBlueprintSettings.snapToGrid.set({ x: 4, y: 5 })
 
   const [stage1, stage2] = project.getAllStages()
-  stage1.name.set("foo")
-  stage2.name.set("bar")
+  stage1.getSettings().name.set("foo")
+  stage2.getSettings().name.set("bar")
 
   stage1.getSettings().blueprintOverrideSettings.snapToGrid.set({ x: 4, y: 5 })
   stage2.getSettings().stageBlueprintSettings.description.set("Foo")

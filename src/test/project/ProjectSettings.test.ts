@@ -30,9 +30,9 @@ test("getStageName() returns correct value", () => {
   expect(settings.getStageName(2)).toBe("Stage 2")
 })
 
-test("getStageNameProperty() returns mutable property", () => {
+test("getStageSettings().name returns mutable property", () => {
   settings.insertStageSettings(1, "Stage 1")
-  const prop = settings.getStageNameProperty(1)
+  const prop = settings.getStageSettings(1).name
   expect(prop.get()).toBe("Stage 1")
   prop.set("Renamed")
   expect(settings.getStageName(1)).toBe("Renamed")
@@ -117,30 +117,30 @@ describe("getNewStageName()", () => {
 
   describe("first stage", () => {
     test("returns 'New Stage' if no naming convention", () => {
-      settings.getStageNameProperty(1).set("Foo")
+      settings.getStageSettings(1).name.set("Foo")
       expect(settings.getNewStageName(1)).toBe("New Stage")
     })
 
     test("returns next number minus 1 if numbered naming convention", () => {
-      settings.getStageNameProperty(1).set("Foo 1")
+      settings.getStageSettings(1).name.set("Foo 1")
       expect(settings.getNewStageName(1)).toBe("Foo 0")
     })
   })
 
   describe("other stages", () => {
     test("adds ' 1' if no naming convention", () => {
-      settings.getStageNameProperty(1).set("Foo")
+      settings.getStageSettings(1).name.set("Foo")
       expect(settings.getNewStageName(2)).toBe("Foo 1")
     })
 
     test("increments number if numbered naming convention", () => {
-      settings.getStageNameProperty(1).set("Foo 1")
+      settings.getStageSettings(1).name.set("Foo 1")
       expect(settings.getNewStageName(2)).toBe("Foo 2")
     })
 
     test("adds '.1' if numbered naming convention but next stage already has that name", () => {
-      settings.getStageNameProperty(1).set("Foo 3")
-      settings.getStageNameProperty(2).set("Foo 4")
+      settings.getStageSettings(1).name.set("Foo 3")
+      settings.getStageSettings(2).name.set("Foo 4")
       expect(settings.getNewStageName(2)).toBe("Foo 3.1")
     })
   })

@@ -19,6 +19,7 @@ import { BlueprintBookTemplate } from "./BlueprintBookTemplate"
 import { SurfaceSettings } from "./surfaces"
 
 export interface StageSettingsData {
+  readonly name: MutableProperty<string>
   readonly blueprintOverrideSettings: BlueprintSettingsOverrideTable
   readonly stageBlueprintSettings: StageBlueprintSettingsTable
 }
@@ -34,7 +35,6 @@ export class ProjectSettings {
   surfaceSettings: SurfaceSettings
   readonly blueprintBookTemplate: BlueprintBookTemplate
 
-  private stageNames: Record<StageNumber, MutableProperty<string>>
   private stageSettings: Record<StageNumber, StageSettingsData>
 
   constructor(name: string, surfaceSettings: SurfaceSettings) {
@@ -44,7 +44,6 @@ export class ProjectSettings {
     this.defaultBlueprintSettings = createBlueprintSettingsTable()
     this.surfaceSettings = surfaceSettings
     this.blueprintBookTemplate = new BlueprintBookTemplate()
-    this.stageNames = {}
     this.stageSettings = {}
 
     if (this.isSpacePlatform()) {
@@ -54,15 +53,11 @@ export class ProjectSettings {
   }
 
   stageCount(): StageNumber {
-    return luaLength(this.stageNames)
+    return luaLength(this.stageSettings)
   }
 
   getStageName(stage: StageNumber): LocalisedString {
-    return this.stageNames[stage].get()
-  }
-
-  getStageNameProperty(stage: StageNumber): MutableProperty<string> {
-    return this.stageNames[stage]
+    return this.stageSettings[stage].name.get()
   }
 
   getStageSettings(stage: StageNumber): StageSettingsData {
@@ -81,23 +76,21 @@ export class ProjectSettings {
   }
 
   insertStageSettings(stageNumber: StageNumber, name: string): void {
-    const nameProperty = property(name)
     const settings: StageSettingsData = {
+      name: property(name),
       blueprintOverrideSettings: createEmptyBlueprintOverrideSettings(),
       stageBlueprintSettings: createStageBlueprintSettingsTable(),
     }
-    table.insert(this.stageNames as unknown as MutableProperty<string>[], stageNumber, nameProperty)
     table.insert(this.stageSettings as unknown as StageSettingsData[], stageNumber, settings)
   }
 
   removeStageSettings(stageNumber: StageNumber): void {
-    table.remove(this.stageNames as unknown as MutableProperty<string>[], stageNumber)
     table.remove(this.stageSettings as unknown as StageSettingsData[], stageNumber)
   }
 
   getNewStageName(stageNumber: StageNumber): string {
     const otherStageNum = stageNumber == 1 ? 1 : stageNumber - 1
-    const previousName = this.stageNames[otherStageNum].get()
+    const previousName = this.stageSettings[otherStageNum].name.get()
     const [name, numStr] = string.match(previousName, "^(.-)(%d+)$")
     const num = tonumber(numStr)
 
@@ -106,7 +99,7 @@ export class ProjectSettings {
       const newNum = num + (stageNumber == 1 ? -1 : 1)
       if (newNum >= 0) {
         const candidateName = name + newNum
-        const nextName = this.stageNames[stageNumber]?.get()
+        const nextName = this.stageSettings[stageNumber]?.name.get()
         if (candidateName != nextName) {
           return candidateName
         }
@@ -133,12 +126,10 @@ export class ProjectSettings {
     defaultBlueprintSettings: PropertiesTable<OverrideableBlueprintSettings>
     surfaceSettings: SurfaceSettings
     blueprintBookTemplate: BlueprintBookTemplate
-    stageNames: Record<number, MutableProperty<string>>
     stageSettings: Record<number, StageSettingsData>
   }): ProjectSettings {
     const instance = new ProjectSettings("_migration_", data.surfaceSettings)
     const mut = instance as unknown as Mutable<ProjectSettings> & {
-      stageNames: Record<number, MutableProperty<string>>
       stageSettings: Record<number, StageSettingsData>
     }
     mut.projectName = data.projectName
@@ -146,7 +137,6 @@ export class ProjectSettings {
     mut.stagedTilesEnabled = data.stagedTilesEnabled
     mut.defaultBlueprintSettings = data.defaultBlueprintSettings
     mut.blueprintBookTemplate = data.blueprintBookTemplate
-    mut.stageNames = data.stageNames
     mut.stageSettings = data.stageSettings
     return instance
   }

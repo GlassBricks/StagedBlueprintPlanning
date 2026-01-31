@@ -110,7 +110,7 @@ Migrations.to("2.8.0", () => {
     ;(project as UserProjectInternal).registerEvents()
     for (const stage of project.getAllStages()) {
       ;(stage as StageInternal).registerEvents()
-      updateStageSurfaceName(stage.surface, project.settings.projectName.get(), stage.name.get())
+      updateStageSurfaceName(stage.surface, project.settings.projectName.get(), stage.getSettings().name.get())
     }
 
     const settings = readSurfaceSettings(project.getStage(1)!.surface)

@@ -41,7 +41,7 @@ test("creates stage reference with correct properties", () => {
   createStageReference(stack, stage)
   expect(stack.valid).toBe(true)
   expect(stack.name).toBe(Prototypes.StageReference)
-  expect(stack.label).toBe(`[[ ${stage.name.get()} ]]`)
+  expect(stack.label).toBe(`[[ ${stage.getSettings().name.get()} ]]`)
   expect(stack.allow_manual_label_change).toBe(false)
   expect(stack.preview_icons).toEqual([
     {
@@ -92,7 +92,7 @@ test("correctStageReference updates stack if stage changed", () => {
   const stack = temporaryItemStack()
   createStageReference(stack, stage)
 
-  stage.name.set("New Name")
+  stage.getSettings().name.set("New Name")
   const ret = correctStageReference(stack)
 
   expect(ret).toBe(stage)

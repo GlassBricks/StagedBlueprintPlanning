@@ -83,7 +83,7 @@ export function convertBookToProjectDataOnly(stack: LuaItemStack): UserProject {
     // set stage blueprint settings
     const stage = project.getStage(curStageNum)!
     if (blueprintStack.label != nil) {
-      stage.name.set(blueprintStack.label)
+      stage.getSettings().name.set(blueprintStack.label)
     }
     const stageSettings = stage.getBlueprintSettingsView()
     updateBasicBlueprintSettings(blueprintStack, stageSettings)

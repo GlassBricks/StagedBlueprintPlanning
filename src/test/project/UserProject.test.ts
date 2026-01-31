@@ -82,7 +82,7 @@ describe("Stages", () => {
   })
   test("initial name is correct", () => {
     const stage = project.getStage(1)!
-    expect(stage.name.get()).toEqual("Stage 1")
+    expect(stage.getSettings().name.get()).toEqual("Stage 1")
   })
 })
 
@@ -103,7 +103,7 @@ test("insert stage", () => {
   expect(getStageAtSurface(stage.surface.index)).toBe(stage)
   expect(getStageAtSurface(oldStage.surface.index)).toBe(oldStage)
 
-  expect(stage.name.get()).toEqual("Stage 0")
+  expect(stage.getSettings().name.get()).toEqual("Stage 0")
 
   expect(project.getStage(1)!).toEqual(stage)
   expect(project.getStage(2)!).toEqual(oldStage)
@@ -122,7 +122,7 @@ test("insert stage", () => {
   expect(getStageAtSurface(anotherInserted.surface.index)).toEqual(anotherInserted)
   expect(getStageAtSurface(stage.surface.index)).toEqual(stage)
   expect(getStageAtSurface(oldStage.surface.index)).toEqual(oldStage)
-  expect(anotherInserted.name.get()).toEqual("New Stage")
+  expect(anotherInserted.getSettings().name.get()).toEqual("New Stage")
 
   expect(anotherInserted.stageNumber).toEqual(1)
   expect(stage.stageNumber).toEqual(2)
@@ -230,62 +230,62 @@ describe("new stage name", () => {
 
   describe("first stage", () => {
     test("is 'New Stage' if no naming convention", () => {
-      project.getStage(1)!.name.set("Foo")
+      project.getStage(1)!.getSettings().name.set("Foo")
 
       const stage = project.insertStage(1)
 
-      expect(stage.name.get()).toEqual("New Stage")
+      expect(stage.getSettings().name.get()).toEqual("New Stage")
       expect(getIconsFromSettings(getCurrentValues(stage.getBlueprintSettingsView()))).toBeNil()
     })
 
     test("is next number minus 1 if numbered naming convention", () => {
-      project.getStage(1)!.name.set("Foo 1")
+      project.getStage(1)!.getSettings().name.set("Foo 1")
       const stage = project.insertStage(1)
-      expect(stage.name.get()).toEqual("Foo 0")
+      expect(stage.getSettings().name.get()).toEqual("Foo 0")
       expect(getIconsFromSettings(getCurrentValues(stage.getBlueprintSettingsView()))).toBeNil()
     })
   })
 
   describe("other stages", () => {
     test('adds " 1" if no naming convention', () => {
-      project.getStage(1)!.name.set("Foo")
+      project.getStage(1)!.getSettings().name.set("Foo")
 
       const stage = project.insertStage(2)
-      expect(stage.name.get()).toEqual("Foo 1")
+      expect(stage.getSettings().name.get()).toEqual("Foo 1")
     })
 
     test("increments number if numbered naming convention", () => {
-      project.getStage(1)!.name.set("Foo 1")
+      project.getStage(1)!.getSettings().name.set("Foo 1")
 
       const stage = project.insertStage(2)
-      expect(stage.name.get()).toEqual("Foo 2")
+      expect(stage.getSettings().name.get()).toEqual("Foo 2")
     })
 
     test("increments 19 to 20 and 239 to 240", () => {
-      project.getStage(1)!.name.set("Foo 19")
+      project.getStage(1)!.getSettings().name.set("Foo 19")
 
       const stage = project.insertStage(2)
-      expect(stage.name.get()).toEqual("Foo 20")
+      expect(stage.getSettings().name.get()).toEqual("Foo 20")
 
-      project.getStage(2)!.name.set("Foo 239")
+      project.getStage(2)!.getSettings().name.set("Foo 239")
 
       const stage2 = project.insertStage(3)
-      expect(stage2.name.get()).toEqual("Foo 240")
+      expect(stage2.getSettings().name.get()).toEqual("Foo 240")
     })
 
     test('adds ".1" if numbered naming convention, but next stage already has that name', () => {
-      project.getStage(1)!.name.set("Foo 3")
-      project.getStage(2)!.name.set("Foo 4")
+      project.getStage(1)!.getSettings().name.set("Foo 3")
+      project.getStage(2)!.getSettings().name.set("Foo 4")
 
       const stage = project.insertStage(2)
-      expect(stage.name.get()).toEqual("Foo 3.1")
+      expect(stage.getSettings().name.get()).toEqual("Foo 3.1")
     })
 
     test("detects and uses numerical separator if next stage already has that name", () => {
-      project.getStage(1)!.name.set("Foo 3--2")
-      project.getStage(2)!.name.set("Foo 3--3")
+      project.getStage(1)!.getSettings().name.set("Foo 3--2")
+      project.getStage(2)!.getSettings().name.set("Foo 3--3")
       const stage = project.insertStage(2)
-      expect(stage.name.get()).toEqual("Foo 3--2--1")
+      expect(stage.getSettings().name.get()).toEqual("Foo 3--2--1")
     })
   })
 })

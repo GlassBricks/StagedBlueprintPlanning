@@ -157,7 +157,7 @@ class ComputeUnitNumberFilterStep implements BlueprintStep {
   }
 
   title(): LocalisedString {
-    return [L_GuiBlueprintBookTask.PreparingStage, this.stagePlan.stage.name.get()]
+    return [L_GuiBlueprintBookTask.PreparingStage, this.stagePlan.stage.getSettings().name.get()]
   }
 }
 
@@ -171,7 +171,7 @@ class TakeStageBlueprintStep implements BlueprintStep {
 
   run(): void {
     const { stage, bbox } = this.stagePlan
-    const stageName = stage.name.get()
+    const stageName = stage.getSettings().name.get()
     const result = takeSingleBlueprint({
       stack: this.actualStack,
       settings: this.overrideableSettings satisfies BlueprintTakeSettings,
@@ -196,7 +196,7 @@ class TakeStageBlueprintStep implements BlueprintStep {
   }
 
   title(): LocalisedString {
-    return [L_GuiBlueprintBookTask.TakeStageBlueprint, this.stagePlan.stage.name.get()]
+    return [L_GuiBlueprintBookTask.TakeStageBlueprint, this.stagePlan.stage.getSettings().name.get()]
   }
 }
 
@@ -259,7 +259,7 @@ class ComputeAdditionalSettingsStep implements BlueprintStep {
   }
 
   title(): LocalisedString {
-    return [L_GuiBlueprintBookTask.PreparingStage, this.stagePlan.stage.name.get()]
+    return [L_GuiBlueprintBookTask.PreparingStage, this.stagePlan.stage.getSettings().name.get()]
   }
 }
 

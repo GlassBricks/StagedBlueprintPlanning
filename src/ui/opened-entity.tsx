@@ -100,7 +100,7 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
     function StageButton(buttonStage: Stage): Element {
       return (
         <button
-          caption={buttonStage.name}
+          caption={buttonStage.getSettings().name}
           styleMod={{ width: StageButtonWidth, height: StageButtonHeight }}
           enabled={buttonStage != stage}
           on_gui_click={bind(EntityProjectInfo.teleportToStageAction, buttonStage)}
@@ -203,7 +203,7 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
   private renderStageDiffSettings(stageDiff: StageDiff<BlueprintEntity>): Element {
     const diffEntries = Object.keys(stageDiff).sort() as Array<keyof BlueprintEntity>
     const nextLowerStageNum = this.entity.prevStageWithDiff(this.stage.stageNumber) ?? this.entity.firstStage
-    const nextLowerStageName = this.stage.project.getStage(nextLowerStageNum)!.name.get()
+    const nextLowerStageName = this.stage.project.getStage(nextLowerStageNum)!.getSettings().name.get()
     return (
       <>
         <label caption={[L_GuiEntityInfo.StageDiff]} style="heading_2_label" />

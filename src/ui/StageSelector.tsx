@@ -51,9 +51,9 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
     this.trackerSubscription.add(subscription)
 
     const stages = this.project.getAllStages()
-    this.element.items = stages.map((l) => l.name.get())
+    this.element.items = stages.map((l) => l.getSettings().name.get())
     for (const stage of stages) {
-      stage.name.subscribe(subscription, bind(ibind(this.setDropDownItem), stage.stageNumber))
+      stage.getSettings().name.subscribe(subscription, bind(ibind(this.setDropDownItem), stage.stageNumber))
     }
     playerCurrentStage(this.playerIndex).subscribeAndRaise(subscription, ibind(this.playerStageChanged))
 

@@ -50,7 +50,7 @@ export function exportStage(this: unknown, stage: Stage): StageExport {
       settings.stageBlueprintSettings,
       keys<StageBlueprintSettings>(),
     ),
-    ...getCurrentValuesOf<StageSettings>(stage, keys<StageSettings>()),
+    ...getCurrentValuesOf<StageSettings>(stage.getSettings(), keys<StageSettings>()),
   }
 }
 
@@ -106,5 +106,5 @@ function importStage(importedStage: StageExport, result: Stage): void {
       keys<StageBlueprintSettings>(),
     )
   }
-  setCurrentValuesOf<StageSettings>(result, importedStage, keys<StageSettings>())
+  setCurrentValuesOf<StageSettings>(result.getSettings(), importedStage, keys<StageSettings>())
 }

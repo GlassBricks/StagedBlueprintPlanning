@@ -7,7 +7,7 @@ import { remove_from_list } from "util"
 import { newProjectContent } from "../entity/ProjectContent"
 import { StageNumber } from "../entity/ProjectEntity"
 import { StagedValue } from "../entity/StagedValue"
-import { Events, globalEvent, ibind, Mutable, MutableProperty, RegisterClass, SimpleEvent, Subscription } from "../lib"
+import { Events, globalEvent, ibind, Mutable, RegisterClass, SimpleEvent, Subscription } from "../lib"
 import { BBox } from "../lib/geometry"
 import { LazyLoadClass } from "../lib/LazyLoad"
 import { EntityHighlights } from "./entity-highlights"
@@ -108,7 +108,7 @@ class UserProjectImpl implements UserProjectInternal {
     this.settings.blueprintBookTemplate.onProjectNameChanged(newValue, oldValue)
 
     for (const [, stage] of pairs(this.stages)) {
-      updateStageSurfaceName(stage.surface, newValue, stage.name.get())
+      updateStageSurfaceName(stage.surface, newValue, stage.getSettings().name.get())
     }
   }
 
@@ -299,7 +299,6 @@ export interface StageInternal extends Stage {
 
 @RegisterClass("Stage")
 class StageImpl implements StageInternal {
-  name: MutableProperty<string>
   readonly valid = true
 
   readonly surfaceIndex: SurfaceIndex
@@ -315,7 +314,6 @@ class StageImpl implements StageInternal {
     readonly surface: LuaSurface,
     public stageNumber: StageNumber,
   ) {
-    this.name = project.settings.getStageNameProperty(stageNumber)
     this.surfaceIndex = surface.index
     if (project.id != 0) storage.surfaceIndexToStage.set(this.surfaceIndex, this)
     this.actions = project.actions
@@ -325,7 +323,7 @@ class StageImpl implements StageInternal {
     if (this.subscription) return
     this.subscription = new Subscription()
 
-    this.name.subscribe(this.subscription, ibind(this.onNameChange))
+    this.getSettings().name.subscribe(this.subscription, ibind(this.onNameChange))
   }
 
   private onNameChange(newName: string): void {
@@ -385,7 +383,7 @@ class StageImpl implements StageInternal {
   }
 
   __tostring(): string {
-    return `<Stage ${this.stageNumber} "${this.name.get()}" of "${this.project.settings.projectName.get()}">`
+    return `<Stage ${this.stageNumber} "${this.getSettings().name.get()}" of "${this.project.settings.projectName.get()}">`
   }
 }
 

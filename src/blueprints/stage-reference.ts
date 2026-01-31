@@ -16,7 +16,7 @@ const StageReferenceTag = "bp100StageReference"
 export function createStageReference(stack: LuaItemStack, stage: Stage): boolean {
   if (!stack.valid) return false
   if (!stack.valid_for_read || stack.name != Prototypes.StageReference) stack.set_stack(Prototypes.StageReference)
-  const name = stage.name.get()
+  const name = stage.getSettings().name.get()
   stack.label = `[[ ${name} ]]`
   stack.allow_manual_label_change = false
   stack.set_blueprint_entities([

@@ -8,9 +8,8 @@ import { BlueprintSettingsTable } from "../blueprints/blueprint-settings"
 import { MutableProjectContent } from "../entity/ProjectContent"
 import { StageNumber } from "../entity/ProjectEntity"
 import { StagedValue } from "../entity/StagedValue"
-import { MutableProperty, SimpleSubscribable } from "../lib"
+import { SimpleSubscribable } from "../lib"
 import { BBox } from "../lib/geometry"
-import { PropertiesTable } from "../utils/properties-obj"
 import { ProjectUpdates } from "./project-updates"
 import type { ProjectSettings, StageSettingsData } from "./ProjectSettings"
 
@@ -65,9 +64,7 @@ export interface StageSettings {
   name: string
 }
 
-export interface Stage extends PropertiesTable<StageSettings> {
-  readonly name: MutableProperty<string>
-
+export interface Stage {
   readonly stageNumber: StageNumber
 
   readonly surface: LuaSurface

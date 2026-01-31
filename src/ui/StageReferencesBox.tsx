@@ -71,7 +71,7 @@ class StageReferencePanel extends Component<{
     for (const stage of this.project.getAllStages()) {
       renderMultiple(
         <>
-          <label caption={stage.name} styleMod={{ width: 80 }} />
+          <label caption={stage.getSettings().name} styleMod={{ width: 80 }} />
           <sprite-button
             style="frame_action_button"
             sprite={Sprites.NewBlueprint}

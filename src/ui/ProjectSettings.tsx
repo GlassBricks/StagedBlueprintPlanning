@@ -451,7 +451,7 @@ class ProjectSettings extends Component<{
           caption={
             stage == nil
               ? [L_GuiProjectSettings.EditingDefaults]
-              : stage.name.map(funcRef(ProjectSettings.editingForStage))
+              : stage.getSettings().name.map(funcRef(ProjectSettings.editingForStage))
           }
           styleMod={{
             font: "heading-2",
@@ -536,7 +536,7 @@ class ProjectSettings extends Component<{
     const player = game.get_player(this.playerIndex)
     if (!player) return
     const takeSettingsStage = stage ?? this.project.getStage(this.project.settings.stageCount())!
-    const name = stage?.name.get() ?? "Defaults"
+    const name = stage?.getSettings().name.get() ?? "Defaults"
     const stageBpSettings = stage ? stage.getSettings().stageBlueprintSettings : nil
     const successful = editInItemBlueprintSettings(
       player,
@@ -751,8 +751,8 @@ class ProjectSettings extends Component<{
       <>
         <frame style="subheader_frame" direction="horizontal" styleMod={{ horizontal_align: "center" }}>
           <ItemRename
-            name={stage.name}
-            displayName={stage.name}
+            name={stage.getSettings().name}
+            displayName={stage.getSettings().name}
             renameTooltip={[L_GuiProjectSettings.RenameStage]}
             maximalWidth={ProjectSettingsTabWidth - 30}
           />
@@ -822,7 +822,13 @@ class ProjectSettings extends Component<{
     if (!stageToMerge) return
     showDialog(player, {
       title: [L_GuiProjectSettings.MergeStage],
-      message: [[L_GuiProjectSettings.MergeStageConfirmation, stage.name.get(), stageToMerge.name.get()]],
+      message: [
+        [
+          L_GuiProjectSettings.MergeStageConfirmation,
+          stage.getSettings().name.get(),
+          stageToMerge.getSettings().name.get(),
+        ],
+      ],
       redConfirm: true,
       backCaption: [L_Game.Cancel],
       confirmCaption: [L_Game.Confirm],
@@ -849,7 +855,7 @@ class ProjectSettings extends Component<{
     if (!stage) return
     showDialog(player, {
       title: [L_GuiProjectSettings.DiscardStage],
-      message: [[L_GuiProjectSettings.DiscardStageConfirmation, stage.name.get()]],
+      message: [[L_GuiProjectSettings.DiscardStageConfirmation, stage.getSettings().name.get()]],
       redConfirm: true,
       backCaption: [L_Game.Cancel],
       confirmCaption: [L_Game.Delete],
