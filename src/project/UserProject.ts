@@ -35,7 +35,6 @@ import { BBox } from "../lib/geometry"
 import { LazyLoadClass } from "../lib/LazyLoad"
 import { L_Bp100 } from "../locale"
 import { createdDiffedPropertyTableView, createEmptyPropertyOverrideTable } from "../utils/properties-obj"
-import { EntityHighlights } from "./entity-highlights"
 import { getStageAtSurface } from "./project-refs"
 import { ProjectUpdates } from "./project-updates"
 import { GlobalProjectEvent, LocalProjectEvent, ProjectId, Stage, StageId, UserProject } from "./ProjectDef"
@@ -48,6 +47,7 @@ import {
 } from "./surfaces"
 import { UserActions } from "./user-actions"
 import { WorldUpdates } from "./world-updates"
+import { WorldPresentation } from "./WorldPresentation"
 import min = math.min
 
 declare const storage: {
@@ -94,7 +94,13 @@ class UserProjectImpl implements UserProjectInternal {
 
   actions = UserActionsClass({ project: this })
   updates = ProjectUpdatesClass({ project: this })
-  worldUpdates = WorldUpdatesClass({ project: this })
+  private _worldPresentation = new WorldPresentation(this)
+  get worldPresentation(): WorldPresentation {
+    return this._worldPresentation
+  }
+  get worldUpdates(): WorldUpdates {
+    return this._worldPresentation.getWorldUpdates()
+  }
 
   private blueprintBookTemplateInv?: LuaInventory
 
@@ -405,9 +411,6 @@ const UserActionsClass = LazyLoadClass<HasProject, UserActions>("UserActions", (
 )
 const ProjectUpdatesClass = LazyLoadClass<HasProject, ProjectUpdates>("ProjectUpdates", ({ project }) =>
   ProjectUpdates(project, project.worldUpdates),
-)
-const WorldUpdatesClass = LazyLoadClass<HasProject, WorldUpdates>("WorldUpdates", ({ project }) =>
-  WorldUpdates(project, EntityHighlights(project)),
 )
 
 export function createUserProject(

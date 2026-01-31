@@ -3,7 +3,7 @@ import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import { RegisterClass } from "../lib"
 
 @RegisterClass("EntityStorage")
-export class EntityStorage<T extends Record<string, unknown>> {
+export class EntityStorage<T extends object> {
   private data = new LuaMap<ProjectEntity, LuaMap<keyof T, LuaMap<StageNumber, unknown>>>()
 
   get<K extends keyof T & string>(entity: ProjectEntity, type: K, stage: StageNumber): T[K] | nil {
@@ -49,7 +49,7 @@ export class EntityStorage<T extends Record<string, unknown>> {
   iterateType<K extends keyof T & string>(entity: ProjectEntity, type: K): LuaPairsIterable<StageNumber, T[K]> {
     const byType = this.data.get(entity)?.get(type)
     if (!byType) return new LuaMap()
-    return byType
+    return byType as LuaMap<number, T[K]>
   }
 
   hasAnyOfType<K extends keyof T & string>(entity: ProjectEntity, type: K): boolean {
@@ -87,7 +87,7 @@ export class EntityStorage<T extends Record<string, unknown>> {
     }
   }
 
-  private cleanupType(entity: ProjectEntity, type: string, byType: LuaMap<StageNumber, unknown>): void {
+  private cleanupType(entity: ProjectEntity, type: keyof T, byType: LuaMap<StageNumber, unknown>): void {
     if (!byType.isEmpty()) return
     const byEntity = this.data.get(entity)!
     byEntity.delete(type)

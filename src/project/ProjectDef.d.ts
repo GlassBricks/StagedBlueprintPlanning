@@ -22,6 +22,7 @@ import { ProjectUpdates } from "./project-updates"
 import type { SurfaceSettings } from "./surfaces"
 import { UserActions } from "./user-actions"
 import { WorldUpdates } from "./world-updates"
+import { WorldPresentation } from "./WorldPresentation"
 
 export type ProjectId = number & {
   _projectIdBrand: never
@@ -46,6 +47,7 @@ export interface Project {
   actions: UserActions
   updates: ProjectUpdates
   worldUpdates: WorldUpdates
+  worldPresentation: WorldPresentation
 }
 
 export interface ProjectSettings {

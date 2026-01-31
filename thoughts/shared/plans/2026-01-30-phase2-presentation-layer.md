@@ -180,8 +180,8 @@ Test that WorldPresentation properly delegates to WorldUpdates methods. Test acc
 ### Success Criteria
 
 #### Automated
-- [ ] `pnpm run test` — all existing tests pass (WorldPresentation is transparent adapter)
-- [ ] `pnpm run lint && pnpm run format:fix` — clean
+- [x] `pnpm run test` — all existing tests pass (WorldPresentation is transparent adapter)
+- [x] `pnpm run lint && pnpm run format:fix` — clean
 
 ---
 

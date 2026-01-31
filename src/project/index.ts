@@ -16,6 +16,7 @@ import { newMap2d } from "../entity/map2d"
 import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import { createProjectTile } from "../tiles/ProjectTile"
 import { Mutable, PRecord, property } from "../lib"
+import { WorldPresentation } from "./WorldPresentation"
 import { Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
 import { getNilPlaceholder } from "../utils/diff-value"
@@ -188,6 +189,16 @@ Migrations.to("2.12.0", () => {
     for (const stage of project.getAllStages()) {
       assume<Mutable<BlueprintSettingsOverrideTable>>(stage.blueprintOverrideSettings)
       stage.blueprintOverrideSettings.customBlueprintName = property(nil)
+    }
+  }
+})
+
+Migrations.to($CURRENT_VERSION, () => {
+  for (const project of getAllProjects()) {
+    const p = project as unknown as Record<string, unknown>
+    delete p.worldUpdates
+    if (!p._worldPresentation) {
+      p._worldPresentation = new WorldPresentation(project)
     }
   }
 })
