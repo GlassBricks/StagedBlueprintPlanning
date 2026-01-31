@@ -20,6 +20,14 @@ Three tracks can proceed mostly independently, merging at defined integration po
 
 Tracks A and B have a single integration point: wiring `ContentObserver` to `WorldPresentation`. Track C can proceed in parallel with minor coordination on interface names.
 
+### Recommended Merge Order: Phase 3 → Phase 1 → Phase 2
+
+All three tracks develop in parallel, but merge sequentially:
+
+- **Phase 3 first**: Largest structural change to `UserProject.ts` (rename, extraction, event system replacement). Merging first avoids rebasing a massive rename over Phase 2's `worldPresentation` additions. Phase 3 doesn't touch `ProjectEntity.ts` or `ProjectContent.ts`, so it's orthogonal to Phase 1.
+- **Phase 1 second**: Splits `ProjectEntity` interface, expands `ProjectContent`. Doesn't touch `UserProject.ts` significantly. Clean merge over Phase 3.
+- **Phase 2 last**: Highest-risk phase (~50 call sites). Benefits from Phase 1's `InternalProjectEntity` split already being in place (knows exactly which interface to remove methods from). Benefits from Phase 3's `Project` rename already being done (adds `worldPresentation` to the final class). Phase 3's `worldUpdates.rebuildStage()` references in the moved `project-event-listener.ts` logic get updated to `worldPresentation.rebuildStage()` as part of Phase 2's normal migration.
+
 ## Pre-Refactor: Integration Test Coverage
 
 Before any refactoring, expand integration tests to cover all user-visible behavior. Tests should be agnostic to internal architecture — they interact through the public API surface (`project.actions` / entity creation / stage operations) and verify world state outcomes.
@@ -165,9 +173,10 @@ Same pattern: move highlight/render object storage from `ProjectEntity.stageProp
 
 ## Phase 3: Project Structure (Track C)
 
-### 3a. Extract ProjectSettings
+### 3a. Extract ProjectSettings + BlueprintBookTemplate
 
-Extract settings from `UserProject` into `ProjectSettings` class:
+Extract settings and blueprint book template from `UserProject` into `ProjectSettings` and `BlueprintBookTemplate` classes together:
+- `BlueprintBookTemplate` owned by `ProjectSettings` from the start
 - Project name, stage names, blueprint settings, surface settings, entity behavior flags
 - Implements `ProjectSettingsWriter` (per target state)
 - `UserProject` delegates to `ProjectSettings` instance
@@ -191,7 +200,7 @@ Extract project list management from module-level functions in `UserProject.ts`:
 - UI components (`StageSelector`, `StageReferencesBox`) register as `ProjectLifecycleObserver` instead of subscribing to `localEvents`
 - `AllProjects.tsx` subscribes to `ProjectList` events instead of `GlobalProjectEvents`
 - `player-current-stage.ts`, `player-project-data.ts` subscribe to `ProjectList.projectDeleted`
-- Delete `project-event-listener.ts` (logic moves into `Project` stage lifecycle and `WorldPresentation`)
+- Delete `project-event-listener.ts` (logic moves into `Project` stage lifecycle; `worldUpdates.rebuildStage()` calls become `worldPresentation.rebuildStage()` after Phase 2 merges)
 - Delete `GlobalProjectEvents` and `localEvents`
 
 ### 3e. Restructure Project and Stage
