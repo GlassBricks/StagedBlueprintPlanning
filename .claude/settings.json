@@ -2,6 +2,7 @@
   "permissions": {
     "allow": [
       "Bash(pnpm run build:*)",
+      "Bash(pnpm run build:test:*)",
       "Bash(pnpm run test:*)",
       "Bash(pnpm run format:fix:*)",
       "Bash(pnpm run lint:*)",
