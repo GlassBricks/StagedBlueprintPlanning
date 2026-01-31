@@ -23,22 +23,22 @@ describe("train entities", () => {
 
   test("create train entity", () => {
     const train = createRollingStock(ctx.surfaces[3 - 1])
-    const entity = ctx.project.updates.addNewEntity(train, 3)!
+    const entity = ctx.projectOps.addNewEntity(train, 3)!
     expect(entity).toBeAny()
     assertTrainEntityCorrect(entity, false)
   })
   test("train entity error", () => {
     const train = createRollingStock(ctx.surfaces[3 - 1])
-    const entity = ctx.project.updates.addNewEntity(train, 3)!
+    const entity = ctx.projectOps.addNewEntity(train, 3)!
     train.destroy()
     ctx.surfaces[3 - 1].find_entities().forEach((e) => e.destroy())
 
-    ctx.project.worldUpdates.refreshAllWorldEntities(entity)
+    ctx.worldOps.refreshAllEntities(entity)
     assertTrainEntityCorrect(entity, 3)
   })
   test("inserting a stage keeps train in same stage", () => {
     const train = createRollingStock(ctx.surfaces[3 - 1])
-    const entity = ctx.project.updates.addNewEntity(train, 3)!
+    const entity = ctx.projectOps.addNewEntity(train, 3)!
     expect(entity).toBeAny()
     expect(entity.lastStage).toBe(3)
     ctx.project.insertStage(4)
@@ -48,8 +48,8 @@ describe("train entities", () => {
   })
   test("Moving a train also sets its last stage", () => {
     const train = createRollingStock(ctx.surfaces[3 - 1])
-    const entity = ctx.project.updates.addNewEntity(train, 3)!
-    ctx.project.updates.trySetFirstStage(entity, 2)
+    const entity = ctx.projectOps.addNewEntity(train, 3)!
+    ctx.projectOps.trySetFirstStage(entity, 2)
     expect(entity.firstStage).toBe(2)
     expect(entity.lastStage).toBe(2)
     assertTrainEntityCorrect(entity, 2)
@@ -66,7 +66,7 @@ describe("vehicles", () => {
 
   test("can save a vehicle with grid", () => {
     const projectEntity = ctx.buildEntity<CarBlueprintEntity>(1, { name: "tank", orientation: 0.25 })
-    const worldEntity = projectEntity.getWorldEntity(1)!
+    const worldEntity = ctx.worldQueries.getWorldEntity(projectEntity, 1)!
     expect(worldEntity.name).toBe("tank")
 
     worldEntity.grid!.put({ name: "solar-panel-equipment" })
@@ -74,11 +74,11 @@ describe("vehicles", () => {
     checkForEntityUpdates(worldEntity, nil)
     checkProjectEntityCorrect(projectEntity)
 
-    ctx.project.worldUpdates.rebuildStage(1)
+    ctx.worldOps.rebuildStage(1)
 
     checkProjectEntityCorrect(projectEntity)
 
-    const newWorldEntity = projectEntity.getWorldEntity(1)!
+    const newWorldEntity = ctx.worldQueries.getWorldEntity(projectEntity, 1)!
     checkForEntityUpdates(newWorldEntity, nil)
     checkProjectEntityCorrect(projectEntity)
 
@@ -123,7 +123,7 @@ test("rebuilding stage does not delete train", () => {
     }
   }
   assert(train)
-  ctx.project.worldUpdates.rebuildStage(1)
+  ctx.worldOps.rebuildStage(1)
   expect(trainEntity.valid).toBe(false)
   expect(ctx.project.content.hasEntity(train)).toBe(true)
   const newTrain = ctx.surfaces[0].find_entities_filtered({ name: "locomotive" })[0]
@@ -143,7 +143,7 @@ test("rebuilding stage places wagon and elevated rails correctly", () => {
   ctx.player.teleport([0, 0], ctx.surfaces[0])
   ctx.player.build_from_cursor({ position: pos, direction: 0, build_mode: defines.build_mode.forced })
 
-  ctx.project.worldUpdates.rebuildAllStages()
+  ctx.worldOps.rebuildAllStages()
 
   const rail = ctx.surfaces[0].find_entities_filtered({ name: "elevated-curved-rail-a" })[0]
   expect(rail).not.toBeNil()

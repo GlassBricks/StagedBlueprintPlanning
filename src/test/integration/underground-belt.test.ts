@@ -44,7 +44,9 @@ describe.each([true, false])("underground snapping, with flipped %s", (flipped) 
     expect(westUnderground.direction).toBe(expectedDirection)
     expect(westUnderground.firstValue.type).toBe(westType)
 
-    expect(westUnderground.getWorldEntity(4)!.neighbours).toEqual(placedUnderground.getWorldEntity(4)!)
+    expect(ctx.worldQueries.getWorldEntity(westUnderground, 4)!.neighbours).toEqual(
+      ctx.worldQueries.getWorldEntity(placedUnderground, 4)!,
+    )
   })
   describe.each<[boolean, string]>([
     [false, "entity markers"],
@@ -124,16 +126,16 @@ describe("underground belt inconsistencies", () => {
         direction: defines.direction.east,
         position: pos,
       })
-      const leftStage1 = leftUnderground.getWorldEntity(1)
+      const leftStage1 = ctx.worldQueries.getWorldEntity(leftUnderground, 1)
       assert(leftStage1)
-      expect(leftStage1.neighbours).not.toBeNil().and.toEqual(rightUnderground.getWorldEntity(1))
-      expect(leftUnderground.getWorldEntity(2)?.neighbours)
+      expect(leftStage1.neighbours).not.toBeNil().and.toEqual(ctx.worldQueries.getWorldEntity(rightUnderground, 1))
+      expect(ctx.worldQueries.getWorldEntity(leftUnderground, 2)?.neighbours)
         .not.toBeNil()
-        .and.toEqual(middleUnderground.getWorldEntity(2))
+        .and.toEqual(ctx.worldQueries.getWorldEntity(middleUnderground, 2))
 
-      const leftStage2 = leftUnderground.getWorldEntity(2)
+      const leftStage2 = ctx.worldQueries.getWorldEntity(leftUnderground, 2)
       assert(leftStage2)
-      const middleStage2 = middleUnderground.getWorldEntity(2)
+      const middleStage2 = ctx.worldQueries.getWorldEntity(middleUnderground, 2)
       assert(middleStage2)
 
       expect(leftStage2.neighbours).toEqual(middleStage2)
@@ -142,9 +144,9 @@ describe("underground belt inconsistencies", () => {
       expect(findUndergroundPair(ctx.project.content, leftUnderground, 1)).toBe(rightUnderground)
     })
     test("When flipping an left paired with multiple undergrounds, error is shown in stage where left flip failed", () => {
-      const leftStage1 = leftUnderground.getWorldEntity(1)!
-      const rightStage1 = rightUnderground.getWorldEntity(1)!
-      const leftStage2 = leftUnderground.getWorldEntity(2)!
+      const leftStage1 = ctx.worldQueries.getWorldEntity(leftUnderground, 1)!
+      const rightStage1 = ctx.worldQueries.getWorldEntity(rightUnderground, 1)!
+      const leftStage2 = ctx.worldQueries.getWorldEntity(leftUnderground, 2)!
 
       leftStage1.rotate({ by_player: ctx.player })
 
@@ -173,16 +175,16 @@ describe("underground belt inconsistencies", () => {
         direction: defines.direction.east,
         belt_to_ground_type: "input",
       })
-      expect(leftUnderground.hasErrorAt(2)).toBe(true)
+      expect(ctx.worldQueries.hasErrorAt(leftUnderground, 2)).toBe(true)
 
       ctx.assertEntityCorrect(leftUnderground, 2)
       ctx.assertEntityCorrect(rightUnderground, false)
       ctx.assertEntityCorrect(middleUnderground, false)
     })
     test("when flipping middle, middle succeeds, but error is shown in left where the flip failed", () => {
-      const middle = middleUnderground.getWorldEntity(2)!
-      const leftStage1 = leftUnderground.getWorldEntity(1)!
-      const leftStage2 = leftUnderground.getWorldEntity(2)!
+      const middle = ctx.worldQueries.getWorldEntity(middleUnderground, 2)!
+      const leftStage1 = ctx.worldQueries.getWorldEntity(leftUnderground, 1)!
+      const leftStage2 = ctx.worldQueries.getWorldEntity(leftUnderground, 2)!
 
       middle.rotate({ by_player: ctx.player })
 
@@ -203,7 +205,7 @@ describe("underground belt inconsistencies", () => {
         direction: defines.direction.east,
         belt_to_ground_type: "input",
       })
-      expect(leftUnderground.hasErrorAt(1)).toBe(true)
+      expect(ctx.worldQueries.hasErrorAt(leftUnderground, 1)).toBe(true)
 
       expect(leftStage2).toMatchTable({
         direction: defines.direction.west,
@@ -215,10 +217,10 @@ describe("underground belt inconsistencies", () => {
       ctx.assertEntityCorrect(middleUnderground, false)
     })
     test("when flipping an underground to correct error, also flips its pair", () => {
-      const leftStage1 = leftUnderground.getWorldEntity(1)!
+      const leftStage1 = ctx.worldQueries.getWorldEntity(leftUnderground, 1)!
       leftStage1.rotate({ by_player: ctx.player })
 
-      const leftStage2 = leftUnderground.getWorldEntity(2)!
+      const leftStage2 = ctx.worldQueries.getWorldEntity(leftUnderground, 2)!
       expect(leftStage2).toMatchTable({
         direction: defines.direction.east,
         belt_to_ground_type: "input",
@@ -238,7 +240,7 @@ describe("underground belt inconsistencies", () => {
         direction: defines.direction.west,
       })
 
-      const middle = middleUnderground.getWorldEntity(2)!
+      const middle = ctx.worldQueries.getWorldEntity(middleUnderground, 2)!
 
       expect(leftStage1).toMatchTable({
         direction: defines.direction.west,
@@ -259,9 +261,9 @@ describe("underground belt inconsistencies", () => {
     })
     test("when deleting an underground causing old pair to flip, project.updates highlights on old pair", () => {
       middleUnderground.setFirstStageUnchecked(1)
-      ctx.project.worldUpdates.updateWorldEntities(middleUnderground, 1)
+      ctx.worldOps.updateWorldEntities(middleUnderground, 1)
 
-      middleUnderground.getWorldEntity(1)!.rotate({ by_player: ctx.player })
+      ctx.worldQueries.getWorldEntity(middleUnderground, 1)!.rotate({ by_player: ctx.player })
       expect(middleUnderground).toMatchTable({
         firstValue: { type: "input" },
         direction: defines.direction.west,
@@ -273,11 +275,11 @@ describe("underground belt inconsistencies", () => {
       ctx.assertEntityCorrect(middleUnderground, false)
       ctx.assertEntityCorrect(leftUnderground, false)
 
-      ctx.player.mine_entity(middleUnderground.getWorldEntity(1)!, true)
+      ctx.player.mine_entity(ctx.worldQueries.getWorldEntity(middleUnderground, 1)!, true)
 
       expect(ctx.project.content.hasEntity(middleUnderground)).toBe(false)
 
-      expect(leftUnderground.hasErrorAt(1)).toBe(true)
+      expect(ctx.worldQueries.hasErrorAt(leftUnderground, 1)).toBe(true)
 
       ctx.assertEntityCorrect(leftUnderground, 1)
       ctx.assertEntityCorrect(rightUnderground, false)
@@ -309,18 +311,18 @@ describe("underground belt inconsistencies", () => {
         direction: defines.direction.east,
         position: pos.add(2, 0),
       }) as ProjectEntity<UndergroundBeltEntity>
-      leftWorldEntity = leftUnderground.getWorldEntity(1)!
+      leftWorldEntity = ctx.worldQueries.getWorldEntity(leftUnderground, 1)!
       expect(leftWorldEntity).toMatchTable({
         belt_to_ground_type: "input",
         direction: defines.direction.east,
-        neighbours: rightUnderground.getWorldEntity(1)!,
+        neighbours: ctx.worldQueries.getWorldEntity(rightUnderground, 1)!,
       })
       rightUnderground.setTypeProperty("input")
       rightUnderground.direction = defines.direction.west
 
-      expect(rightUnderground.hasErrorAt(1)).toBe(true)
-      expect(rightUnderground.hasErrorAt(2)).toBe(true)
-      ctx.project.worldUpdates.updateAllHighlights(rightUnderground)
+      expect(ctx.worldQueries.hasErrorAt(rightUnderground, 1)).toBe(true)
+      expect(ctx.worldQueries.hasErrorAt(rightUnderground, 2)).toBe(true)
+      ctx.worldOps.updateAllHighlights(rightUnderground)
       ctx.assertEntityCorrect(rightUnderground, 1)
     })
     test("flipping an underground with a pair with error project.updates highlight on pair", () => {
@@ -338,7 +340,7 @@ describe("underground belt inconsistencies", () => {
       ctx.assertEntityCorrect(rightUnderground, false)
     })
     test("flipping pair with broken underground at higher stage still disallows rotation", () => {
-      const leftWorldEntity2 = leftUnderground.getWorldEntity(2)!
+      const leftWorldEntity2 = ctx.worldQueries.getWorldEntity(leftUnderground, 2)!
       leftWorldEntity2.rotate({ by_player: ctx.player })
       expect(leftUnderground).toMatchTable({
         firstValue: { type: "input" },
@@ -352,16 +354,16 @@ describe("underground belt inconsistencies", () => {
         belt_to_ground_type: "input",
         direction: defines.direction.east,
       })
-      expect(leftUnderground.getWorldEntity(2)).toMatchTable({
+      expect(ctx.worldQueries.getWorldEntity(leftUnderground, 2)).toMatchTable({
         belt_to_ground_type: "input",
         direction: defines.direction.east,
       })
-      expect(rightUnderground.getWorldEntity(2)).toMatchTable({
+      expect(ctx.worldQueries.getWorldEntity(rightUnderground, 2)).toMatchTable({
         belt_to_ground_type: "output",
         direction: defines.direction.east,
       })
-      expect(rightUnderground.hasErrorAt(1)).toBe(true)
-      expect(rightUnderground.hasErrorAt(2)).toBe(true)
+      expect(ctx.worldQueries.hasErrorAt(rightUnderground, 1)).toBe(true)
+      expect(ctx.worldQueries.hasErrorAt(rightUnderground, 2)).toBe(true)
 
       ctx.assertEntityCorrect(leftUnderground, false)
       ctx.assertEntityCorrect(rightUnderground, 1)
@@ -373,8 +375,8 @@ describe("underground belt inconsistencies", () => {
       type: "input",
       direction: defines.direction.east,
     })
-    assert(underground.getWorldEntity(1)!.rotate())
-    ctx.project.worldUpdates.refreshWorldEntityAtStage(underground, 1)
+    assert(ctx.worldQueries.getWorldEntity(underground, 1)!.rotate())
+    ctx.worldOps.refreshEntity(underground, 1)
     expect(underground).toMatchTable({
       firstValue: { type: "input" },
       direction: defines.direction.east,
@@ -387,13 +389,13 @@ describe("underground belt inconsistencies", () => {
       type: "input",
       direction: defines.direction.east,
     })
-    assert(underground.getWorldEntity(1)!.rotate())
+    assert(ctx.worldQueries.getWorldEntity(underground, 1)!.rotate())
     Events.raiseFakeEventNamed("on_player_selected_area", {
       player_index: 1 as PlayerIndex,
       item: Prototypes.CleanupTool,
       surface: ctx.surfaces[0],
       area: BBox.around(pos, 10),
-      entities: [underground.getWorldEntity(1)!],
+      entities: [ctx.worldQueries.getWorldEntity(underground, 1)!],
       tiles: [],
     })
     expect(underground).toMatchTable({
@@ -414,15 +416,15 @@ describe("underground belt inconsistencies", () => {
       direction: defines.direction.east,
       position: pos.add(1, 0),
     })
-    assert(left.getWorldEntity(1)!.rotate())
-    expect(right.hasErrorAt(1)).toBe(true)
+    assert(ctx.worldQueries.getWorldEntity(left, 1)!.rotate())
+    expect(ctx.worldQueries.hasErrorAt(right, 1)).toBe(true)
 
     Events.raiseFakeEventNamed("on_player_selected_area", {
       player_index: 1 as PlayerIndex,
       item: Prototypes.CleanupTool,
       surface: ctx.surfaces[0],
       area: BBox.around(pos, 10),
-      entities: [left.getWorldEntity(1)!],
+      entities: [ctx.worldQueries.getWorldEntity(left, 1)!],
       tiles: [],
     })
 
@@ -561,7 +563,7 @@ describe("underground belt inconsistencies", () => {
           firstValue: { name: "fast-underground-belt", type: "input" },
           direction: defines.direction.east,
         })
-        expect(underground.getWorldEntity(1)).toMatchTable({
+        expect(ctx.worldQueries.getWorldEntity(underground, 1)).toMatchTable({
           name: "fast-underground-belt",
           belt_to_ground_type: "input",
           direction: defines.direction.east,
@@ -569,7 +571,7 @@ describe("underground belt inconsistencies", () => {
       })
     })
     test("can upgrade underground in flipped direction", () => {
-      underground.getWorldEntity(1)!.rotate({ by_player: ctx.player })
+      ctx.worldQueries.getWorldEntity(underground, 1)!.rotate({ by_player: ctx.player })
       ctx.player.build_from_cursor({ position: pos, build_mode: defines.build_mode.superforced })
 
       waitForPaste(useBplib, () => {
@@ -581,7 +583,7 @@ describe("underground belt inconsistencies", () => {
     })
     test("does not upgrade underground belt in wrong direction", () => {
       underground.setTypeProperty("output")
-      ctx.project.worldUpdates.refreshAllWorldEntities(underground)
+      ctx.worldOps.refreshAllEntities(underground)
       ctx.player.build_from_cursor({ position: pos, build_mode: defines.build_mode.superforced })
 
       waitForPaste(useBplib, () => {

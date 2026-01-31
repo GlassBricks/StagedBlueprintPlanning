@@ -6,91 +6,120 @@
 import expect from "tstl-expect"
 import { ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { getItemRequestSampleItemName, HighlightConstants } from "../../project/entity-highlights"
+import { createOldPipelineWorldQueries, TestWorldQueries } from "../integration/test-world-queries"
 
-export function assertConfigChangedHighlightsCorrect(entity: ProjectEntity, maxStage: StageNumber): void {
+export function assertConfigChangedHighlightsCorrect(
+  entity: ProjectEntity,
+  maxStage: StageNumber,
+  wq: TestWorldQueries = createOldPipelineWorldQueries(),
+): void {
   let i = entity.firstStage
   for (const [stageNumber, changes] of pairs(entity.stageDiffs ?? {})) {
     const isUpgrade = changes.name != nil
 
-    const highlight = expect(entity.getExtraEntity("configChangedHighlight", stageNumber)).toBeAny().getValue()!
+    const highlight = expect(wq.getExtraEntity(entity, "configChangedHighlight", stageNumber))
+      .toBeAny()
+      .getValue()!
     expect(highlight.highlight_box_type).toBe(
       isUpgrade ? HighlightConstants.Upgraded : HighlightConstants.ConfigChanged,
     )
 
     const firstI = i
     for (; i < stageNumber; i++) {
-      if (i != firstI) expect(entity.getExtraEntity("configChangedHighlight", i)).toBeNil()
+      if (i != firstI) expect(wq.getExtraEntity(entity, "configChangedHighlight", i)).toBeNil()
 
-      const highlight = expect(entity.getExtraEntity("configChangedLaterHighlight", i)).toBeAny().getValue()!
+      const highlight = expect(wq.getExtraEntity(entity, "configChangedLaterHighlight", i))
+        .toBeAny()
+        .getValue()!
       expect(highlight.sprite).toBe(
         isUpgrade ? HighlightConstants.UpgradedLater : HighlightConstants.ConfigChangedLater,
       )
     }
   }
   for (let j = i; j <= maxStage; j++) {
-    if (j != i) expect(entity.getExtraEntity("configChangedHighlight", j)).toBeNil()
-    expect(entity.getExtraEntity("configChangedLaterHighlight", j)).toBeNil()
+    if (j != i) expect(wq.getExtraEntity(entity, "configChangedHighlight", j)).toBeNil()
+    expect(wq.getExtraEntity(entity, "configChangedLaterHighlight", j)).toBeNil()
   }
 }
 
-export function assertErrorHighlightsCorrect(entity: ProjectEntity, maxStage: StageNumber): void {
+export function assertErrorHighlightsCorrect(
+  entity: ProjectEntity,
+  maxStage: StageNumber,
+  wq: TestWorldQueries = createOldPipelineWorldQueries(),
+): void {
   let anyHasError = false
   for (const stage of $range(entity.firstStage, maxStage)) {
-    if (entity.hasErrorAt(stage)) {
+    if (wq.hasErrorAt(entity, stage)) {
       anyHasError = true
-      const highlight = expect(entity.getExtraEntity("errorOutline", stage)).toBeAny().getValue()!
+      const highlight = expect(wq.getExtraEntity(entity, "errorOutline", stage))
+        .toBeAny()
+        .getValue()!
       expect(highlight.highlight_box_type).toBe(HighlightConstants.Error)
     } else {
-      expect(entity.getExtraEntity("errorOutline", stage)).toBeNil()
+      expect(wq.getExtraEntity(entity, "errorOutline", stage)).toBeNil()
     }
   }
   if (!anyHasError) {
-    expect(entity.hasAnyExtraEntities("errorElsewhereIndicator")).toBe(false)
+    expect(wq.hasAnyExtraEntities(entity, "errorElsewhereIndicator")).toBe(false)
   } else {
     for (const stage of $range(1, maxStage)) {
-      const hasError = entity.hasErrorAt(stage)
+      const hasError = wq.hasErrorAt(entity, stage)
       if (hasError) {
-        // no indicator
-        expect(entity.getExtraEntity("errorOutline", stage)).not.toBeNil()
-        expect(entity.getExtraEntity("errorElsewhereIndicator", stage)).toBeNil()
+        expect(wq.getExtraEntity(entity, "errorOutline", stage)).not.toBeNil()
+        expect(wq.getExtraEntity(entity, "errorElsewhereIndicator", stage)).toBeNil()
       } else {
-        expect(entity.getExtraEntity("errorElsewhereIndicator", stage)).toBeAny()
+        expect(wq.getExtraEntity(entity, "errorElsewhereIndicator", stage)).toBeAny()
       }
     }
   }
 }
 
-export function assertLastStageHighlightCorrect(entity: ProjectEntity): void {
+export function assertLastStageHighlightCorrect(
+  entity: ProjectEntity,
+  wq: TestWorldQueries = createOldPipelineWorldQueries(),
+): void {
   if (entity.lastStage != nil && !entity.isMovable()) {
-    const highlight = expect(entity.getExtraEntity("stageDeleteHighlight", entity.lastStage)).toBeAny().getValue()!
+    const highlight = expect(wq.getExtraEntity(entity, "stageDeleteHighlight", entity.lastStage))
+      .toBeAny()
+      .getValue()!
     expect(highlight).toMatchTable({
       sprite: HighlightConstants.DeletedNextStage,
     })
   } else {
-    expect(entity.hasAnyExtraEntities("stageDeleteHighlight")).toBe(false)
+    expect(wq.hasAnyExtraEntities(entity, "stageDeleteHighlight")).toBe(false)
   }
 }
 
-export function assertNoHighlightsAfterLastStage(entity: ProjectEntity, maxStage: StageNumber): void {
+export function assertNoHighlightsAfterLastStage(
+  entity: ProjectEntity,
+  maxStage: StageNumber,
+  wq: TestWorldQueries = createOldPipelineWorldQueries(),
+): void {
   if (!entity.lastStage) return
   for (const stage of $range(entity.lastStage + 1, maxStage)) {
-    expect(entity.getExtraEntity("configChangedHighlight", stage)).toBeNil()
-    expect(entity.getExtraEntity("configChangedLaterHighlight", stage)).toBeNil()
-    expect(entity.getExtraEntity("errorOutline", stage)).toBeNil()
-    expect(entity.getExtraEntity("errorElsewhereIndicator", stage)).toBeNil()
-    expect(entity.getExtraEntity("stageDeleteHighlight", stage)).toBeNil()
+    expect(wq.getExtraEntity(entity, "configChangedHighlight", stage)).toBeNil()
+    expect(wq.getExtraEntity(entity, "configChangedLaterHighlight", stage)).toBeNil()
+    expect(wq.getExtraEntity(entity, "errorOutline", stage)).toBeNil()
+    expect(wq.getExtraEntity(entity, "errorElsewhereIndicator", stage)).toBeNil()
+    expect(wq.getExtraEntity(entity, "stageDeleteHighlight", stage)).toBeNil()
   }
 }
 
-export function assertItemRequestHighlightsCorrect(entity: ProjectEntity, maxStage: StageNumber): void {
+export function assertItemRequestHighlightsCorrect(
+  entity: ProjectEntity,
+  maxStage: StageNumber,
+  wq: TestWorldQueries = createOldPipelineWorldQueries(),
+): void {
   for (const stage of $range(1, maxStage)) {
     const sampleItem = getItemRequestSampleItemName(entity, stage)
     if (sampleItem == nil) {
-      expect(entity.getExtraEntity("itemRequestHighlight", stage)).toBeNil()
-      expect(entity.getExtraEntity("itemRequestHighlightOverlay", stage)).toBeNil()
+      expect(wq.getExtraEntity(entity, "itemRequestHighlight", stage)).toBeNil()
+      expect(wq.getExtraEntity(entity, "itemRequestHighlightOverlay", stage)).toBeNil()
     } else {
-      expect(entity.getExtraEntity("itemRequestHighlight", stage)).toBeAny()
-      const overlay = expect(entity.getExtraEntity("itemRequestHighlightOverlay", stage)).toBeAny().getValue()!
+      expect(wq.getExtraEntity(entity, "itemRequestHighlight", stage)).toBeAny()
+      const overlay = expect(wq.getExtraEntity(entity, "itemRequestHighlightOverlay", stage))
+        .toBeAny()
+        .getValue()!
       expect(overlay.sprite).toBe(`item/${sampleItem}`)
     }
   }

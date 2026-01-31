@@ -10,7 +10,8 @@ import { BBox } from "../../lib/geometry"
 import { UserProject } from "../../project/ProjectDef"
 import { SpacePlatformSettings } from "../../project/surfaces"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
-import { assertEntityCorrect } from "./integration-test-util"
+import { assertEntityCorrect, createOldPipelineProjectOps } from "./integration-test-util"
+import { createOldPipelineWorldQueries } from "./test-world-queries"
 
 before_each(() => {
   _deleteAllProjects()
@@ -48,8 +49,9 @@ describe("space platform hub", () => {
       expect(hubEntity.firstStage).toBe(1)
       expect(hubEntity.lastStage).toBeNil()
 
+      const wq = createOldPipelineWorldQueries()
       for (const stage of $range(1, project.numStages())) {
-        const worldEntity = hubEntity.getWorldEntity(stage)
+        const worldEntity = wq.getWorldEntity(hubEntity, stage)
         expect(worldEntity).toBeAny()
         expect(worldEntity!.name).toBe("space-platform-hub")
         expect(worldEntity!.position).toEqual(hubEntity.position)
@@ -113,8 +115,9 @@ describe("space platform tiles", () => {
         }
       }
     }
+    const projectOps = createOldPipelineProjectOps(project)
     for (const position of positionsToRemove) {
-      project.updates.deleteTile(position)
+      projectOps.deleteTile(position)
     }
 
     const newStage = project.insertStage(project.numStages())

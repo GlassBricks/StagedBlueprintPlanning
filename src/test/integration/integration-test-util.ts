@@ -6,12 +6,13 @@ import { BlueprintEntity, LuaEntity, LuaPlayer, LuaSurface, SurfaceCreateEntity,
 import expect from "tstl-expect"
 import { oppositedirection } from "util"
 import { Prototypes } from "../../constants"
-import { LuaEntityInfo } from "../../entity/Entity"
+import { Entity, LuaEntityInfo } from "../../entity/Entity"
 import { ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { isPreviewEntity } from "../../entity/prototype-info"
 import { canBeAnyDirection, saveEntity } from "../../entity/save-load"
 import { assert } from "../../lib"
-import { Pos } from "../../lib/geometry"
+import { Position, Pos } from "../../lib/geometry"
+import { checkForEntityUpdates } from "../../project/event-handlers"
 import { UserProject } from "../../project/ProjectDef"
 import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import {
@@ -21,24 +22,97 @@ import {
   assertLastStageHighlightCorrect,
   assertNoHighlightsAfterLastStage,
 } from "../project/entity-highlight-test-util"
+import { createOldPipelineWorldQueries, TestWorldQueries } from "./test-world-queries"
 
-export function assertEntityCorrect(project: UserProject, entity: ProjectEntity, expectError: number | false): void {
+export { createOldPipelineWorldQueries, TestWorldQueries } from "./test-world-queries"
+
+export type Pipeline = "old" | "new"
+
+export function describeDualPipeline(name: string, fn: (pipeline: Pipeline) => void): void {
+  describe.each<[Pipeline]>([["old"], ["new"]])(`${name} (%s pipeline)`, (pipeline) => fn(pipeline))
+}
+
+export interface TestWorldOps {
+  rebuildStage(stage: StageNumber): void
+  rebuildAllStages(): void
+  refreshEntity(entity: ProjectEntity, stage: StageNumber): void
+  refreshAllEntities(entity: ProjectEntity): void
+  rebuildEntity(entity: ProjectEntity, stage: StageNumber): void
+  updateWorldEntities(entity: ProjectEntity, stage: StageNumber): void
+  updateAllHighlights(entity: ProjectEntity): void
+  resyncWithWorld(): void
+}
+
+export interface TestProjectOps {
+  resetProp<T extends Entity>(entity: ProjectEntity<T>, stage: StageNumber, prop: keyof T): boolean
+  movePropDown<T extends Entity>(entity: ProjectEntity<T>, stage: StageNumber, prop: keyof T): boolean
+  resetAllProps(entity: ProjectEntity, stage: StageNumber): boolean
+  moveAllPropsDown(entity: ProjectEntity, stage: StageNumber): boolean
+  setTileAtStage(position: Position, stage: StageNumber, value: string | nil): void
+  deleteTile(position: Position): boolean
+  trySetLastStage(
+    entity: ProjectEntity,
+    stage: StageNumber | nil,
+  ): import("../../project/project-updates").StageMoveResult
+  trySetFirstStage(entity: ProjectEntity, stage: StageNumber): import("../../project/project-updates").StageMoveResult
+  addNewEntity(entity: LuaEntity, stage: StageNumber): ProjectEntity | nil
+  deleteEntityOrCreateSettingsRemnant(entity: ProjectEntity): void
+  tryReviveSettingsRemnant(
+    entity: ProjectEntity,
+    stage: StageNumber,
+  ): import("../../project/project-updates").StageMoveResult
+}
+
+export function createOldPipelineProjectOps(project: UserProject): TestProjectOps {
+  return {
+    resetProp: (entity, stage, prop) => project.updates.resetProp(entity, stage, prop),
+    movePropDown: (entity, stage, prop) => project.updates.movePropDown(entity, stage, prop),
+    resetAllProps: (entity, stage) => project.updates.resetAllProps(entity, stage),
+    moveAllPropsDown: (entity, stage) => project.updates.moveAllPropsDown(entity, stage),
+    setTileAtStage: (position, stage, value) => project.updates.setTileAtStage(position, stage, value),
+    deleteTile: (position) => project.updates.deleteTile(position),
+    trySetLastStage: (entity, stage) => project.updates.trySetLastStage(entity, stage),
+    trySetFirstStage: (entity, stage) => project.updates.trySetFirstStage(entity, stage),
+    addNewEntity: (entity, stage) => project.updates.addNewEntity(entity, stage),
+    deleteEntityOrCreateSettingsRemnant: (entity) => project.updates.deleteEntityOrCreateSettingsRemnant(entity),
+    tryReviveSettingsRemnant: (entity, stage) => project.updates.tryReviveSettingsRemnant(entity, stage),
+  }
+}
+
+export function applyDiffViaWorld(
+  worldQueries: TestWorldQueries,
+  entity: ProjectEntity,
+  stage: StageNumber,
+  applyFn: (worldEntity: LuaEntity) => void,
+): void {
+  const worldEntity = worldQueries.getWorldEntity(entity, stage)
+  assert(worldEntity, "world entity must exist at stage")
+  applyFn(worldEntity)
+  checkForEntityUpdates(worldEntity, nil)
+}
+
+export function assertEntityCorrect(
+  project: UserProject,
+  entity: ProjectEntity,
+  expectError: number | false,
+  wq: TestWorldQueries = createOldPipelineWorldQueries(),
+): void {
   expect(entity.isSettingsRemnant).toBeFalsy()
   const found = project.content.findCompatibleEntity(entity.firstValue.name, entity.position, entity.direction, 1)
   expect(found).toBe(entity)
 
   let hasError: number | false = false
   for (const stage of $range(1, project.lastStageFor(entity))) {
-    const worldEntity = entity.getWorldOrPreviewEntity(stage)!
+    const worldEntity = wq.getWorldOrPreviewEntity(entity, stage)!
     assert(worldEntity, `entity does not exist at stage ${stage}`)
     const isPreview = isPreviewEntity(worldEntity)
     const value = entity.getValueAtStage(stage)
     if (value == nil) {
       assert(isPreview, `entity must be preview at stage ${stage}`)
     } else if (isPreview) {
-      assert(entity.hasErrorAt(stage), `entity must have error at stage ${stage} to be preview`)
+      assert(wq.hasErrorAt(entity, stage), `entity must have error at stage ${stage} to be preview`)
       hasError ||= stage
-    } else if (entity.hasErrorAt(stage)) {
+    } else if (wq.hasErrorAt(entity, stage)) {
       assert(
         worldEntity.type == "underground-belt",
         "Only underground belt currently can have error with existing entity",
@@ -63,31 +137,31 @@ export function assertEntityCorrect(project: UserProject, entity: ProjectEntity,
     expect(worldEntity.position).comment(`preview at stage ${stage}`).toEqual(entity.position)
     if (isPreview) {
       expect(worldEntity.direction).toEqual(entity.getPreviewDirection())
-    } else if (entity.isUndergroundBelt() && entity.hasErrorAt(stage)) {
+    } else if (entity.isUndergroundBelt() && wq.hasErrorAt(entity, stage)) {
       expect(worldEntity.direction).toEqual(oppositedirection(entity.direction))
     } else if (!canBeAnyDirection(worldEntity)) {
       expect(worldEntity.direction).toEqual(entity.direction)
     }
 
-    expect(entity.getExtraEntity("settingsRemnantHighlight", stage)).toBeNil()
+    expect(wq.getExtraEntity(entity, "settingsRemnantHighlight", stage)).toBeNil()
   }
 
   expect(hasError).toBe(expectError)
 
   for (const stage of $range(project.lastStageFor(entity) + 1, project.numStages())) {
-    expect(entity.getWorldOrPreviewEntity(stage)).toBeNil()
+    expect(wq.getWorldOrPreviewEntity(entity, stage)).toBeNil()
   }
 
-  assertErrorHighlightsCorrect(entity, project.lastStageFor(entity))
-  assertConfigChangedHighlightsCorrect(entity, project.lastStageFor(entity))
-  assertLastStageHighlightCorrect(entity)
-  assertNoHighlightsAfterLastStage(entity, project.numStages())
-  assertItemRequestHighlightsCorrect(entity, project.lastStageFor(entity))
+  assertErrorHighlightsCorrect(entity, project.lastStageFor(entity), wq)
+  assertConfigChangedHighlightsCorrect(entity, project.lastStageFor(entity), wq)
+  assertLastStageHighlightCorrect(entity, wq)
+  assertNoHighlightsAfterLastStage(entity, project.numStages(), wq)
+  assertItemRequestHighlightsCorrect(entity, project.lastStageFor(entity), wq)
 
   const wireConnections = entity.wireConnections
   if (!wireConnections) {
     for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
-      const worldEntity = entity.getWorldEntity(stage)
+      const worldEntity = wq.getWorldEntity(entity, stage)
       if (!worldEntity) continue
       for (const [, connectionPoint] of pairs(worldEntity.get_wire_connectors(false))) {
         expect(connectionPoint.connection_count).toBe(0)
@@ -95,11 +169,11 @@ export function assertEntityCorrect(project: UserProject, entity: ProjectEntity,
     }
   } else {
     for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
-      const thisWorldEntity = entity.getWorldEntity(stage)
+      const thisWorldEntity = wq.getWorldEntity(entity, stage)
       if (!thisWorldEntity) continue
 
-      const expectedConnections = Object.entries(wireConnections).flatMap(([entity, connections]) => {
-        const otherWorldEntity = entity.getWorldEntity(stage)
+      const expectedConnections = Object.entries(wireConnections).flatMap(([otherEntity, connections]) => {
+        const otherWorldEntity = wq.getWorldEntity(otherEntity, stage)
         if (!otherWorldEntity) return []
         return Object.keys(connections).map((connection) => ({
           toId: connection.toId,
@@ -127,33 +201,44 @@ export function assertEntityCorrect(project: UserProject, entity: ProjectEntity,
   }
 }
 
-export function assertEntityNotPresent(project: UserProject, entity: ProjectEntity): void {
+export function assertEntityNotPresent(
+  project: UserProject,
+  entity: ProjectEntity,
+  wq: TestWorldQueries = createOldPipelineWorldQueries(),
+): void {
   const found = project.content.findCompatibleEntity(entity.firstValue.name, entity.position, entity.direction, 1)
   expect(found).toBeNil()
 
   for (const stage of $range(1, project.lastStageFor(entity))) {
-    expect(entity.getWorldOrPreviewEntity(stage)).toBeNil()
+    expect(wq.getWorldOrPreviewEntity(entity, stage)).toBeNil()
   }
-  expect(entity.hasAnyExtraEntities("errorOutline")).toBe(false)
-  expect(entity.hasAnyExtraEntities("errorElsewhereIndicator")).toBe(false)
+  expect(wq.hasAnyExtraEntities(entity, "errorOutline")).toBe(false)
+  expect(wq.hasAnyExtraEntities(entity, "errorElsewhereIndicator")).toBe(false)
 }
 
-export function assertIsSettingsRemnant(project: UserProject, entity: ProjectEntity): void {
+export function assertIsSettingsRemnant(
+  project: UserProject,
+  entity: ProjectEntity,
+  wq: TestWorldQueries = createOldPipelineWorldQueries(),
+): void {
   expect(entity.isSettingsRemnant).toBe(true)
   for (const stage of $range(1, project.lastStageFor(entity))) {
-    const preview = entity.getWorldOrPreviewEntity(stage)!
+    const preview = wq.getWorldOrPreviewEntity(entity, stage)!
     expect(preview).toBeAny()
     expect(isPreviewEntity(preview)).toBe(true)
-    expect(entity.getExtraEntity("settingsRemnantHighlight", stage)).toBeAny()
+    expect(wq.getExtraEntity(entity, "settingsRemnantHighlight", stage)).toBeAny()
   }
-  expect(entity.hasAnyExtraEntities("errorOutline")).toBe(false)
-  expect(entity.hasAnyExtraEntities("errorElsewhereIndicator")).toBe(false)
+  expect(wq.hasAnyExtraEntities(entity, "errorOutline")).toBe(false)
+  expect(wq.hasAnyExtraEntities(entity, "errorElsewhereIndicator")).toBe(false)
 }
 
 export interface EntityTestContext {
   project: UserProject
   surfaces: LuaSurface[]
   player: LuaPlayer
+  worldOps: TestWorldOps
+  projectOps: TestProjectOps
+  worldQueries: TestWorldQueries
   assertEntityCorrect(entity: ProjectEntity, expectError: number | false): void
   assertEntityNotPresent(entity: ProjectEntity): void
   assertIsSettingsRemnant(entity: ProjectEntity): void
@@ -172,14 +257,17 @@ export function setupEntityIntegrationTest(numStages = 6): EntityTestContext {
     project: nil!,
     surfaces: nil!,
     player: nil!,
+    worldOps: nil!,
+    projectOps: nil!,
+    worldQueries: nil!,
     assertEntityCorrect(entity: ProjectEntity, expectError: number | false) {
-      assertEntityCorrect(ctx.project, entity, expectError)
+      assertEntityCorrect(ctx.project, entity, expectError, ctx.worldQueries)
     },
     assertEntityNotPresent(entity: ProjectEntity) {
-      assertEntityNotPresent(ctx.project, entity)
+      assertEntityNotPresent(ctx.project, entity, ctx.worldQueries)
     },
     assertIsSettingsRemnant(entity: ProjectEntity) {
-      assertIsSettingsRemnant(ctx.project, entity)
+      assertIsSettingsRemnant(ctx.project, entity, ctx.worldQueries)
     },
     createEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>): LuaEntity {
       const params = {
@@ -232,6 +320,18 @@ export function setupEntityIntegrationTest(numStages = 6): EntityTestContext {
     ctx.project = createUserProject("test", numStages)
     ctx.surfaces = ctx.project.getAllStages().map((stage) => stage.surface)
     ctx.player = game.players[1]
+    ctx.worldOps = {
+      rebuildStage: (stage) => ctx.project.worldUpdates.rebuildStage(stage),
+      rebuildAllStages: () => ctx.project.worldUpdates.rebuildAllStages(),
+      refreshEntity: (entity, stage) => ctx.project.worldUpdates.refreshWorldEntityAtStage(entity, stage),
+      refreshAllEntities: (entity) => ctx.project.worldUpdates.refreshAllWorldEntities(entity),
+      rebuildEntity: (entity, stage) => ctx.project.worldUpdates.rebuildWorldEntityAtStage(entity, stage),
+      updateWorldEntities: (entity, stage) => ctx.project.worldUpdates.updateWorldEntities(entity, stage),
+      updateAllHighlights: (entity) => ctx.project.worldUpdates.updateAllHighlights(entity),
+      resyncWithWorld: () => ctx.project.worldUpdates.resyncWithWorld(),
+    }
+    ctx.projectOps = createOldPipelineProjectOps(ctx.project)
+    ctx.worldQueries = createOldPipelineWorldQueries()
   })
 
   before_each(() => {

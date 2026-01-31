@@ -12,7 +12,7 @@ import { canBeAnyDirection } from "../../entity/save-load"
 import { Events } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { runEntireCurrentTask } from "../../lib/task"
-import { EntityUpdateResult } from "../../project/project-updates"
+import { checkForEntityUpdates } from "../../project/event-handlers"
 import { _simulateUndo } from "../../project/undo"
 import { setupEntityIntegrationTest } from "./integration-test-util"
 import direction = defines.direction
@@ -68,7 +68,7 @@ describe.each([
 
   test("is correct when entity dies", () => {
     const entity = buildEntity(3)
-    const worldEntity = entity.getWorldEntity(4)!
+    const worldEntity = ctx.worldQueries.getWorldEntity(entity, 4)!
     worldEntity.destructible = true
     worldEntity.die()
     ctx.assertEntityCorrect(entity, 4)
@@ -77,7 +77,7 @@ describe.each([
   test("has error when entity cannot be placed at some stage", () => {
     createEntity(4, { name: "stone-wall" })
     const entity = buildEntity(3)
-    expect(isPreviewEntity(entity.getWorldOrPreviewEntity(4)!)).toBe(true)
+    expect(isPreviewEntity(ctx.worldQueries.getWorldOrPreviewEntity(entity, 4)!)).toBe(true)
     ctx.assertEntityCorrect(entity, 4)
   })
 
@@ -85,15 +85,22 @@ describe.each([
     const blocker = createEntity(4, { name: "stone-wall" })
     const entity = buildEntity(3)
     blocker.destroy()
-    ctx.project.actions.onTryFixEntity(entity.getWorldOrPreviewEntity(4)!, 4)
+    Events.raiseFakeEventNamed("on_player_selected_area", {
+      player_index: ctx.player.index,
+      item: Prototypes.CleanupTool,
+      entities: [ctx.worldQueries.getWorldOrPreviewEntity(entity, 4)!],
+      tiles: [],
+      surface: ctx.surfaces[3],
+      area: { left_top: pos, right_bottom: pos },
+    })
     ctx.assertEntityCorrect(entity, false)
   })
 
   test("refreshWorldEntityAtStage will fix incorrect direction", () => {
     const entity = buildEntity(3)
-    entity.getWorldOrPreviewEntity(4)!.direction = direction.north
+    ctx.worldQueries.getWorldOrPreviewEntity(entity, 4)!.direction = direction.north
 
-    ctx.project.worldUpdates.refreshWorldEntityAtStage(entity, 4)
+    ctx.worldOps.refreshEntity(entity, 4)
     ctx.assertEntityCorrect(entity, false)
   })
 
@@ -107,7 +114,7 @@ describe.each([
 
   test("will disallow entity deletion at a higher stage", () => {
     const entity = buildEntity(3)
-    const worldEntity = entity.getWorldEntity(4)!
+    const worldEntity = ctx.worldQueries.getWorldEntity(entity, 4)!
     worldEntity.mine({
       force: true,
       ignore_minable: true,
@@ -119,7 +126,7 @@ describe.each([
 
   test("can delete entity at first stage", () => {
     const entity = buildEntity(3)
-    const worldEntity = entity.getWorldEntity(3)!
+    const worldEntity = ctx.worldQueries.getWorldEntity(entity, 3)!
     ctx.player.mine_entity(worldEntity, true)
     expect(worldEntity.valid).toBe(false)
     ctx.assertEntityNotPresent(entity)
@@ -128,7 +135,7 @@ describe.each([
   test("deleting entity may create settings remnant", () => {
     const entity = buildEntity(3)
     entity._applyDiffAtStage(4, { override_stack_size: 2 })
-    const worldEntity = entity.getWorldEntity(3)!
+    const worldEntity = ctx.worldQueries.getWorldEntity(entity, 3)!
     ctx.player.mine_entity(worldEntity, true)
     expect(worldEntity.valid).toBe(false)
     ctx.assertIsSettingsRemnant(entity)
@@ -140,10 +147,10 @@ describe.each([
         const entity = buildEntity<InserterBlueprintEntity>(1)
         entity._applyDiffAtStage(3, { override_stack_size: 2 })
         entity._applyDiffAtStage(5, { override_stack_size: 3 })
-        ctx.project.updates.deleteEntityOrCreateSettingsRemnant(entity)
+        ctx.projectOps.deleteEntityOrCreateSettingsRemnant(entity)
         ctx.assertIsSettingsRemnant(entity)
 
-        assert(ctx.project.updates.tryReviveSettingsRemnant(entity, reviveStage))
+        assert(ctx.projectOps.tryReviveSettingsRemnant(entity, reviveStage))
         expect(entity.isSettingsRemnant).toBeFalsy()
         expect(reviveStage).toBe(entity.firstStage)
 
@@ -164,10 +171,10 @@ describe.each([
       test("settings remnant 2->3, revive at stage 1", () => {
         const entity = buildEntity<InserterBlueprintEntity>(2)
         entity._applyDiffAtStage(3, { override_stack_size: 3 })
-        ctx.project.updates.deleteEntityOrCreateSettingsRemnant(entity)
+        ctx.projectOps.deleteEntityOrCreateSettingsRemnant(entity)
         ctx.assertIsSettingsRemnant(entity)
 
-        ctx.project.updates.tryReviveSettingsRemnant(entity, 1)
+        ctx.projectOps.tryReviveSettingsRemnant(entity, 1)
         expect(entity.isSettingsRemnant).toBeFalsy()
         expect(1).toBe(entity.firstStage)
 
@@ -182,13 +189,20 @@ describe.each([
   test("can force delete an entity at any stage", () => {
     const entity = buildEntity(3)
     entity._applyDiffAtStage(4, { override_stack_size: 2 })
-    ctx.project.actions.onEntityForceDeleteUsed(entity.getWorldEntity(4)!, 4, ctx.player.index)
+    Events.raiseFakeEventNamed("on_player_selected_area", {
+      player_index: ctx.player.index,
+      item: Prototypes.ForceDeleteTool,
+      entities: [ctx.worldQueries.getWorldEntity(entity, 4)!],
+      tiles: [],
+      surface: ctx.surfaces[3],
+      area: { left_top: pos, right_bottom: pos },
+    })
     ctx.assertEntityNotPresent(entity)
   })
 
   test("can rotate in the first stage", () => {
     const entity = buildEntity(3)
-    const worldEntity = entity.getWorldEntity(3)!
+    const worldEntity = ctx.worldQueries.getWorldEntity(entity, 3)!
     if (
       worldEntity.type == "underground-belt" ||
       !worldEntity.supports_direction ||
@@ -205,7 +219,7 @@ describe.each([
 
   test("rotation forbidden at higher stage", () => {
     const entity = buildEntity(3)
-    const worldEntity = entity.getWorldEntity(4)!
+    const worldEntity = ctx.worldQueries.getWorldEntity(entity, 4)!
     if (!worldEntity.supports_direction || worldEntity.direction == direction.north) return
     worldEntity.rotatable = true
     worldEntity.rotate({ by_player: ctx.player })
@@ -228,7 +242,7 @@ describe.each([
 
   test("can create upgrade", () => {
     const entity = buildEntity(3)
-    const worldEntity = entity.getWorldEntity(4)!
+    const worldEntity = ctx.worldQueries.getWorldEntity(entity, 4)!
     worldEntity.order_upgrade({
       force: worldEntity.force,
       target: upgradeName,
@@ -237,8 +251,8 @@ describe.each([
 
     expect(entity.firstValue.name).toBe(name)
     expect(entity.getStageDiff(4)).toEqual({ name: upgradeName })
-    expect(entity.getWorldEntity(4)!.name).toBe(upgradeName)
-    expect(entity.getWorldEntity(5)!.name).toBe(upgradeName)
+    expect(ctx.worldQueries.getWorldEntity(entity, 4)!.name).toBe(upgradeName)
+    expect(ctx.worldQueries.getWorldEntity(entity, 5)!.name).toBe(upgradeName)
     ctx.assertEntityCorrect(entity, false)
   })
 
@@ -246,19 +260,19 @@ describe.each([
     createEntity(5, { name: "stone-wall" })
     const entity = buildEntity(3)
 
-    let preview = entity.getWorldOrPreviewEntity(5)!
+    let preview = ctx.worldQueries.getWorldOrPreviewEntity(entity, 5)!
     expect(isPreviewEntity(preview)).toBe(true)
     expect(preview.name).toBe(Prototypes.PreviewEntityPrefix + name)
 
     ctx.assertEntityCorrect(entity, 5)
 
-    entity.getWorldOrPreviewEntity(4)!.order_upgrade({
+    ctx.worldQueries.getWorldOrPreviewEntity(entity, 4)!.order_upgrade({
       force: "player",
       target: upgradeName,
       player: ctx.player,
     })
 
-    preview = entity.getWorldOrPreviewEntity(5)!
+    preview = ctx.worldQueries.getWorldOrPreviewEntity(entity, 5)!
     expect(isPreviewEntity(preview)).toBe(true)
     expect(preview.name).toBe(Prototypes.PreviewEntityPrefix + upgradeName)
 
@@ -267,14 +281,28 @@ describe.each([
 
   test("can move entity up", () => {
     const entity = buildEntity(3)
-    ctx.project.actions.onMoveEntityToStageCustomInput(entity.getWorldOrPreviewEntity(4)!, 4, ctx.player.index)
+    Events.raiseFakeEventNamed("on_player_reverse_selected_area", {
+      player_index: ctx.player.index,
+      item: Prototypes.StageMoveTool,
+      entities: [ctx.worldQueries.getWorldOrPreviewEntity(entity, 4)!],
+      tiles: [],
+      surface: ctx.surfaces[3],
+      area: { left_top: pos, right_bottom: pos },
+    })
     expect(entity.firstStage).toBe(4)
     ctx.assertEntityCorrect(entity, false)
   })
 
   test("can move entity down", () => {
     const entity = buildEntity(3)
-    ctx.project.actions.onMoveEntityToStageCustomInput(entity.getWorldOrPreviewEntity(2)!, 2, ctx.player.index)
+    Events.raiseFakeEventNamed("on_player_reverse_selected_area", {
+      player_index: ctx.player.index,
+      item: Prototypes.StageMoveTool,
+      entities: [ctx.worldQueries.getWorldOrPreviewEntity(entity, 2)!],
+      tiles: [],
+      surface: ctx.surfaces[1],
+      area: { left_top: pos, right_bottom: pos },
+    })
     expect(entity.firstStage).toBe(2)
     ctx.assertEntityCorrect(entity, false)
   })
@@ -285,20 +313,18 @@ describe.each([
 
     test("can update value at first stage from world", () => {
       const entity = buildEntity(3)
-      const worldEntity = entity.getWorldEntity(3)!
+      const worldEntity = ctx.worldQueries.getWorldEntity(entity, 3)!
       applyToEntity(worldEntity)
-      const ret = ctx.project.updates.tryUpdateEntityFromWorld(entity, 3)
-      expect(ret).toBe(EntityUpdateResult.Updated)
+      checkForEntityUpdates(worldEntity, nil)
       expect(entity.firstValue).toMatchTable(diff)
       ctx.assertEntityCorrect(entity, false)
     })
 
     test("updating higher value from world", () => {
       const entity = buildEntity(3)
-      const worldEntity = entity.getWorldEntity(4)!
+      const worldEntity = ctx.worldQueries.getWorldEntity(entity, 4)!
       applyToEntity(worldEntity)
-      const ret = ctx.project.updates.tryUpdateEntityFromWorld(entity, 4)
-      expect(ret).toBe(EntityUpdateResult.Updated)
+      checkForEntityUpdates(worldEntity, nil)
       expect(entity.firstValue).not.toMatchTable(diff)
       expect(entity.hasStageDiff(4)).toBe(true)
       expect(entity.getStageDiff(4)).toEqual(diff)
@@ -310,20 +336,20 @@ describe.each([
       const entity = buildEntity(2)
       entity._applyDiffAtStage(5, { name: upgradeName })
       entity._applyDiffAtStage(3, diff)
-      ctx.project.worldUpdates.refreshAllWorldEntities(entity)
+      ctx.worldOps.refreshAllEntities(entity)
       for (const stage of $range(1, 6)) {
-        ctx.project.worldUpdates.refreshWorldEntityAtStage(entity, stage)
+        ctx.worldOps.refreshEntity(entity, stage)
         ctx.assertEntityCorrect(entity, false)
       }
       for (const stage of $range(1, 6)) {
-        ctx.project.worldUpdates.rebuildWorldEntityAtStage(entity, stage)
+        ctx.worldOps.rebuildEntity(entity, stage)
         ctx.assertEntityCorrect(entity, false)
       }
       for (const stage of $range(1, 6)) {
-        ctx.project.worldUpdates.rebuildStage(stage)
+        ctx.worldOps.rebuildStage(stage)
         ctx.assertEntityCorrect(entity, false)
       }
-      ctx.project.worldUpdates.rebuildAllStages()
+      ctx.worldOps.rebuildAllStages()
       runEntireCurrentTask()
       ctx.assertEntityCorrect(entity, false)
     })
@@ -332,7 +358,7 @@ describe.each([
       const entity = buildEntity(3)
       entity._applyDiffAtStage(4, diff)
       for (const key of keys) {
-        ctx.project.updates.resetProp(entity, 4, key as keyof BlueprintEntity)
+        ctx.projectOps.resetProp(entity, 4, key as keyof BlueprintEntity)
       }
       expect(entity.hasStageDiff()).toBe(false)
       expect(entity.firstValue).not.toMatchTable(diff)
@@ -344,7 +370,7 @@ describe.each([
       const entity = buildEntity(3)
       entity._applyDiffAtStage(4, diff)
       for (const key of keys) {
-        ctx.project.updates.movePropDown(entity, 4, key as keyof BlueprintEntity)
+        ctx.projectOps.movePropDown(entity, 4, key as keyof BlueprintEntity)
       }
       expect(entity.hasStageDiff()).toBe(false)
       expect(entity.firstValue).toMatchTable(diff)
@@ -354,7 +380,7 @@ describe.each([
     test("resetAllProps", () => {
       const entity = buildEntity(3)
       entity._applyDiffAtStage(4, diff)
-      ctx.project.updates.resetAllProps(entity, 4)
+      ctx.projectOps.resetAllProps(entity, 4)
       expect(entity.hasStageDiff()).toBe(false)
       expect(entity.firstValue).not.toMatchTable(diff)
       ctx.assertEntityCorrect(entity, false)
@@ -363,7 +389,7 @@ describe.each([
     test("moveAllPropsDown", () => {
       const entity = buildEntity(3)
       entity._applyDiffAtStage(4, diff)
-      ctx.project.updates.moveAllPropsDown(entity, 4)
+      ctx.projectOps.moveAllPropsDown(entity, 4)
       expect(entity.hasStageDiff()).toBe(false)
       expect(entity.firstValue).toMatchTable(diff)
       ctx.assertEntityCorrect(entity, false)
@@ -375,7 +401,7 @@ describe.each([
     Events.raiseFakeEventNamed("on_player_selected_area", {
       player_index: ctx.player.index,
       item: Prototypes.StageDeconstructTool,
-      entities: [entity.getWorldEntity(3)!],
+      entities: [ctx.worldQueries.getWorldEntity(entity, 3)!],
       tiles: [],
       surface: ctx.surfaces[2],
       area: { left_top: pos, right_bottom: pos },
@@ -387,12 +413,19 @@ describe.each([
 
   test("using stage delete tool alt select", () => {
     const entity = ctx.buildEntity(1, { name: "inserter", position: pos, direction: direction.west })
-    ctx.project.actions.userSetLastStageWithUndo(entity, 3, ctx.player.index)
+    Events.raiseFakeEventNamed("on_player_selected_area", {
+      player_index: ctx.player.index,
+      item: Prototypes.StageDeconstructTool,
+      entities: [ctx.worldQueries.getWorldEntity(entity, 4)!],
+      tiles: [],
+      surface: ctx.surfaces[3],
+      area: { left_top: pos, right_bottom: pos },
+    })
 
     Events.raiseFakeEventNamed("on_player_alt_selected_area", {
       player_index: ctx.player.index,
       item: Prototypes.StageDeconstructTool,
-      entities: [entity.getWorldEntity(3)!],
+      entities: [ctx.worldQueries.getWorldEntity(entity, 3)!],
       tiles: [],
       surface: ctx.surfaces[2],
       area: { left_top: pos, right_bottom: pos },

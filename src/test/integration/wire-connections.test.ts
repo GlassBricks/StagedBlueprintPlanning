@@ -12,6 +12,7 @@ import { ProjectWireConnection, wireConnectionEquals } from "../../entity/wire-c
 import { Mutable } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { debugPrint } from "../../lib/test/misc"
+import { checkForCircuitWireUpdates } from "../../project/event-handlers"
 import { setupEntityIntegrationTest, waitForPaste } from "./integration-test-util"
 
 const ctx = setupEntityIntegrationTest()
@@ -59,16 +60,16 @@ describe("poles and wire connections", () => {
   test("disconnect and connect cables", () => {
     const pole1 = setupPole(3)
     const pole2 = setupPole2(3)
-    disconnectPole(pole1.getWorldEntity(3)!, pole2.getWorldEntity(3)!)
-    ctx.project.updates.updateWiresFromWorld(pole1, 3)
+    disconnectPole(ctx.worldQueries.getWorldEntity(pole1, 3)!, ctx.worldQueries.getWorldEntity(pole2, 3)!)
+    checkForCircuitWireUpdates(ctx.worldQueries.getWorldEntity(pole1, 3)!, nil)
 
     expect(pole1.wireConnections?.get(pole2)).toBeNil()
     expect(pole2.wireConnections?.get(pole1)).toBeNil()
     ctx.assertEntityCorrect(pole1, false)
     ctx.assertEntityCorrect(pole2, false)
 
-    connectPole(pole1.getWorldEntity(3)!, pole2.getWorldEntity(3)!)
-    ctx.project.updates.updateWiresFromWorld(pole1, 3)
+    connectPole(ctx.worldQueries.getWorldEntity(pole1, 3)!, ctx.worldQueries.getWorldEntity(pole2, 3)!)
+    checkForCircuitWireUpdates(ctx.worldQueries.getWorldEntity(pole1, 3)!, nil)
 
     expect(pole1.wireConnections?.get(pole2)).toBeAny()
     expect(pole2.wireConnections?.get(pole1)).toBeAny()
@@ -79,12 +80,14 @@ describe("poles and wire connections", () => {
   test("connect and disconnect circuit wires", () => {
     const inserter = ctx.buildEntity(3)
     const pole = setupPole(3)
-    const poleConnector = pole.getWorldEntity(3)!.get_wire_connector(defines.wire_connector_id.circuit_red, true)
-    const inserterConnector = inserter
-      .getWorldEntity(3)!
+    const poleConnector = ctx.worldQueries
+      .getWorldEntity(pole, 3)!
+      .get_wire_connector(defines.wire_connector_id.circuit_red, true)
+    const inserterConnector = ctx.worldQueries
+      .getWorldEntity(inserter, 3)!
       .get_wire_connector(defines.wire_connector_id.circuit_red, true)
     poleConnector.connect_to(inserterConnector)
-    ctx.project.updates.updateWiresFromWorld(pole, 3)
+    checkForCircuitWireUpdates(ctx.worldQueries.getWorldEntity(pole, 3)!, nil)
 
     const expectedConnection = next(inserter.wireConnections!.get(pole)!)[0] as ProjectWireConnection
     expect(expectedConnection).toBeAny()
@@ -100,7 +103,7 @@ describe("poles and wire connections", () => {
       ),
     ).toBe(true)
 
-    const worldEntity = inserter.getWorldEntity(3)!
+    const worldEntity = ctx.worldQueries.getWorldEntity(inserter, 3)!
     const inserterValue = saveEntity(worldEntity)[0]! as Mutable<InserterBlueprintEntity>
     if (inserterValue.control_behavior) {
       inserter._applyDiffAtStage(3, {

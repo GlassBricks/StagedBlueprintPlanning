@@ -251,11 +251,11 @@ Replace direct `project.actions.*` calls with event simulation:
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] All existing tests pass: `pnpm run test`
-- [ ] No remaining direct calls to `project.updates`, `project.worldUpdates`, or `project.actions` in integration tests (except `buildEntity` helper)
-- [ ] No remaining direct calls to `entity.getWorldEntity`, `entity.getWorldOrPreviewEntity`, `entity.hasErrorAt`, `entity.getExtraEntity`, or `entity.hasAnyExtraEntities` in integration tests (all go through `ctx.worldQueries`)
-- [ ] Lint passes: `pnpm run lint`
-- [ ] Format passes: `pnpm run format:fix`
+- [x] All existing tests pass: `pnpm run test`
+- [x] No remaining direct calls to `project.updates`, `project.worldUpdates`, or `project.actions` in integration tests (except `buildEntity` helper)
+- [x] No remaining direct calls to `entity.getWorldEntity`, `entity.getWorldOrPreviewEntity`, `entity.hasErrorAt`, `entity.getExtraEntity`, or `entity.hasAnyExtraEntities` in integration tests (all go through `ctx.worldQueries`)
+- [x] Lint passes: `pnpm run lint`
+- [x] Format passes: `pnpm run format:fix`
 
 ---
 
