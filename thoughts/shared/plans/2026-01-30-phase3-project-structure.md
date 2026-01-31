@@ -46,7 +46,8 @@ After this phase:
 - Module-level `GlobalEvent` exports in `ProjectList.ts` replace `GlobalProjectEvents` for project-level lifecycle
 - `project-event-listener.ts` deleted; its logic moved into `Project` methods
 - `ProjectDef.d.ts` deleted; types live in their implementing files
-- `Stage` is a lightweight accessor
+- `Stage` is a lightweight accessor with `getFoo()` methods (no property-style accessors)
+- All callers use new API paths directly (e.g., `project.settings.projectName`, `project.surfaces.getSurface()`) — no delegation layer on `Project`
 
 ### Verification:
 - All existing tests pass
@@ -64,7 +65,9 @@ After this phase:
 
 ## Implementation Approach
 
-Incremental extraction: each sub-phase extracts one component, delegates from `Project`, and all tests pass before proceeding. The event system replacement happens last since it touches the most files.
+Incremental extraction: each sub-phase extracts one component, eagerly migrates all callers to the new API (no temporary delegation layer), and all tests pass before proceeding. The event system replacement happens last since it touches the most files.
+
+For wide-reaching mechanical refactors (e.g., `project.name` → `project.settings.projectName`), use ast-grep, regex search-replace, or parallel haiku agents to efficiently update all call sites.
 
 ### Commits
 
@@ -161,8 +164,7 @@ Move from `StageImpl`:
 
 - Add `readonly settings: ProjectSettings` field, constructed in constructor
 - Remove extracted fields: `name`, `landfillTile`, `stagedTilesEnabled`, `defaultBlueprintSettings`, `surfaceSettings`, `blueprintBookTemplateInv`, and all blueprint book methods
-- Delegate `displayName()`, `isSpacePlatform()`, `getStageName()` to `settings`
-- `numStages()` delegates to `settings.stageCount()`
+- Remove `displayName()`, `isSpacePlatform()`, `getStageName()`, `numStages()` — no delegation, callers migrated directly
 - `insertStage()`: calls `settings.insertStageSettings()` for the name/settings, calls `settings.blueprintBookTemplate.onStageInserted()`
 - `deleteStage()`: calls `settings.removeStageSettings()`
 - `delete()`: calls `settings.blueprintBookTemplate.destroy()`
@@ -171,22 +173,34 @@ Move from `StageImpl`:
 #### 4. Update `StageImpl`
 - Remove `name` property (now comes from `settings.getStageNameProperty(stageNumber)`)
 - Remove `blueprintOverrideSettings`, `stageBlueprintSettings` (now from `settings.getStageSettings(stageNumber)`)
-- Add delegation methods (e.g. `getName()`, `getSettings()`) that delegate to `project.settings`
+- No delegation methods — callers migrated to access `project.settings` directly or via Stage accessor methods
 
 #### 5. Update `ProjectDef.d.ts`
-Add `settings: ProjectSettings` to interfaces. Keep backward-compatible delegate methods during this phase.
+Add `settings: ProjectSettings` to interfaces. Remove extracted fields and methods from interfaces (no backward-compatible delegates).
 
-#### 6. Update callers
-Callers that access `project.name` → `project.settings.projectName`
-Callers that access `stage.name` → `project.settings.getStageNameProperty(stageNumber)` (or keep Stage delegation)
-Callers that access `project.landfillTile` etc. → `project.settings.landfillTile`
+#### 6. Migrate all callers (mechanical refactor)
+Use ast-grep, regex search-replace, or parallel haiku agents for these bulk migrations:
 
-**File**: `src/ui/ProjectSettings.tsx`
-- `editBlueprintBookTemplate()`: `project.getOrCreateBlueprintBookTemplate()` → `project.settings.blueprintBookTemplate.getOrCreate(project)`
-- `resetBlueprintBookTemplate()`: `project.resetBlueprintBookTemplate()` → `project.settings.blueprintBookTemplate.reset()`
+**Project property migrations (~80 call sites across ~25 files):**
+- `project.name` → `project.settings.projectName`
+- `project.landfillTile` → `project.settings.landfillTile`
+- `project.stagedTilesEnabled` → `project.settings.stagedTilesEnabled`
+- `project.defaultBlueprintSettings` → `project.settings.defaultBlueprintSettings`
+- `project.surfaceSettings` → `project.settings.surfaceSettings`
+- `project.numStages()` → `project.settings.stageCount()`
+- `project.displayName()` → `project.settings.displayName()`
+- `project.isSpacePlatform()` → `project.settings.isSpacePlatform()`
+- `project.getStageName(` → `project.settings.getStageName(`
 
-**File**: `src/blueprints/blueprint-creation.ts`
-- `addBlueprintBookTasks()`: `project.getBlueprintBookTemplate()` → `project.settings.blueprintBookTemplate.get()`
+**Stage property migrations (~120 call sites across ~20 files):**
+- `stage.name` → `stage.getName()` (Stage keeps a thin accessor that calls `project.settings.getStageNameProperty(stageNumber)`)
+- `stage.blueprintOverrideSettings` → `stage.getSettings().blueprintOverrideSettings` (or callers access `project.settings` directly)
+- `stage.stageBlueprintSettings` → `stage.getSettings().stageBlueprintSettings`
+
+**Blueprint book method migrations (~15 call sites across ~3 files):**
+- `project.getBlueprintBookTemplate()` → `project.settings.blueprintBookTemplate.get()`
+- `project.getOrCreateBlueprintBookTemplate()` → `project.settings.blueprintBookTemplate.getOrCreate(project)`
+- `project.resetBlueprintBookTemplate()` → `project.settings.blueprintBookTemplate.reset()`
 
 #### 7. Add tests
 **File**: `src/test/project/BlueprintBookTemplate.test.ts`
@@ -214,7 +228,7 @@ Unit tests for `ProjectSettings`:
 
 Move existing "new stage name" tests from `UserProject.test.ts` to `ProjectSettings.test.ts` (or keep both, with UserProject tests exercising via delegation).
 
-Existing `blueprintBookTemplate` tests in `UserProject.test.ts` should continue passing via delegate methods.
+Existing `blueprintBookTemplate` tests in `UserProject.test.ts` should be updated to use the new API paths (e.g., `project.settings.blueprintBookTemplate.get()`).
 
 ### Success Criteria:
 
@@ -261,7 +275,7 @@ class ProjectSurfaces implements SurfaceManager {
 #### 2. Update `StageImpl`
 - Remove `surface` storage from `StageImpl` constructor (surface comes from `project.surfaces.getSurface(stageNumber)`)
 - Remove `StageImpl.create()` static method (surface creation moves to `ProjectSurfaces`)
-- Add `getSurface()` method that delegates to `project.surfaces.getSurface(this.stageNumber)`
+- Keep `getSurface()` accessor method that delegates to `project.surfaces.getSurface(this.stageNumber)`
 - Remove `registerEvents()` / `onNameChange()` (surface name sync moves to `ProjectSurfaces`)
 
 #### 3. Update `UserProjectImpl`
@@ -270,12 +284,21 @@ class ProjectSurfaces implements SurfaceManager {
 - `insertStage()`: call `this.surfaces.insertSurface()` instead of `StageImpl.create()`
 - `deleteStage()`: call `this.surfaces.deleteSurface()` after stage cleanup
 - Remove `onNameChange()` surface update logic (now in `ProjectSurfaces`)
-- `getSurface()` delegates to `this.surfaces.getSurface()`
+- Remove `getSurface()` method — no delegation, callers migrated directly
 
 #### 4. Update `storage.surfaceIndexToStage` mapping
 Currently populated in `StageImpl` constructor. Move to `Project` level — `Project` manages the `surfaceIndexToStage` mapping when creating/deleting stages.
 
-#### 5. Add tests
+#### 5. Migrate all callers (mechanical refactor)
+Use ast-grep, regex search-replace, or parallel haiku agents for these bulk migrations:
+
+**Project surface migrations (~60 call sites across ~15 files):**
+- `project.getSurface(` → `project.surfaces.getSurface(`
+
+**Stage surface migrations (~63 call sites across ~22 files):**
+- `stage.surface` → `stage.getSurface()` (Stage keeps accessor method)
+
+#### 6. Add tests
 **File**: `src/test/project/ProjectSurfaces.test.ts`
 
 Unit tests for `ProjectSurfaces`:
@@ -475,10 +498,11 @@ Final cleanup: rename `UserProject` → `Project`, delete `ProjectDef.d.ts`, mak
 
 ### Changes Required:
 
-#### 1. Restructure `Stage`
+#### 1. Finalize `Stage` as lightweight accessor
 **File**: `src/project/UserProject.ts` (or new `src/project/Stage.ts`)
 
-`Stage` becomes a lightweight accessor. Use `getFoo()` methods (not `get foo()` property accessors) for delegation:
+Stage should already be a lightweight accessor after phases 3a-3b. This step removes remaining non-accessor members:
+
 ```typescript
 @RegisterClass("Stage")
 class Stage {
@@ -496,7 +520,6 @@ class Stage {
 ```
 
 Remove from `StageImpl`:
-- `blueprintOverrideSettings`, `stageBlueprintSettings` (now in `ProjectSettings`)
 - `getBlueprintSettingsView()` — move to a utility or keep on Stage as a convenience that delegates to `project.settings`
 - `getBlueprintBBox()` — keep as convenience on Stage
 - `getID()` — keep (needed for stage references in blueprints)
@@ -508,34 +531,27 @@ Move remaining type definitions to their implementing files:
 - `ProjectId`, `StageId` → `src/project/Project.ts` (or `src/project/ProjectSettings.ts`)
 - `Stage` interface → merged with `Stage` class
 - `UserProject` interface → deleted (class is the type)
-- Event types → already deleted in 3e
+- Event types → already deleted in 3d
 
-#### 3. Rename `UserProject` → `Project`
+#### 3. Rename `UserProject` → `Project` (mechanical refactor)
+Use ast-grep, regex search-replace, or parallel haiku agents:
 - Rename `UserProjectImpl` → `ProjectImpl` (or just `Project` since minimal interface is deleted)
 - Keep `@RegisterClass("Assembly")` for storage compatibility
 - Update all imports across codebase: `UserProject` → `Project`
 - `createUserProject()` → `createProject()`
 - `_deleteAllProjects()` remains as test utility
 
-#### 4. Remove delegate methods from `Project`
-Now that `ProjectSettings` and `ProjectSurfaces` exist, remove convenience delegates:
-- `getSurface()` — callers use `project.surfaces.getSurface()`
-- `getStageName()` — callers use `project.settings.getStageName()`
-- `isSpacePlatform()` — callers use `project.settings.isSpacePlatform()`
-- `numStages()` — callers use `project.settings.stageCount()`
-- `lastStageFor()` — utility function, not a method on Project
-- `displayName()` — callers use `project.settings.displayName()`
+#### 4. Migrate remaining Stage callers (mechanical refactor)
+Use ast-grep, regex search-replace, or parallel haiku agents:
+- `stage.actions` → `stage.project.actions` (~158 call sites across ~11 files)
+- `stage.deleteByMerging()` → `project.mergeStage(stage.getStageNumber())`
+- `stage.discardInProject()` → `project.discardStage(stage.getStageNumber())`
+- `lastStageFor()` — extract to utility function if still needed
 
-#### 5. Update all callers
-Mechanical rename/import changes across the codebase. `project.name` → `project.settings.projectName`, etc.
-
-#### 6. Update tests
+#### 5. Update tests
 - Rename all `UserProject` references to `Project` in test files
 - `createUserProject()` → `createProject()`
 - Update imports across all test files
-- Replace `project.getSurface()` → `project.surfaces.getSurface()`, etc.
-- Replace `stage.actions` → `project.actions` in tests
-- Replace `stage.deleteByMerging()` → `project.mergeStage(stage.stageNumber)` in tests
 
 ### Success Criteria:
 
@@ -545,7 +561,6 @@ Mechanical rename/import changes across the codebase. `project.name` → `projec
 - [ ] `pnpm run format:fix` passes
 - [ ] No `ProjectDef.d.ts` file exists
 - [ ] No `UserProject` type references remain (except `@RegisterClass("Assembly")`)
-- [ ] No delegate methods on `Project` for settings/surfaces
 
 #### Manual Verification:
 - [ ] Mod loads correctly in Factorio
