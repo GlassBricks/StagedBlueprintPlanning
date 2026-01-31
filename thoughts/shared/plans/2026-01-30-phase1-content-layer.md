@@ -24,7 +24,7 @@ After this phase:
 - `MutableProjectContent` has all entity mutation methods (per target state). Each method casts `ProjectEntity` to `InternalProjectEntity` internally and performs the mutation
 - `ContentObserver` interface is defined with a `setObserver()` method on `MutableProjectContent`. Observer is nil — notifications are no-ops
 - All mutation methods on `MutableProjectContent` fire observer notifications when observer is set
-- All existing callers updated to either: (a) use `MutableProjectContent` mutation methods, or (b) use `InternalProjectEntity` directly for internal operations
+- All existing callers updated to either: (a) use `MutableProjectContent` mutation methods, or (b) use `entity._asMut()` / `InternalProjectEntity` directly for internal operations
 - All existing tests pass unchanged. New unit tests cover each `MutableProjectContent` mutation method and observer notifications
 
 ## What We're NOT Doing
@@ -90,6 +90,9 @@ interface ProjectEntity<out T extends Entity = Entity> extends StagedValue<T, St
   getProperty<T extends keyof StageProperties>(key: T, stage: StageNumber): StageProperties[T] | nil
   getPropertyAllStages<T extends keyof StageProperties>(key: T): Record<StageNumber, StageProperties[T]> | nil
   propertySetInAnyStage(key: keyof StageProperties): boolean
+
+  // Cast to mutable interface — for internal code and tests only
+  _asMut(): InternalProjectEntity
 
   // Internal linked list (Map2D)
   _next: ProjectEntity | nil
@@ -209,7 +212,7 @@ class ProjectEntityImpl<T extends Entity = Entity>
   implements InternalProjectEntity<T>
 ```
 
-No runtime changes. The class already has all methods.
+The class already has all methods. Only addition: `_asMut(): InternalProjectEntity { return this }`.
 
 #### 3. `newProjectEntity()` — Return type changes to `InternalProjectEntity`
 
@@ -229,7 +232,7 @@ Files that mutate entities directly need to either:
 - Accept `InternalProjectEntity` as parameter type (internal code)
 - Or use `MutableProjectContent` methods (Phase 1b)
 
-For Phase 1a, update mutation callers to use `InternalProjectEntity` type where they directly mutate. This is a mechanical type annotation change at each call site. Key files:
+For Phase 1a, update mutation callers to use `InternalProjectEntity` type where they directly mutate. Callers can either change parameter types to `InternalProjectEntity`, or use `entity._asMut()` to obtain the mutable interface. Key files:
 - `src/project/project-updates.ts` — functions that accept entity params and mutate them need `InternalProjectEntity` parameter types
 - `src/project/user-actions.ts` — `replaceWorldEntity` calls
 - `src/project/world-updates.ts` — world entity mutation calls
@@ -239,16 +242,6 @@ For Phase 1a, update mutation callers to use `InternalProjectEntity` type where 
 - `src/entity/wires.ts` — `addWireConnection`, `removeWireConnection`
 - `src/import-export/from-blueprint-book.ts` — `applyUpgradeAtStage`
 - `src/import-export/entity.ts` — `setUnstagedValue`
-
-For callers that get entities from `ProjectContent` (which returns `ProjectEntity`), they need to cast via a helper. Add a cast utility:
-
-```typescript
-function asInternalEntity(entity: ProjectEntity): InternalProjectEntity {
-  return entity as InternalProjectEntity
-}
-```
-
-This cast is safe because all `ProjectEntity` instances are `ProjectEntityImpl` which implements `InternalProjectEntity`.
 
 #### 5. Export both interfaces
 
@@ -268,7 +261,7 @@ Export `InternalProjectEntity` from `ProjectEntity.ts` for use by internal modul
 
 ### Overview
 
-Add entity mutation methods to `MutableProjectContent` that wrap `InternalProjectEntity` operations. Each method casts the `ProjectEntity` to `InternalProjectEntity`, performs the mutation, and calls `ContentObserver` notification (added in 1c, nil for now).
+Add entity mutation methods to `MutableProjectContent` that wrap `InternalProjectEntity` operations. Each method calls `entity._asMut()` to obtain the mutable interface, performs the mutation, and calls `ContentObserver` notification (added in 1c, nil for now).
 
 ### Changes
 
@@ -327,49 +320,49 @@ Implementation in `ProjectContentImpl` — each method follows the pattern:
 
 ```typescript
 setEntityDirection(entity: ProjectEntity, direction: defines.direction): void {
-  const internal = entity as InternalProjectEntity
+  const internal = entity._asMut()
   internal.direction = direction
   // observer notification added in 1c
 }
 
 adjustEntityValue(entity: ProjectEntity, stage: StageNumber, value: Entity): boolean {
-  const internal = entity as InternalProjectEntity
+  const internal = entity._asMut()
   const changed = internal.adjustValueAtStage(stage, value)
   // observer notification added in 1c
   return changed
 }
 
 makeEntitySettingsRemnant(entity: ProjectEntity): void {
-  const internal = entity as InternalProjectEntity
+  const internal = entity._asMut()
   internal.isSettingsRemnant = true
   // observer notification added in 1c
 }
 
 reviveEntity(entity: ProjectEntity, stage: StageNumber): void {
-  const internal = entity as InternalProjectEntity
+  const internal = entity._asMut()
   internal.isSettingsRemnant = nil
   internal.setFirstStageUnchecked(stage)
   // observer notification added in 1c
 }
 
 addWireConnection(connection: ProjectWireConnection): void {
-  const from = connection.fromEntity as InternalProjectEntity
-  const to = connection.toEntity as InternalProjectEntity
+  const from = connection.fromEntity._asMut()
+  const to = connection.toEntity._asMut()
   from.addOneWayWireConnection(connection)
   to.addOneWayWireConnection(connection)
   // observer notification added in 1c
 }
 
 removeWireConnection(connection: ProjectWireConnection): void {
-  const from = connection.fromEntity as InternalProjectEntity
-  const to = connection.toEntity as InternalProjectEntity
+  const from = connection.fromEntity._asMut()
+  const to = connection.toEntity._asMut()
   from.removeOneWayWireConnection(connection)
   to.removeOneWayWireConnection(connection)
   // observer notification added in 1c
 }
 
 setEntityValue(entity: ProjectEntity, firstValue: Entity, stageDiffs: StageDiffs | nil): void {
-  const internal = entity as InternalProjectEntity
+  const internal = entity._asMut()
   internal.setFirstValueDirectly(firstValue)
   internal.setStageDiffsDirectly(stageDiffs)
   // observer notification added in 1c
@@ -448,20 +441,20 @@ Each mutation method fires the appropriate notification after performing the mut
 
 ```typescript
 adjustEntityValue(entity: ProjectEntity, stage: StageNumber, value: Entity): boolean {
-  const internal = entity as InternalProjectEntity
+  const internal = entity._asMut()
   const changed = internal.adjustValueAtStage(stage, value)
   if (changed) this.observer?.onEntityChanged(entity, stage)
   return changed
 }
 
 setEntityFirstStage(entity: ProjectEntity, stage: StageNumber): void {
-  const internal = entity as InternalProjectEntity
+  const internal = entity._asMut()
   internal.setFirstStageUnchecked(stage)
   this.observer?.onEntityChanged(entity, math.min(stage, internal.firstStage))
 }
 
 setEntityLastStage(entity: ProjectEntity, stage: StageNumber | nil): void {
-  const internal = entity as InternalProjectEntity
+  const internal = entity._asMut()
   const oldLastStage = internal.lastStage
   internal.setLastStageUnchecked(stage)
   this.observer?.onEntityLastStageChanged(entity, oldLastStage)
@@ -484,13 +477,13 @@ deleteEntity(entity: ProjectEntity): void {
 }
 
 makeEntitySettingsRemnant(entity: ProjectEntity): void {
-  const internal = entity as InternalProjectEntity
+  const internal = entity._asMut()
   internal.isSettingsRemnant = true
   this.observer?.onEntityBecameSettingsRemnant(entity)
 }
 
 reviveEntity(entity: ProjectEntity, stage: StageNumber): void {
-  const internal = entity as InternalProjectEntity
+  const internal = entity._asMut()
   internal.isSettingsRemnant = nil
   internal.setFirstStageUnchecked(stage)
   this.observer?.onEntityRevived(entity)
