@@ -8,11 +8,24 @@ Reference: [Phasing Plan](./separation-of-concerns-phases.md) Phase 1, [Target S
 
 ## Current State
 
-- `ProjectEntity` (interface, `ProjectEntity.ts:70-180`) exposes all mutation methods directly: `adjustValueAtStage`, `setPropAtStage`, `setPositionUnchecked`, `direction` (writable), `isSettingsRemnant` (writable), wire connection methods, world entity storage, etc.
-- `ProjectEntityImpl` (class, `ProjectEntity.ts:210-781`) implements `ProjectEntity` and is decorated with `@RegisterClass("AssemblyEntity")` for serialization
-- `MutableProjectContent` (`ProjectContent.ts:61-76`) has collection-level operations (`addEntity`, `deleteEntity`, `changeEntityPosition`, stage operations, tile operations) but no entity-level mutation methods
+- `ProjectEntity` (interface, `ProjectEntity.ts`) exposes all mutation methods directly: `adjustValueAtStage`, `setPropAtStage`, `setPositionUnchecked`, `direction` (writable), `isSettingsRemnant` (writable), wire connection methods, etc.
+- `ProjectEntityImpl` (class, `ProjectEntity.ts`) implements `ProjectEntity` and is decorated with `@RegisterClass("AssemblyEntity")` for serialization
+- `MutableProjectContent` (`ProjectContent.ts`) has collection-level operations (`addEntity`, `deleteEntity`, `changeEntityPosition`, stage operations, tile operations) but no entity-level mutation methods
 - Callers in `project-updates.ts`, `user-actions.ts`, `world-updates.ts`, `entity-highlights.ts`, and `event-handlers.ts` directly call mutation methods on `ProjectEntity` instances
-- `newProjectEntity()` (`ProjectEntity.ts:795-805`) returns `ProjectEntity<E>`
+- `newProjectEntity()` returns `ProjectEntity<E>`
+
+### Parallel Track Progress (Phase 2 and Phase 3)
+
+Phase 2 (Presentation Layer) and Phase 3 (Project Structure) are developing in parallel. Relevant completed work:
+
+- **Phase 2a-2b complete**: `EntityStorage` class exists, `WorldPresentation` shell wraps `WorldUpdates` + `EntityHighlights`. `WorldEntityLookup` interface defined on `WorldPresentation`.
+- **Phase 2c partially complete**: `WorldUpdates` and `EntityHighlights` internals use `EntityStorage`. World entity accessor methods exist on `WorldPresentation`. External caller migration is in progress (~26 files still call `entity.getWorldEntity()` etc.).
+- **Phase 3a complete**: `ProjectSettings` and `BlueprintBookTemplate` extracted from `UserProject`. `Project` interface has `settings` field.
+
+This means:
+- World entity methods (`getWorldEntity`, `getWorldOrPreviewEntity`, `hasErrorAt`, etc.) are being migrated off `ProjectEntity` by Phase 2. Phase 1's `InternalProjectEntity` should NOT include these methods — they belong to `WorldPresentation`.
+- Extra entity methods (`getExtraEntity`, `replaceExtraEntity`, etc.) are already migrated internally to `EntityStorage` in Phase 2. These should also NOT appear on `InternalProjectEntity`.
+- `Project` interface already has `settings: ProjectSettings` and `worldPresentation: WorldPresentation`.
 
 ## Desired End State
 
@@ -30,10 +43,10 @@ After this phase:
 ## What We're NOT Doing
 
 - Implementing `ContentObserver` (no implementor yet — just the interface)
-- Creating `WorldPresentation` or `EntityStorage` (Phase 2)
 - Changing `ProjectActions` or event dispatch (Phase 4)
 - Moving files to a `content/` module (Phase 5)
-- Removing world entity storage from `ProjectEntity` (Phase 2)
+- Migrating world entity methods off `ProjectEntity` (Phase 2, in progress on parallel track)
+- Extracting `ProjectSurfaces` or replacing event system (Phase 3, in progress on parallel track)
 
 ## Implementation Approach
 
@@ -51,10 +64,10 @@ Introduce `InternalProjectEntity` interface. Split current `ProjectEntity` into 
 
 #### 1. `src/entity/ProjectEntity.ts` — Split interface
 
-Split current `ProjectEntity` interface (lines 70-180) into two interfaces:
+Split current `ProjectEntity` interface into two interfaces:
 
 ```typescript
-interface ProjectEntity<out T extends Entity = Entity> extends StagedValue<T, StageDiff<T>> {
+interface ProjectEntity<out T extends Entity = Entity> extends ReadonlyStagedValue<T, StageDiff<T>> {
   readonly position: Position
   readonly direction: defines.direction
   readonly isSettingsRemnant?: true
@@ -68,30 +81,27 @@ interface ProjectEntity<out T extends Entity = Entity> extends StagedValue<T, St
   isPersistent(): boolean
   getPreviewDirection(): defines.direction
 
-  // Read-only stage value queries (inherited from StagedValue)
-  // getPropAtStage, getUpgradeAtStage, etc. — already inherited
-
   // Additional read-only methods
-  hasErrorAt(stage: StageNumber): boolean
   getFirstStageDiffForProp<K extends keyof T>(prop: K): LuaMultiReturn<[] | [StageNumber | nil, T[K]]>
   getUnstagedValue(stage: StageNumber): UnstagedEntityProps | nil
 
-  // World entity queries (still on ProjectEntity until Phase 2 moves them)
+  // World entity queries — transitional, Phase 2 moves these to WorldPresentation
+  // (Include or omit depending on merge order; if Phase 2 merges first, these are already gone)
   getWorldEntity(stage: StageNumber): LuaEntity | nil
   getWorldOrPreviewEntity(stage: StageNumber): LuaEntity | nil
   iterateWorldOrPreviewEntities(): LuaIterable<LuaMultiReturn<[StageNumber, LuaEntity]>>
   hasWorldEntityInRange(startStage: StageNumber, endStage: StageNumber): boolean
+  hasErrorAt(stage: StageNumber): boolean
 
-  // Extra entity queries (still here until Phase 2)
+  // Extra entity queries — transitional, Phase 2 moves these to EntityStorage
   getExtraEntity<T extends keyof ExtraEntities>(type: T, stage: StageNumber): ExtraEntities[T] | nil
   hasAnyExtraEntities(type: ExtraEntityType): boolean
 
-  // Property queries (still here until Phase 2)
+  // Property queries
   getProperty<T extends keyof StageProperties>(key: T, stage: StageNumber): StageProperties[T] | nil
   getPropertyAllStages<T extends keyof StageProperties>(key: T): Record<StageNumber, StageProperties[T]> | nil
   propertySetInAnyStage(key: keyof StageProperties): boolean
 
-  // Cast to mutable interface — for internal code and tests only
   _asMut(): InternalProjectEntity
 
   // Internal linked list (Map2D)
@@ -99,10 +109,12 @@ interface ProjectEntity<out T extends Entity = Entity> extends StagedValue<T, St
 }
 ```
 
+Note: World entity and extra entity query methods are marked transitional. If Phase 2 merges before Phase 1, these will already be removed from `ProjectEntity` and live on `WorldPresentation`/`EntityStorage`. Phase 1 should not re-add them. The `_asMut()` cast and `ReadonlyStagedValue` extension are the core changes.
+
 New `InternalProjectEntity` extending `ProjectEntity`:
 
 ```typescript
-interface InternalProjectEntity<T extends Entity = Entity> extends ProjectEntity<T> {
+interface InternalProjectEntity<T extends Entity = Entity> extends ProjectEntity<T>, StagedValue<T, StageDiff<T>> {
   // Mutable transform
   position: Position
   direction: defines.direction
@@ -114,11 +126,7 @@ interface InternalProjectEntity<T extends Entity = Entity> extends ProjectEntity
   // Mutable rolling stock flag
   isNewRollingStock: true | nil
 
-  // Stage bounds
-  setFirstStageUnchecked(stage: StageNumber): void
-  setLastStageUnchecked(stage: StageNumber | nil): void
-
-  // Value mutations
+  // Value mutations (from StagedValue)
   adjustValueAtStage(stage: StageNumber, value: T): boolean
   setPropAtStage<K extends keyof T>(stage: StageNumber, prop: K, value: T[K]): boolean
   applyUpgradeAtStage(stage: StageNumber, newValue: NameAndQuality): boolean
@@ -127,9 +135,11 @@ interface InternalProjectEntity<T extends Entity = Entity> extends ProjectEntity
   moveValueDown(stage: StageNumber): StageNumber | nil
   movePropDown<K extends keyof T>(stage: StageNumber, prop: K): StageNumber | nil
 
-  // Direct value setters
+  // Direct value setters (from StagedValue)
   setFirstValueDirectly(value: T): void
   setStageDiffsDirectly(stageDiffs: PRRecord<StageNumber, StageDiff<T>> | nil): void
+  setFirstStageUnchecked(stage: StageNumber): void
+  setLastStageUnchecked(stage: StageNumber | nil): void
   clearPropertyInAllStages<T extends keyof StageProperties>(key: T): void
 
   // Unstaged value mutation
@@ -146,28 +156,14 @@ interface InternalProjectEntity<T extends Entity = Entity> extends ProjectEntity
   syncIngoingConnections(existingEntities: ReadonlyLuaSet<ProjectEntity>): void
   removeIngoingConnections(): void
 
-  // World entity mutations — transitional, removed by Phase 2 (storage moves to EntityStorage)
-  replaceWorldEntity(stage: StageNumber, entity: LuaEntity | nil): void
-  replaceWorldOrPreviewEntity(stage: StageNumber, entity: LuaEntity | nil): void
-  destroyWorldOrPreviewEntity(stage: StageNumber): void
-  destroyAllWorldOrPreviewEntities(): void
-
-  // Extra entity mutations — transitional, removed by Phase 2 (storage moves to EntityStorage)
-  replaceExtraEntity<T extends ExtraEntityType>(type: T, stage: StageNumber, entity: ExtraEntities[T] | nil): void
-  destroyExtraEntity<T extends ExtraEntityType>(type: T, stage: StageNumber): void
-  destroyAllExtraEntities(type: ExtraEntityType): void
-
-  // Property mutations — transitional, removed by Phase 2 (highlight storage moves to EntityStorage)
-  setProperty<T extends keyof StageProperties>(key: T, stage: StageNumber, value: StageProperties[T] | nil): boolean
-
   // Internal
   _applyDiffAtStage(stage: StageNumber, diff: StageDiffInternal<T>): void
 }
 ```
 
-Note: `StagedValue` also exposes mutation methods (`setFirstStageUnchecked`, `setFirstValueDirectly`, etc.). The `StagedValue` interface itself will need equivalent splitting: a read-only `StagedValue` and its mutations moved to a mutable extension. However, `StagedValue` is also used by `ProjectTile` — so changes must be compatible. The simplest approach: leave `StagedValue` unchanged for now. `ProjectEntity` simply narrows its exposure by not re-exposing the mutation methods. `InternalProjectEntity` re-exposes them.
+Note: World entity methods (`replaceWorldEntity`, `destroyWorldOrPreviewEntity`, etc.) and extra entity methods (`replaceExtraEntity`, `destroyExtraEntity`, etc.) are NOT on `InternalProjectEntity`. Phase 2 moves these to `WorldPresentation`/`EntityStorage`. If Phase 2 has not yet merged when Phase 1 is implemented, these methods still exist on `ProjectEntityImpl` but are not part of the `InternalProjectEntity` contract — they are accessed through `WorldPresentation` instead.
 
-**Approach for StagedValue**: Split `StagedValue` into `ReadonlyStagedValue` (query methods) and `StagedValue` (extends `ReadonlyStagedValue` with mutations). `ProjectEntity extends ReadonlyStagedValue`. `InternalProjectEntity extends ProjectEntity` and also extends `StagedValue` (full). `BaseStagedValue` continues to implement `StagedValue`. `ProjectTile` is unaffected (it uses `StagedValue` directly).
+**Approach for StagedValue**: Split `StagedValue` into `ReadonlyStagedValue` (query methods) and `StagedValue` (extends `ReadonlyStagedValue` with mutations). `ProjectEntity extends ReadonlyStagedValue`. `InternalProjectEntity extends ProjectEntity, StagedValue` (full). `BaseStagedValue` continues to implement `StagedValue`. `ProjectTile` is unaffected (it uses `StagedValue` directly).
 
 ```typescript
 interface ReadonlyStagedValue<T, D> {
@@ -234,14 +230,13 @@ Files that mutate entities directly need to either:
 
 For Phase 1a, update mutation callers to use `InternalProjectEntity` type where they directly mutate. Callers can either change parameter types to `InternalProjectEntity`, or use `entity._asMut()` to obtain the mutable interface. Key files:
 - `src/project/project-updates.ts` — functions that accept entity params and mutate them need `InternalProjectEntity` parameter types
-- `src/project/user-actions.ts` — `replaceWorldEntity` calls
-- `src/project/world-updates.ts` — world entity mutation calls
-- `src/project/entity-highlights.ts` — extra entity mutation calls
 - `src/project/event-handlers.ts` — `direction` writes, `isNewRollingStock` writes
 - `src/entity/ProjectContent.ts` — `changeEntityPosition` (calls `setPositionUnchecked`), `syncIngoingConnections`
 - `src/entity/wires.ts` — `addWireConnection`, `removeWireConnection`
 - `src/import-export/from-blueprint-book.ts` — `applyUpgradeAtStage`
 - `src/import-export/entity.ts` — `setUnstagedValue`
+
+Note: `world-updates.ts` and `entity-highlights.ts` world entity mutation calls are being handled by Phase 2 (parallel track). `user-actions.ts` `replaceWorldEntity` calls are already migrated to `WorldPresentation` by Phase 2.
 
 #### 5. Export both interfaces
 
@@ -371,13 +366,10 @@ setEntityValue(entity: ProjectEntity, firstValue: Entity, stageDiffs: StageDiffs
 
 #### 2. Move standalone wire functions into MutableProjectContent
 
-Currently `addWireConnection` and `removeWireConnection` are standalone exported functions in `ProjectEntity.ts` (lines 783-793). These become methods on `MutableProjectContent`. The standalone functions can remain as thin wrappers calling `content.addWireConnection()`, or callers can be migrated directly.
-
-Preferred approach: keep the standalone functions for now as compatibility shims (they're used in `wires.ts` and `project-updates.ts`). They will be deleted in Phase 5. The `MutableProjectContent` methods are the canonical API going forward.
-
-Alternatively, since the standalone functions in `ProjectEntity.ts` operate on `InternalProjectEntity` directly without content knowledge, and `MutableProjectContent.addWireConnection` adds observer notification, the cleanest approach is:
-- `MutableProjectContent.addWireConnection` is the new API (with observer)
+Currently `addWireConnection` and `removeWireConnection` are standalone exported functions in `ProjectEntity.ts`. These become methods on `MutableProjectContent`:
+- `MutableProjectContent.addWireConnection` is the new API (with observer notification)
 - Update callers (`wires.ts`, `project-updates.ts`) to use `content.addWireConnection()` instead
+- Remove standalone functions from `ProjectEntity.ts`
 
 #### 3. `changeEntityPosition` already exists — add observer hook point
 
@@ -568,20 +560,24 @@ describe("MutableProjectContent mutations", () => {
 
 ---
 
-## Open Design Decisions (Resolved)
+## Design Decisions
 
 ### StagedValue mutation exposure
 
-**Decision**: Split `StagedValue` into `ReadonlyStagedValue` (query-only interface) and `StagedValue extends ReadonlyStagedValue` (adds mutations). `ProjectEntity extends ReadonlyStagedValue`. `InternalProjectEntity extends StagedValue`. `BaseStagedValue` continues to implement `StagedValue`. `ProjectTile` is unaffected (uses `StagedValue` directly).
+Split `StagedValue` into `ReadonlyStagedValue` (query-only interface) and `StagedValue extends ReadonlyStagedValue` (adds mutations). `ProjectEntity extends ReadonlyStagedValue`. `InternalProjectEntity extends ProjectEntity, StagedValue`. `BaseStagedValue` continues to implement `StagedValue`. `ProjectTile` is unaffected (uses `StagedValue` directly).
 
 ### Wire connection standalone functions
 
-**Decision**: Migrate callers in `wires.ts` to use `content.addWireConnection()`/`content.removeWireConnection()`. The `wires.ts` functions (`saveWireConnections`) already receive `content` as a parameter, so this is straightforward. Remove standalone `addWireConnection`/`removeWireConnection` from `ProjectEntity.ts` exports.
+Migrate callers in `wires.ts` to use `content.addWireConnection()`/`content.removeWireConnection()`. Remove standalone `addWireConnection`/`removeWireConnection` from `ProjectEntity.ts`.
 
 ### Observer notification granularity
 
-**Decision**: Follow target state spec exactly. Most mutations fire `onEntityChanged(entity, fromStage)`. Only settings remnant, last-stage, wire, add, delete have distinct notifications. Mutation methods that return false (no change) do not fire notifications.
+Follow target state spec. Most mutations fire `onEntityChanged(entity, fromStage)`. Only settings remnant, last-stage, wire, add, delete have distinct notifications. Mutation methods that return false (no change) do not fire notifications.
 
 ### Where to put ContentObserver
 
-**Decision**: Define in `ProjectContent.ts` alongside `MutableProjectContent`, since they are tightly coupled. Avoids a new file for a single interface.
+Define in `ProjectContent.ts` alongside `MutableProjectContent`.
+
+### Merge order with parallel tracks
+
+Per phasing plan, recommended merge order is Phase 3 → Phase 1 → Phase 2. Phase 1 is orthogonal to Phase 3 (different files). Phase 1's `InternalProjectEntity` excludes world entity methods — those are handled by Phase 2. If Phase 2 merges before Phase 1, the world entity methods will already be gone from `ProjectEntity`, simplifying Phase 1's interface split. If Phase 1 merges first, the world entity methods remain on `ProjectEntityImpl` but are not part of `InternalProjectEntity`.
