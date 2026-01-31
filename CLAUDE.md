@@ -94,10 +94,8 @@ in `src/project/`:
 
 ### Migrations
 
-**IMPORTANT**: when editing anything that ends up in the `storage` global (project data, player data, etc.), always add a migration.
-
-- Place project-related migrations in: `src/project/index.ts`
-- use `Migrations.to($CURRENT_VERSION)` as a placeholder for current version. Global var will be substituted by a script later.
+**IMPORTANT**: when editing anything that ends up in the `storage` global (project data, player data, etc.), always add a migration. 
+See [docs/Migrations.md](docs/Migrations.md) for full reference and patterns.
 
 ### Testing
 
