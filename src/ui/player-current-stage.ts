@@ -10,8 +10,7 @@ import { Position } from "../lib/geometry"
 import { getProjectPlayerData } from "../project/player-project-data"
 import { getStageAtSurface } from "../project/project-refs"
 import { Stage, UserProject } from "../project/ProjectDef"
-import { projectDeleted } from "../project/ProjectList"
-import { ProjectEvents } from "../project/UserProject"
+import { projectDeleted, stageDeleted } from "../project/ProjectList"
 
 declare global {
   interface PlayerData {
@@ -54,9 +53,7 @@ function updateAllPlayers() {
   }
 }
 projectDeleted.addListener(updateAllPlayers)
-ProjectEvents.addListener((e) => {
-  if (e.type == "stage-deleted") updateAllPlayers()
-})
+stageDeleted.addListener(updateAllPlayers)
 
 function teleportPlayer(player: LuaPlayer, surface: LuaSurface, position: Position): void {
   if (player.controller_type == defines.controllers.remote) {

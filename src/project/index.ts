@@ -19,11 +19,10 @@ import { Migrations } from "../lib/migration"
 import { createProjectTile } from "../tiles/ProjectTile"
 import { getNilPlaceholder } from "../utils/diff-value"
 import "./event-handlers"
-import "./project-event-listener"
 import { getDefaultSurfaceSettings, readSurfaceSettings, updateStageSurfaceName } from "./surfaces"
 import "./UserProject"
 import { getAllProjects } from "./ProjectList"
-import { StageInternal, UserProjectInternal } from "./UserProject"
+import { UserProject } from "./ProjectDef"
 import { WorldPresentation } from "./WorldPresentation"
 
 Migrations.to("2.2.0", () => {
@@ -107,10 +106,12 @@ interface OldProjectTile {
 }
 
 Migrations.to("2.8.0", () => {
+  interface HasRegisterEvents {
+    registerEvents(): void
+  }
   for (const project of getAllProjects()) {
-    ;(project as UserProjectInternal).registerEvents()
+    ;(project as unknown as HasRegisterEvents).registerEvents()
     for (const stage of project.getAllStages()) {
-      ;(stage as StageInternal).registerEvents()
       updateStageSurfaceName(stage.getSurface(), project.settings.projectName.get(), stage.getSettings().name.get())
     }
 
@@ -172,7 +173,7 @@ Migrations.to("2.12.0", () => {
 
 Migrations.to($CURRENT_VERSION, () => {
   for (const project of getAllProjects()) {
-    interface OldUserProject extends Omit<UserProjectInternal, "worldUpdates"> {
+    interface OldUserProject extends Omit<UserProject, "worldUpdates"> {
       worldUpdates?: unknown
     }
     const old = project as unknown as OldUserProject

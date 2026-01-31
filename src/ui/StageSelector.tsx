@@ -5,9 +5,9 @@
 
 import { DropDownGuiElement, ListBoxGuiElement, LocalisedString, PlayerIndex } from "factorio:runtime"
 import { StageNumber } from "../entity/ProjectEntity"
-import { assertNever, bind, ibind, MutableProperty, RegisterClass, Subscription } from "../lib"
+import { bind, ibind, MutableProperty, RegisterClass, Subscription } from "../lib"
 import { Component, Element, ElemProps, FactorioJsx, RenderContext } from "../lib/factoriojsx"
-import { LocalProjectEvent, Stage, UserProject } from "../project/ProjectDef"
+import { Stage, UserProject } from "../project/ProjectDef"
 import { playerCurrentStage, teleportToStage } from "./player-current-stage"
 
 export type StageSelectorProps<T extends "drop-down" | "list-box"> = {
@@ -57,15 +57,8 @@ export class StageSelector<T extends "drop-down" | "list-box"> extends Component
     }
     playerCurrentStage(this.playerIndex).subscribeAndRaise(subscription, ibind(this.playerStageChanged))
 
-    this.project.localEvents.subscribe(subscription, ibind(this.onProjectEvent))
-  }
-
-  private onProjectEvent(event: LocalProjectEvent) {
-    if (event.type == "stage-added" || event.type == "stage-deleted") {
-      this.setup()
-    } else if (event.type != "project-deleted" && event.type != "pre-stage-deleted") {
-      assertNever(event)
-    }
+    this.project.stageAdded.subscribe(subscription, ibind(this.setup))
+    this.project.stageDeleted.subscribe(subscription, ibind(this.setup))
   }
 
   private setDropDownItem(stageNumber: StageNumber, name: LocalisedString) {

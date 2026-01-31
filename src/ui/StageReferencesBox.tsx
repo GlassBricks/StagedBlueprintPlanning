@@ -35,7 +35,8 @@ class StageReferencePanel extends Component<{
   ): Element {
     this.project = props.project
     this.subscription = context.getSubscription()
-    this.project.localEvents.subscribe(this.subscription, ibind(this.setup))
+    this.project.stageAdded.subscribe(this.subscription, ibind(this.setup))
+    this.project.stageDeleted.subscribe(this.subscription, ibind(this.setup))
     context.onMount(() => this.setup())
     return (
       <frame

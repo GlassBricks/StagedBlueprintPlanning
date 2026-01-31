@@ -482,12 +482,12 @@ Remove file and its import from `src/project/index.ts`.
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] `pnpm run test` passes
-- [ ] `pnpm run lint` passes
-- [ ] `pnpm run format:fix` passes
-- [ ] No references to `GlobalProjectEvents`, `ProjectEvents`, or `localEvents` remain
-- [ ] `project-event-listener.ts` deleted
-- [ ] Updated tests in `src/test/project/UserProject.test.ts`
+- [x] `pnpm run test` passes
+- [x] `pnpm run lint` passes
+- [x] `pnpm run format:fix` passes
+- [x] No references to `GlobalProjectEvents`, `ProjectEvents`, or `localEvents` remain
+- [x] `project-event-listener.ts` deleted
+- [x] Updated tests in `src/test/project/UserProject.test.ts`
 
 ---
 

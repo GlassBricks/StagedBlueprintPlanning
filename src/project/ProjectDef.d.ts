@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { LuaEntity, LuaSurface } from "factorio:runtime"
+import { LuaSurface } from "factorio:runtime"
 import { BlueprintSettingsTable } from "../blueprints/blueprint-settings"
 import { MutableProjectContent } from "../entity/ProjectContent"
 import { StageNumber } from "../entity/ProjectEntity"
@@ -48,7 +48,9 @@ export interface UserProject extends Project {
 
   readonly content: MutableProjectContent
 
-  readonly localEvents: SimpleSubscribable<LocalProjectEvent>
+  readonly stageAdded: SimpleSubscribable<Stage>
+  readonly preStageDeleted: SimpleSubscribable<Stage>
+  readonly stageDeleted: SimpleSubscribable<Stage>
 
   getStage(stageNumber: StageNumber): Stage | nil
   getAllStages(): readonly Stage[]
@@ -84,42 +86,3 @@ export interface Stage {
   deleteByMerging(): void
   discardInProject(): void
 }
-
-export interface ProjectCreatedEvent {
-  readonly type: "project-created"
-  readonly project: UserProject
-}
-export interface ProjectDeletedEvent {
-  readonly type: "project-deleted"
-  readonly project: UserProject
-}
-
-export interface ProjectsReorderedEvent {
-  readonly type: "projects-reordered"
-  readonly project1: UserProject
-  readonly project2: UserProject
-}
-export interface StageAddedEvent {
-  readonly type: "stage-added"
-  readonly spacePlatformHub: LuaEntity | nil
-  readonly project: UserProject
-  readonly stage: Stage
-}
-export interface PreStageDeletedEvent {
-  readonly type: "pre-stage-deleted"
-  readonly project: UserProject
-  readonly stage: Stage
-}
-export interface StageDeletedEvent {
-  readonly type: "stage-deleted"
-  readonly project: UserProject
-  readonly stage: Stage
-}
-export type GlobalProjectEvent =
-  | ProjectCreatedEvent
-  | ProjectDeletedEvent
-  | ProjectsReorderedEvent
-  | StageAddedEvent
-  | PreStageDeletedEvent
-  | StageDeletedEvent
-export type LocalProjectEvent = ProjectDeletedEvent | StageAddedEvent | PreStageDeletedEvent | StageDeletedEvent

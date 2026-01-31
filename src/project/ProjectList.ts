@@ -1,7 +1,7 @@
 import { nil } from "factorio:runtime"
 import { remove_from_list } from "util"
 import { globalEvent } from "../lib"
-import { ProjectId, UserProject } from "./ProjectDef"
+import { ProjectId, Stage, UserProject } from "./ProjectDef"
 
 declare const storage: {
   projects: UserProject[]
@@ -10,6 +10,7 @@ declare const storage: {
 export const projectCreated = globalEvent<[UserProject]>()
 export const projectDeleted = globalEvent<[UserProject]>()
 export const projectsReordered = globalEvent<[UserProject, UserProject]>()
+export const stageDeleted = globalEvent<[project: UserProject, stage: Stage]>()
 
 export function getAllProjects(): readonly UserProject[] {
   return storage.projects

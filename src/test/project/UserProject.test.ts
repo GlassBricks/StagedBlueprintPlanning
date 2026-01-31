@@ -6,27 +6,29 @@
 import expect, { AnySelflessFun, mock, MockNoSelf } from "tstl-expect"
 import { getIconsFromSettings } from "../../blueprints/blueprint-settings"
 import { getReferencedStage } from "../../blueprints/stage-reference"
+import { UserProject } from "../../project/ProjectDef"
 import { getProjectById, getStageAtSurface } from "../../project/project-refs"
-import { PreStageDeletedEvent, ProjectCreatedEvent, StageAddedEvent, UserProject } from "../../project/ProjectDef"
-import { _deleteAllProjects, createUserProject, ProjectEvents } from "../../project/UserProject"
+import { projectCreated, projectDeleted } from "../../project/ProjectList"
+import { _deleteAllProjects, createUserProject } from "../../project/UserProject"
 import { getCurrentValues } from "../../utils/properties-obj"
 
-let eventListener: MockNoSelf<AnySelflessFun>
+let createdListener: MockNoSelf<AnySelflessFun>
+let deletedListener: MockNoSelf<AnySelflessFun>
 before_each(() => {
-  eventListener = mock.fnNoSelf()
-  ProjectEvents.addListener(eventListener)
+  createdListener = mock.fnNoSelf()
+  deletedListener = mock.fnNoSelf()
+  projectCreated.addListener(createdListener)
+  projectDeleted.addListener(deletedListener)
 })
 after_each(() => {
-  ProjectEvents.removeListener(eventListener)
+  projectCreated.removeListener(createdListener)
+  projectDeleted.removeListener(deletedListener)
   _deleteAllProjects()
 })
 
-test("project created calls event", () => {
+test("project created fires projectCreated event", () => {
   const project = createUserProject("Mock", 0)
-  expect(eventListener).toHaveBeenCalledWith({
-    type: "project-created",
-    project,
-  } as ProjectCreatedEvent)
+  expect(createdListener).toHaveBeenCalledWith(project)
 })
 
 test("getProjectById", () => {
@@ -55,19 +57,10 @@ describe("deletion", () => {
     project.delete()
     expect(stage.valid).toBe(false)
   })
-  test("calls event", () => {
+  test("fires projectDeleted event", () => {
     const project = createUserProject("Mock", 0)
-    const sp2 = mock.fn()
-    project.localEvents._subscribeIndependently({ invoke: sp2 })
     project.delete()
-    expect(eventListener).toHaveBeenCalledWith({
-      type: "project-deleted",
-      project,
-    })
-    expect(sp2).toHaveBeenCalledWith({
-      type: "project-deleted",
-      project,
-    })
+    expect(deletedListener).toHaveBeenCalledWith(project)
   })
 })
 
@@ -87,11 +80,10 @@ describe("Stages", () => {
 })
 
 test("insert stage", () => {
-  const sp = mock.fn()
+  const stageAddedListener = mock.fn()
   const project = createUserProject("Mock", 2)
   const oldStage = project.getStage(1)!
-  project.localEvents._subscribeIndependently({ invoke: sp })
-  eventListener.clear()
+  project.stageAdded._subscribeIndependently({ invoke: stageAddedListener })
 
   const stage = project.insertStage(1)
 
@@ -108,14 +100,7 @@ test("insert stage", () => {
   expect(project.getStage(1)!).toEqual(stage)
   expect(project.getStage(2)!).toEqual(oldStage)
 
-  const expected: StageAddedEvent = {
-    type: "stage-added",
-    project,
-    stage,
-    spacePlatformHub: nil,
-  }
-  expect(eventListener).toHaveBeenCalledWith(expected)
-  expect(sp).toHaveBeenCalledWith(expected)
+  expect(stageAddedListener).toHaveBeenCalledWith(stage)
 
   const anotherInserted = project.insertStage(1)
   expect(anotherInserted).not.toBe(stage)
@@ -134,10 +119,11 @@ test("insert stage", () => {
 })
 
 test("delete stage", () => {
-  const sp = mock.fn()
+  const preDeleteListener = mock.fn()
+  const deleteListener = mock.fn()
   const project = createUserProject("Test", 3)
-  project.localEvents._subscribeIndependently({ invoke: sp })
-  eventListener.clear()
+  project.preStageDeleted._subscribeIndependently({ invoke: preDeleteListener })
+  project.stageDeleted._subscribeIndependently({ invoke: deleteListener })
 
   const stage1 = project.getStage(1)!
   const stage2 = project.getStage(2)!
@@ -158,13 +144,8 @@ test("delete stage", () => {
   expect(project.getStage(1)!).toEqual(stage1)
   expect(project.getStage(2)!).toEqual(stage3)
 
-  const expected: PreStageDeletedEvent = {
-    type: "pre-stage-deleted",
-    project,
-    stage: stage2,
-  }
-  expect(eventListener).toHaveBeenCalledWith(expected)
-  expect(sp).toHaveBeenCalledWith(expected)
+  expect(preDeleteListener).toHaveBeenCalledWith(stage2)
+  expect(deleteListener).toHaveBeenCalledWith(stage2)
 })
 
 test("delete stage by deleting surface", () => {
@@ -187,10 +168,9 @@ test("deleting last stage deletes project", () => {
 
 describe("discardStage()", () => {
   test("discards stage and raises events", () => {
-    const sp = mock.fn()
+    const preDeleteListener = mock.fn()
     const project = createUserProject("Test", 3)
-    project.localEvents._subscribeIndependently({ invoke: sp })
-    eventListener.clear()
+    project.preStageDeleted._subscribeIndependently({ invoke: preDeleteListener })
 
     const stage1 = project.getStage(1)!
     const stage2 = project.getStage(2)!
@@ -202,13 +182,7 @@ describe("discardStage()", () => {
     expect(stage1.stageNumber).toEqual(1)
     expect(stage3.stageNumber).toEqual(2)
 
-    const expected: PreStageDeletedEvent = {
-      type: "pre-stage-deleted",
-      project,
-      stage: stage2,
-    }
-    expect(eventListener).toHaveBeenCalledWith(expected)
-    expect(sp).toHaveBeenCalledWith(expected)
+    expect(preDeleteListener).toHaveBeenCalledWith(stage2)
   })
 
   test("deletes entire project when discarding only stage", () => {
