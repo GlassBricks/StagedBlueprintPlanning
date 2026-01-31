@@ -1,13 +1,35 @@
 {
   "permissions": {
     "allow": [
-      "Bash(./hack/spec_metadata.sh)",
-      "Bash(hack/spec_metadata.sh)",
-      "Bash(bash hack/spec_metadata.sh)"
+      "Bash(pnpm run build:*)",
+      "Bash(pnpm run test:*)",
+      "Bash(pnpm run format:fix:*)",
+      "Bash(pnpm run lint:*)",
+      "Bash(pnpm run check:*)",
+      "Bash(pnpm run subst-current-version:*)",
+      "Bash(pnpx factorio-test-cli:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git worktree:*)",
+      "Bash(git stash:*)",
+      "Bash(git merge:*)",
+      "Bash(git rebase:*)",
+      "Bash(git cherry-pick:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git show:*)",
+      "Bash(mkdir:*)",
+      "Bash(ls:*)",
+      "Bash(wc:*)",
+      "Bash(tee:*)",
+      "Bash(mv:*)",
+      "Bash(cp:*)",
+      "Bash(xargs:*)",
+      "WebSearch"
     ]
-  },
-  "enableAllProjectMcpServers": false,
-  "env": {
-    "MAX_THINKING_TOKENS": "32000"
   }
 }
