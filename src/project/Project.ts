@@ -7,7 +7,7 @@ import { BlueprintSettingsTable } from "../blueprints/blueprint-settings"
 import { MutableProjectContent, newProjectContent } from "../entity/ProjectContent"
 import { StageNumber } from "../entity/ProjectEntity"
 import { ReadonlyStagedValue } from "../entity/StagedValue"
-import { Events, ibind, Mutable, RegisterClass, SimpleEvent, SimpleSubscribable, Subscription } from "../lib"
+import { Events, Mutable, RegisterClass, SimpleEvent, SimpleSubscribable } from "../lib"
 import { BBox } from "../lib/geometry"
 import { LazyLoadClass } from "../lib/LazyLoad"
 import { getStageAtSurface } from "./project-refs"
@@ -158,17 +158,8 @@ class ProjectImpl implements Project {
     return project
   }
 
-  private subscription?: Subscription
   registerEvents(): void {
-    if (this.subscription) return
-    this.subscription = new Subscription()
-
-    this.settings.projectName.subscribe(this.subscription, ibind(this.onNameChange))
     this.surfaces.registerEvents()
-  }
-
-  private onNameChange(newValue: string, oldValue: string): void {
-    this.settings.blueprintBookTemplate.onProjectNameChanged(newValue, oldValue)
   }
 
   getStage(stageNumber: StageNumber): Stage | nil {
@@ -291,8 +282,6 @@ class ProjectImpl implements Project {
     this.preStageDeleted.closeAll()
     this.stageDeleted.closeAll()
     this.surfaces.close()
-    this.subscription?.close()
-    delete this.subscription
   }
 
   private registerStageInSurfaceMap(stage: StageImpl, surface: LuaSurface): void {

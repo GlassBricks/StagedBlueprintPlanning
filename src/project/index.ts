@@ -19,10 +19,10 @@ import { Migrations } from "../lib/migration"
 import { createProjectTile } from "../tiles/ProjectTile"
 import { getNilPlaceholder } from "../utils/diff-value"
 import "./event-handlers"
-import { getDefaultSurfaceSettings, readSurfaceSettings, updateStageSurfaceName } from "./surfaces"
 import "./Project"
-import { getAllProjects } from "./ProjectList"
 import { Project } from "./Project"
+import { getAllProjects } from "./ProjectList"
+import { getDefaultSurfaceSettings, readSurfaceSettings, updateStageSurfaceName } from "./surfaces"
 import { WorldPresentation } from "./WorldPresentation"
 
 Migrations.to("2.2.0", () => {
@@ -175,13 +175,14 @@ Migrations.to($CURRENT_VERSION, () => {
   for (const project of getAllProjects()) {
     interface OldUserProject extends Omit<Project, "worldUpdates"> {
       worldUpdates?: unknown
+      subscription?: { close(): void }
     }
     const old = project as unknown as OldUserProject
     delete old.worldUpdates
+    old.subscription?.close()
+    delete old.subscription
     if (!project.worldPresentation) {
-      ;(project as unknown as { worldPresentation: WorldPresentation }).worldPresentation = new WorldPresentation(
-        project,
-      )
+      project.worldPresentation = new WorldPresentation(project)
     }
     interface OldProjectEntity {
       [stage: StageNumber]: LuaEntity | nil

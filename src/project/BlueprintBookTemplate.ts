@@ -14,10 +14,10 @@ export interface StageProvider {
 export class BlueprintBookTemplate {
   private inventory?: LuaInventory
 
-  get(): LuaItemStack | nil {
-    if (!this.inventory?.valid) return nil
-    const stack = this.inventory[0]
-    if (stack.valid_for_read && stack.is_blueprint_book) return stack
+  get(projectName: string): LuaItemStack | nil {
+    const stack = this.getStack()
+    if (stack) stack.label = projectName
+    return stack
   }
 
   getOrCreate(stages: StageProvider, projectName: string): LuaItemStack {
@@ -28,6 +28,7 @@ export class BlueprintBookTemplate {
     if (!stack.valid_for_read || !stack.is_blueprint_book) {
       this.setInitial(stack, stages, projectName)
     }
+    stack.label = projectName
     return stack
   }
 
@@ -37,16 +38,9 @@ export class BlueprintBookTemplate {
   }
 
   onStageInserted(newStageNumber: StageNumber, stages: StageProvider): void {
-    const template = this.get()
-    if (!template) return
-    this.addStageToTemplate(newStageNumber, template, stages)
-  }
-
-  onProjectNameChanged(newName: string, oldName: string): void {
-    const template = this.get()
-    if (template != nil && template.label == oldName) {
-      template.label = newName
-    }
+    const stack = this.getStack()
+    if (!stack) return
+    this.addStageToTemplate(newStageNumber, stack, stages)
   }
 
   destroy(): void {
@@ -58,6 +52,12 @@ export class BlueprintBookTemplate {
     const instance = new BlueprintBookTemplate()
     instance.inventory = inventory
     return instance
+  }
+
+  private getStack(): LuaItemStack | nil {
+    if (!this.inventory?.valid) return nil
+    const stack = this.inventory[0]
+    if (stack.valid_for_read && stack.is_blueprint_book) return stack
   }
 
   private setInitial(stack: LuaItemStack, stages: StageProvider, projectName: string): void {

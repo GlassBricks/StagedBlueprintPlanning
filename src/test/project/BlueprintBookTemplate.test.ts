@@ -9,7 +9,7 @@ after_each(() => {
 
 test("get() returns nil initially", () => {
   const template = new BlueprintBookTemplate()
-  expect(template.get()).toBeNil()
+  expect(template.get("Test")).toBeNil()
 })
 
 test("getOrCreate() creates book with correct stage references", () => {
@@ -32,25 +32,17 @@ test("reset() destroys inventory, subsequent get() returns nil", () => {
   const template = project.settings.blueprintBookTemplate
   const book = template.getOrCreate(project, project.settings.projectName.get())
   template.reset()
-  expect(template.get()).toBeNil()
+  expect(template.get("Test")).toBeNil()
   expect(book.valid).toBe(false)
 })
 
-test("onProjectNameChanged() updates label when label matches old name", () => {
+test("get() sets label to projectName", () => {
   const project = createProject("Test", 2)
   const template = project.settings.blueprintBookTemplate
-  const book = template.getOrCreate(project, "Test")
-  template.onProjectNameChanged("New Name", "Test")
-  expect(book.label).toBe("New Name")
-})
-
-test("onProjectNameChanged() does not update label when label differs", () => {
-  const project = createProject("Test", 2)
-  const template = project.settings.blueprintBookTemplate
-  const book = template.getOrCreate(project, "Test")
-  book.label = "Custom Label"
-  template.onProjectNameChanged("New Name", "Test")
-  expect(book.label).toBe("Custom Label")
+  template.getOrCreate(project, "Test")
+  const book = template.get("New Name")
+  expect(book).not.toBeNil()
+  expect(book!.label).toBe("New Name")
 })
 
 describe("onStageInserted()", () => {

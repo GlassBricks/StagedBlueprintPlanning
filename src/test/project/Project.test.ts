@@ -267,13 +267,13 @@ describe("new stage name", () => {
 describe("blueprintBookTemplate", () => {
   test("initially nil", () => {
     const project = createProject("Test", 0)
-    expect(project.settings.blueprintBookTemplate.get()).toBeNil()
+    expect(project.settings.blueprintBookTemplate.get("Test")).toBeNil()
   })
 
   test("can be set", () => {
     const project = createProject("Test", 0)
     const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
-    expect(project.settings.blueprintBookTemplate.get()).toEqual(book)
+    expect(project.settings.blueprintBookTemplate.get("Test")).toEqual(book)
 
     assert(book.is_blueprint_book)
     expect(book.label).toEqual(project.settings.projectName.get())
@@ -288,7 +288,7 @@ describe("blueprintBookTemplate", () => {
     const project = createProject("Test", 0)
     const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
     project.settings.blueprintBookTemplate.reset()
-    expect(project.settings.blueprintBookTemplate.get()).toBeNil()
+    expect(project.settings.blueprintBookTemplate.get("Test")).toBeNil()
     expect(book.valid).toBe(false)
   })
 
@@ -296,24 +296,17 @@ describe("blueprintBookTemplate", () => {
     const project = createProject("Test", 0)
     const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
     book.clear()
-    expect(project.settings.blueprintBookTemplate.get()).toBe(nil)
+    expect(project.settings.blueprintBookTemplate.get("Test")).toBe(nil)
     const newBook = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
     assert(newBook.is_blueprint_book)
   })
 
-  test("changing project name changes book label", () => {
+  test("get() sets label to projectName", () => {
     const project = createProject("Test", 0)
-    const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
-    project.settings.projectName.set("New Name")
-    expect(book.label).toEqual("New Name")
-  })
-
-  test("changing project name does not change book label if book label is different", () => {
-    const project = createProject("Test", 0)
-    const book = project.settings.blueprintBookTemplate.getOrCreate(project, project.settings.projectName.get())
-    book.label = "Different"
-    project.settings.projectName.set("New Name")
-    expect(book.label).toEqual("Different")
+    project.settings.blueprintBookTemplate.getOrCreate(project, "Test")
+    const book = project.settings.blueprintBookTemplate.get("New Name")
+    expect(book).not.toBeNil()
+    expect(book!.label).toBe("New Name")
   })
 
   describe("inserting stage", () => {
