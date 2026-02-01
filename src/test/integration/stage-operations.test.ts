@@ -11,7 +11,7 @@ import { assert, Events } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { runEntireCurrentTask } from "../../lib/task"
 import { checkForEntityUpdates } from "../../project/event-handlers"
-import { StageMoveResult } from "../../project/project-updates"
+import { StageMoveResult } from "../../project/ProjectActions"
 import { NormalSurfaceSettings, syncMapGenSettings } from "../../project/surfaces"
 import { applyDiffViaWorld, setupEntityIntegrationTest } from "./integration-test-util"
 import direction = defines.direction

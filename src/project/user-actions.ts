@@ -16,10 +16,16 @@ import { L_Interaction } from "../locale"
 import { createIndicator, createNotification } from "./notifications"
 import { EntityUpdateResult, ProjectUpdates, StageMoveResult } from "./project-updates"
 
-import { ProjectBase, Project } from "./Project"
-import type { ProjectActions } from "./ProjectActions"
+import { ProjectBase } from "./Project"
+import {
+  undoBringToStage,
+  undoDeleteEntity,
+  undoManualStageMove,
+  undoSendToStage,
+  lastStageChangeUndo,
+} from "./ProjectActions"
 import { prepareArea } from "./surfaces"
-import { registerUndoAction, UndoAction, UndoHandler } from "./undo"
+import { registerUndoAction, UndoAction } from "./undo"
 import { WorldUpdates } from "./world-updates"
 
 /**
@@ -103,63 +109,6 @@ export interface InternalUserActions extends UserActions {
     byPlayer: PlayerIndex | nil,
   ): boolean
 }
-
-interface ProjectEntityRecord {
-  project: ProjectBase
-  entity: ProjectEntity
-}
-
-interface StageChangeRecord extends ProjectEntityRecord {
-  oldStage: StageNumber
-}
-
-interface InternalProject extends Project {
-  actions: ProjectActions
-}
-
-const undoDeleteEntity = UndoHandler<ProjectEntityRecord>("delete entity", (_, { project, entity }) => {
-  const actions = (project as InternalProject).actions
-  actions.readdDeletedEntity(entity)
-})
-
-const undoManualStageMove = UndoHandler<StageChangeRecord>("stage move", (player, { project, entity, oldStage }) => {
-  const actions = (project as InternalProject).actions
-  const actualEntity = actions.findCompatibleEntityForUndo(entity)
-  if (actualEntity) {
-    actions.userTryMoveEntityToStage(actualEntity, oldStage, player.index, true)
-  }
-})
-
-const undoSendToStage = UndoHandler<StageChangeRecord>("send to stage", (player, { project, entity, oldStage }) => {
-  const actions = (project as InternalProject).actions
-  const actualEntity = actions.findCompatibleEntityForUndo(entity)
-  if (actualEntity) {
-    actions.userBringEntityToStage(actualEntity, oldStage, player.index)
-  }
-})
-
-const undoBringToStage = UndoHandler<StageChangeRecord>("bring to stage", (player, { project, entity, oldStage }) => {
-  const actions = (project as InternalProject).actions
-  const actualEntity = actions.findCompatibleEntityForUndo(entity)
-  if (actualEntity) {
-    actions.userSendEntityToStage(actualEntity, actualEntity.firstStage, oldStage, player.index)
-  }
-})
-
-interface LastStageChangeRecord extends ProjectEntityRecord {
-  oldLastStage: StageNumber | nil
-}
-
-const lastStageChangeUndo = UndoHandler(
-  "last stage change",
-  (player, { project, entity, oldLastStage }: LastStageChangeRecord) => {
-    const actions = (project as InternalProject).actions
-    const actualEntity = actions.findCompatibleEntityForUndo(entity)
-    if (actualEntity) {
-      actions.userTrySetLastStage(actualEntity, oldLastStage, player.index)
-    }
-  },
-)
 
 export function UserActions(
   project: ProjectBase,

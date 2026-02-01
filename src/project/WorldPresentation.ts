@@ -1,4 +1,5 @@
-import { HighlightBoxEntity, LuaEntity, LuaRenderObject, nil } from "factorio:runtime"
+import { HighlightBoxEntity, LuaEntity, LuaRenderObject, MapPosition, nil } from "factorio:runtime"
+import { ContentObserver } from "../entity/ProjectContent"
 import { ProjectEntity, StageNumber, UndergroundBeltProjectEntity } from "../entity/ProjectEntity"
 import { isPreviewEntity, movableTypes } from "../entity/prototype-info"
 import { RegisterClass } from "../lib"
@@ -65,10 +66,62 @@ function getClosures(wp: WorldPresentation): Closures {
 }
 
 @RegisterClass("WorldPresentation")
-export class WorldPresentation implements WorldEntityLookup, WorldPresenter {
+export class WorldPresentation implements WorldEntityLookup, WorldPresenter, ContentObserver {
   readonly entityStorage = new EntityStorage<WorldEntityTypes>()
 
   constructor(readonly project: ProjectBase) {}
+
+  onEntityAdded(entity: ProjectEntity): void {
+    this.getWorldUpdates().updateNewWorldEntitiesWithoutWires(entity)
+    this.getWorldUpdates().updateWireConnections(entity)
+    this.getHighlights().updateAllHighlights(entity)
+  }
+
+  onEntityDeleted(entity: ProjectEntity): void {
+    this.getWorldUpdates().deleteWorldEntities(entity)
+  }
+
+  onEntityChanged(entity: ProjectEntity, fromStage: StageNumber): void {
+    this.getWorldUpdates().updateWorldEntities(entity, fromStage)
+  }
+
+  onEntityLastStageChanged(entity: ProjectEntity, oldLastStage: StageNumber | nil): void {
+    this.getWorldUpdates().updateWorldEntitiesOnLastStageChanged(entity, oldLastStage)
+  }
+
+  onEntityBecameSettingsRemnant(entity: ProjectEntity): void {
+    this.getWorldUpdates().makeSettingsRemnant(entity)
+  }
+
+  onEntityRevived(entity: ProjectEntity): void {
+    this.getWorldUpdates().reviveSettingsRemnant(entity)
+  }
+
+  onWiresChanged(entity: ProjectEntity): void {
+    this.getWorldUpdates().updateWireConnections(entity)
+    this.getHighlights().updateAllHighlights(entity)
+  }
+
+  onStageDiscarded(
+    stageNumber: StageNumber,
+    deleted: ProjectEntity[],
+    updated: ProjectEntity[],
+    updatedTiles: MapPosition[],
+  ): void {
+    for (const entity of deleted) {
+      this.getWorldUpdates().deleteWorldEntities(entity)
+    }
+    for (const entity of updated) {
+      this.getWorldUpdates().updateWorldEntities(entity, stageNumber)
+    }
+    for (const tilePosition of updatedTiles) {
+      this.getWorldUpdates().updateTilesInRange(tilePosition, stageNumber, nil)
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onStageMerged(_stageNumber: StageNumber): void {}
+
 
   getWorldUpdates(): WorldUpdates {
     return getClosures(this).worldUpdates

@@ -53,14 +53,14 @@ export interface TestProjectOps {
   trySetLastStage(
     entity: ProjectEntity,
     stage: StageNumber | nil,
-  ): import("../../project/project-updates").StageMoveResult
-  trySetFirstStage(entity: ProjectEntity, stage: StageNumber): import("../../project/project-updates").StageMoveResult
+  ): import("../../project/ProjectActions").StageMoveResult
+  trySetFirstStage(entity: ProjectEntity, stage: StageNumber): import("../../project/ProjectActions").StageMoveResult
   addNewEntity(entity: LuaEntity, stage: StageNumber): ProjectEntity | nil
   deleteEntityOrCreateSettingsRemnant(entity: ProjectEntity): void
   tryReviveSettingsRemnant(
     entity: ProjectEntity,
     stage: StageNumber,
-  ): import("../../project/project-updates").StageMoveResult
+  ): import("../../project/ProjectActions").StageMoveResult
 }
 
 export function createOldPipelineProjectOps(project: Project): TestProjectOps {
