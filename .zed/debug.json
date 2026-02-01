@@ -13,18 +13,20 @@
       "EditorExtensions": true,
       "quality": true,
       "elevated-rails": true,
-      "space-age": true
+      "space-age": true,
     },
     "disableExtraMods": true,
     "factorioArgs": [
-      "--load-scenario", "factorio-test/Test",
-      "-c", "$ZED_WORKTREE_ROOT/factorio-test-data-dir/config.ini"
+      "--load-scenario",
+      "factorio-test/Test",
+      "-c",
+      "$ZED_WORKTREE_ROOT/factorio-test-data-dir/config.ini",
     ],
     "hookControl": false,
     "adjustModSettings": [
-      { "scope": "startup", "name": "factorio-test-auto-start", "value": true },
-      { "scope": "runtime-global", "name": "factorio-test-mod-to-test", "value": "bp100" }
-    ]
+      // { "scope": "startup", "name": "factorio-test-auto-start", "value": true },
+      // { "scope": "runtime-global", "name": "factorio-test-mod-to-test", "value": "bp100" }
+    ],
   },
   {
     "adapter": "factorio",
@@ -40,20 +42,22 @@
       "EditorExtensions": true,
       "quality": true,
       "elevated-rails": true,
-      "space-age": true
+      "space-age": true,
     },
     "disableExtraMods": true,
     "factorioArgs": [
-      "--load-scenario", "factorio-test/Test",
-      "-c", "$ZED_WORKTREE_ROOT/factorio-test-data-dir/config.ini"
+      "--load-scenario",
+      "factorio-test/Test",
+      "-c",
+      "$ZED_WORKTREE_ROOT/factorio-test-data-dir/config.ini",
     ],
-    "hookControl": true
+    "hookControl": true,
   },
   {
     "adapter": "factorio",
     "label": "Debug only",
     "request": "launch",
     "factorioPath": "/home/ben/opt/factorio/bin/x64/factorio",
-    "hookControl": true
-  }
+    "hookControl": true,
+  },
 ]
