@@ -26,15 +26,18 @@ This doc outlines a major refactor to improve the separation of concerns and arc
 
 **MutableProjectContent** - Pure data storage for project entities and tiles. Has no knowledge of LuaEntity, world state, or business rules. All entity mutations flow through this component, which notifies its `ContentObserver` of changes. External code interacts with entities via `ProjectEntity` (read-only); only the content module uses `InternalProjectEntity` for mutations.
 
-**WorldPresentation** - Synchronizes Factorio world state with project content. Implements `ContentObserver` to react to content changes (entity added/deleted/modified) by creating/updating/destroying world entities and highlights. Uses `EntityStorage` for world entity tracking.
+**WorldPresenter** - The interface through which `ProjectActions` interacts with the presentation layer. Extends `WorldEntityLookup` (queries) with presentation commands (rebuild, refresh, delete, tile sync). `ProjectActions` depends only on this interface, never on `WorldPresentation` directly, for testability.
+
+**WorldPresentation** - Synchronizes Factorio world state with project content. Implements `ContentObserver` and `WorldPresenter`. Internally wraps `WorldUpdates` + `EntityHighlights` + `EntityStorage` — these are implementation details not exposed to `ProjectActions`.
 
 **EntityStorage** - Generic storage mapping `(ProjectEntity, type, stage)` to world objects (LuaEntity, highlights, render objects). Handles stage key shifting when stages are inserted/deleted.
 
-**ProjectActions** - The business logic layer between events and data. Receives Factorio events (from `event-handlers.ts`) and programmatic calls (from UI). Responsibilities:
+**ProjectActions** - The business logic layer between events and data. Depends on `MutableProjectContent` and `WorldPresenter` (not `WorldPresentation`). Receives Factorio events (from `event-handlers.ts`) and programmatic calls (from UI). Responsibilities:
 - **Validation**: Enforces business rules (e.g., rotation only at first stage, stage movement constraints)
 - **Coordination**: Orchestrates multi-entity operations (underground belt pairs, train carriages)
 - **LuaEntity reading**: Extracts entity values from world for "update from world" operations
 - **Content mutation**: Calls `MutableProjectContent` methods to modify data
+- **Presentation bypass**: Calls `WorldPresenter` directly for operations not driven by content changes (refresh, rebuild, tile sync)
 - **User feedback**: Sends notifications to players
 - **Undo/redo**: Returns `UndoAction` objects for registration
 
@@ -47,8 +50,9 @@ Internally may use pure helper functions for complex domain logic (e.g., undergr
 Module-level functions in `ProjectList.ts` manage the project collection in `storage.projects`. Each `Project` owns: `ProjectSettings`, `ProjectSurfaces`, `MutableProjectContent`, `WorldPresentation`, and `ProjectActions`.
 
 `ProjectSurfaces` observes `ProjectSettings` for stage name changes.
-`WorldPresentation` owns `EntityStorage` and implements `ContentObserver` to receive content change notifications.
+`WorldPresentation` owns `EntityStorage` and implements both `ContentObserver` (reactive) and `WorldPresenter` (commands).
 `MutableProjectContent` notifies its registered `ContentObserver` on all mutations.
+`ProjectActions` depends on `WorldPresenter` interface and `MutableProjectContent` — no direct access to `WorldUpdates`, `EntityHighlights`, or `EntityStorage`.
 
 ### Module Organization
 
@@ -646,13 +650,40 @@ class EntityStorage<T extends Record<string, unknown>> {
 }
 ```
 
+### WorldPresenter
+
+The interface through which `ProjectActions` interacts with the presentation layer. Extends `WorldEntityLookup` (queries) with presentation commands. `ProjectActions` depends only on this interface, never on `WorldPresentation` directly, for testability.
+
+```typescript
+interface WorldPresenter extends WorldEntityLookup {
+  replaceWorldOrPreviewEntity(entity: ProjectEntity, stage: StageNumber, luaEntity: LuaEntity | nil): void
+
+  rebuildStage(stage: StageNumber): void
+  rebuildAllStages(): void
+  rebuildEntity(entity: ProjectEntity, stage: StageNumber): void
+  // Refreshes world entity + all highlights at a stage (no content change)
+  refreshEntity(entity: ProjectEntity, stage: StageNumber): void
+  // Refreshes world entity + highlights at all stages (no content change)
+  refreshAllEntities(entity: ProjectEntity): void
+  // Removes world entity at a stage without deleting the project entity
+  deleteEntityAtStage(entity: ProjectEntity, stage: StageNumber): void
+  resetUnderground(entity: ProjectEntity, stage: StageNumber): void
+
+  updateTiles(position: Position, fromStage: StageNumber): TileCollision | nil
+
+  disableAllEntitiesInStage(stage: StageNumber): void
+  enableAllEntitiesInStage(stage: StageNumber): void
+  initSpacePlatform(): void
+}
+```
+
 ### WorldPresentation
 
-Merges WorldUpdates + EntityHighlights, implements ContentObserver.
+Merges WorldUpdates + EntityHighlights, implements ContentObserver and WorldPresenter. `WorldUpdates` and `EntityHighlights` are internal implementation details — external code accesses presentation through `WorldPresenter` or `ContentObserver` only.
 
 ```typescript
 @RegisterClass("WorldPresentation")
-class WorldPresentation implements ContentObserver {
+class WorldPresentation implements ContentObserver, WorldPresenter {
   readonly entityStorage: EntityStorage<WorldEntityTypes>
 
   constructor(
@@ -662,35 +693,12 @@ class WorldPresentation implements ContentObserver {
     content: MutableProjectContent,
   )
 
-  // World entity access
-  getWorldOrPreviewEntity(entity: ProjectEntity, stage: StageNumber): LuaEntity | nil
-  getWorldEntity(entity: ProjectEntity, stage: StageNumber): LuaEntity | nil
-  replaceWorldOrPreviewEntity(entity: ProjectEntity, stage: StageNumber, luaEntity: LuaEntity | nil): void
-  hasErrorAt(entity: ProjectEntity, stage: StageNumber): boolean
-
   // Stage lifecycle (called directly by Project, not via observer)
   onStageInserted(stageNumber: StageNumber): void
   onPreStageDeleted(stageNumber: StageNumber): void
   // Shifts world storage keys after stage deletion. Entity cleanup is handled
   // by ContentObserver.onStageMerged / onStageDiscarded before this is called.
   onStageDeleted(stageNumber: StageNumber): void
-
-  // Commands
-  rebuildStage(stage: StageNumber): void
-  rebuildAllStages(): void
-  refreshEntity(entity: ProjectEntity, stage: StageNumber): void
-  refreshAllEntities(entity: ProjectEntity): void
-  rebuildEntity(entity: ProjectEntity, stage: StageNumber): void
-  // was: clearWorldEntityAtStage
-  deleteEntity(entity: ProjectEntity, stage: StageNumber): void
-  resetUnderground(entity: ProjectEntity, stage: StageNumber): void
-  disableAllEntitiesInStage(stage: StageNumber): void
-  enableAllEntitiesInStage(stage: StageNumber): void
-
-  // Tile sync (called directly by ProjectActions, not via ContentObserver)
-  updateTiles(position: Position, fromStage: StageNumber): TileCollision | nil
-
-  initSpacePlatform(): void
 }
 ```
 
@@ -703,21 +711,22 @@ The business logic layer. `MutableProjectContent` is pure data storage; `Project
 - Coordinate multi-entity changes (underground belt pairs, train carriages)
 - Read entity values from LuaEntity for "update from world" operations
 - Call `MutableProjectContent` for each data mutation
-- Query `WorldPresentation` for world entity state (e.g., settings remnant decisions, error checks)
-- Call `WorldPresentation` directly for operations that bypass the observer (train rebuilds, tile sync)
+- Query `WorldPresenter` for world entity state (e.g., settings remnant decisions, error checks)
+- Call `WorldPresenter` directly for operations that bypass the observer (train rebuilds, tile sync, entity refresh)
 - Provide user feedback via notifications
 - Return `UndoAction` objects for undo registration
+- Zero direct calls to `WorldUpdates`, `EntityHighlights`, or `EntityStorage` — only `WorldPresenter` and `MutableProjectContent`
 
 **Internal helpers:** Complex domain logic (underground belt pairing, train handling, collision detection) may be extracted to pure helper functions. These encapsulate what was previously in `ProjectUpdates`, but without world sync calls. Helpers are internal implementation details, not a separate layer.
 
-**No observer batching needed.** Most multi-entity operations (underground belt pairs, undo groups) work correctly with per-mutation observer notifications, at the cost of occasional redundant world rebuilds. Train carriage operations require ordered destroy-all-then-rebuild-all, which `ProjectActions` handles by calling `WorldPresentation` directly for the destroy/rebuild sequence rather than relying on observer notifications. Stage merge/discard already use single batched `ContentObserver` notifications. Import defers observer attachment entirely.
+**No observer batching needed.** Most multi-entity operations (underground belt pairs, undo groups) work correctly with per-mutation observer notifications, at the cost of occasional redundant world rebuilds. Train carriage operations require ordered destroy-all-then-rebuild-all, which `ProjectActions` handles by calling `WorldPresenter` directly for the destroy/rebuild sequence rather than relying on observer notifications. Stage merge/discard already use single batched `ContentObserver` notifications. Import constructs content before the project, so no observer fires during bulk entity population.
 
 Receives events from `event-handlers.ts` or other user-handling code (GUI, custom input actions, etc). `event-handlers.ts` remains mostly as-is — it continues to own Factorio event parsing, state machines (fast replace detection, blueprint paste coordination, wire tracking), selection tool dispatch, and undo registration. It calls `ProjectActions` methods instead of the current `UserActions`/`ProjectUpdates` split.
 
 ```typescript
 @RegisterClass("ProjectActions")
 class ProjectActions {
-  constructor(content: MutableProjectContent, worldPresentation: WorldPresentation, settings: StagePresentation)
+  constructor(content: MutableProjectContent, worldPresenter: WorldPresenter, settings: StagePresentation)
 
   // Entity lifecycle events (from Factorio, called by event-handlers.ts)
   onEntityCreated(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex | nil): UndoAction | nil
@@ -838,37 +847,25 @@ interface MutableProjectContent {
 
 ### Import Flow
 
+Content is constructed and populated before the project, so no observer fires during bulk entity addition:
+
 ```typescript
 function importProject(data: ProjectExport): Project {
-  // 1. Create components without observer
-  const settings = ProjectSettings.fromData(data.settings)
-  const surfaces = new ProjectSurfaces(settings)
-  for (let i = 1; i <= settings.stageCount(); i++) {
-    surfaces.createSurface(i, settings.getStageName(i), nil)
-  }
+  // 1. Create and populate content (no observer attached)
   const content = newMutableProjectContent()
-
-  // 2. Delete auto-created space platform hub (surfaces auto-create one)
-  if (settings.isSpacePlatform()) {
-    const hub = next(content.allEntities())[0]
-    if (hub) content.deleteEntity(hub)
-  }
-
-  // 3. Import entities (two-pass for wires, no observer notifications)
   content.importEntities(data.entities)
 
-  // 4. Create presentation and attach observer
-  const worldPresentation = new WorldPresentation(settings, surfaces, settings, content)
-  content.setObserver(worldPresentation)
+  // 2. Create project, passing pre-populated content
+  // Project constructor wires observer internally
+  const project = createProjectWithContent(name, numStages, surfaceSettings, content)
 
-  // 5. Assemble and rebuild
-  const project = new Project(settings, surfaces, content, worldPresentation)
-  worldPresentation.rebuildAllStages()
+  // 3. Rebuild all world entities in one pass
+  project.worldPresentation.rebuildAllStages()
   return project
 }
 ```
 
-Key difference from current: observer attachment is deferred until after entity import, avoiding per-entity world updates. `rebuildAllStages()` creates all world entities in one pass.
+No observer detach/reattach needed — content has no observer until the `Project` constructor wires it. `rebuildAllStages()` creates all world entities in one pass.
 `importEntities()` handles wire connections internally via two-pass.
 
 ### Export Flow
@@ -908,7 +905,10 @@ function exportProject(project: Project): ProjectExport {
 - [ ] All entity mutations go through `MutableProjectContent`
 - [ ] `MutableProjectContent` has no LuaEntity references or business logic
 - [ ] All validation and coordination logic is in `ProjectActions`
+- [ ] `ProjectActions` depends on `WorldPresenter` interface, not `WorldPresentation` class
+- [ ] `ProjectActions` has zero imports of `WorldUpdates`, `EntityHighlights`, or `EntityStorage`
 - [ ] No direct mutation of `ProjectEntity` from outside content module
 - [ ] External code cannot call `InternalProjectEntity` methods without casting
 - [ ] Stage operations in `Project` call components directly in order (not via observer)
 - [ ] Per-project stage events (`SimpleEvent`) are only used by UI/external components
+- [ ] Import flows construct content before project (no observer detach/reattach)
