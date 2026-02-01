@@ -57,8 +57,8 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0(typed-factorio@3.33.0(lua-types@2.13.1)(typescript-to-lua@1.33.2(typescript@5.9.3)))
       factorio-test-cli:
-        specifier: ^3.3.0
-        version: 3.3.0
+        specifier: ^3.3.1
+        version: 3.3.1
       factoriomod-debug:
         specifier: ^2.0.8
         version: 2.0.10
@@ -942,8 +942,8 @@ packages:
     resolution: {integrity: sha512-kVscqXk4OCp68SZ0dkgEKVi6/8ij300KBWTJq32P/dYeWTSwK41WyTxalN1eRmA5Z9UU/LX9D7FWSmV9SAYx6g==}
     engines: {node: '>=0.10.0'}
 
-  factorio-test-cli@3.3.0:
-    resolution: {integrity: sha512-ADKxRpzdrzZfzX9WZ1fVAok23o9WDpEHvwF/xCeqAykK5DmLMX54lMi1r2RpmSL9nDyy8U9dunI1pQ2/fNT/1g==}
+  factorio-test-cli@3.3.1:
+    resolution: {integrity: sha512-wkhZTXisvjxmaoMgVqV9vvhIFZ07ZJrCwixAiHMKSgTp/fs4O97+C79GCtQ28dOafyCDCt6OKuMBOPnXS+Pjyw==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -2842,7 +2842,7 @@ snapshots:
 
   esutils@2.0.3: {}
 
-  factorio-test-cli@3.3.0:
+  factorio-test-cli@3.3.1:
     dependencies:
       chalk: 5.6.2
       commander: 12.1.0
