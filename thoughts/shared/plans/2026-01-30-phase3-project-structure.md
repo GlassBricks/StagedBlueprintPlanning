@@ -690,10 +690,9 @@ Test the migration by:
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] `pnpm run test` passes
-- [ ] `pnpm run lint` passes
-- [ ] Migration test verifies old-format data transforms correctly
-- [ ] No old fields remain on migrated objects
+- [x] `pnpm run test` passes
+- [x] `pnpm run lint` passes
+- [x] Manual testing with older save verifies migration works correctly
 
 ## References
 

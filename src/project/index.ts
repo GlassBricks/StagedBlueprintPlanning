@@ -3,27 +3,117 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { LuaEntity, SignalID } from "factorio:runtime"
+import { LuaEntity, LuaInventory, LuaSurface, nil, SignalID, SurfaceIndex } from "factorio:runtime"
 import {
   BlueprintSettingsOverrideTable,
   BlueprintSettingsTable,
   BlueprintTakeSettings,
   createStageBlueprintSettingsTable,
   iconNumbers,
+  StageBlueprintSettingsTable,
 } from "../blueprints/blueprint-settings"
 import { newMap2d } from "../entity/map2d"
 import { StageNumber } from "../entity/ProjectEntity"
-import { Mutable, PRecord, property } from "../lib"
+import { Mutable, MutableProperty, PRecord, property, SimpleEvent, Subscription } from "../lib"
 import { Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
+import { PropertiesTable } from "../utils/properties-obj"
 import { createProjectTile } from "../tiles/ProjectTile"
 import { getNilPlaceholder } from "../utils/diff-value"
 import "./event-handlers"
+import { getDefaultSurfaceSettings, readSurfaceSettings, SurfaceSettings, updateStageSurfaceName } from "./surfaces"
 import "./Project"
-import { Project } from "./Project"
+import { BlueprintBookTemplate } from "./BlueprintBookTemplate"
 import { getAllProjects } from "./ProjectList"
-import { getDefaultSurfaceSettings, readSurfaceSettings, updateStageSurfaceName } from "./surfaces"
+import { OverrideableBlueprintSettings } from "../blueprints/blueprint-settings"
+import { Project } from "./Project"
+import { ProjectSettings, StageSettingsData } from "./ProjectSettings"
+import { ProjectSurfaces } from "./ProjectSurfaces"
 import { WorldPresentation } from "./WorldPresentation"
+
+declare const luaLength: LuaLength<Record<number, any>, number>
+
+interface OldStage {
+  surface?: LuaSurface
+  surfaceIndex?: SurfaceIndex
+  name?: MutableProperty<string>
+  blueprintOverrideSettings?: BlueprintSettingsOverrideTable
+  stageBlueprintSettings?: StageBlueprintSettingsTable
+  subscription?: Subscription
+}
+
+interface OldProject {
+  name?: MutableProperty<string>
+  landfillTile?: MutableProperty<string | nil>
+  stagedTilesEnabled?: MutableProperty<boolean>
+  defaultBlueprintSettings?: PropertiesTable<OverrideableBlueprintSettings>
+  surfaceSettings?: SurfaceSettings
+  blueprintBookTemplateInv?: LuaInventory
+  localEvents?: SimpleEvent<any>
+  stages: Record<number, unknown>
+  settings?: ProjectSettings
+  surfaces?: ProjectSurfaces
+  stageAdded?: SimpleEvent<unknown>
+  preStageDeleted?: SimpleEvent<unknown>
+  stageDeleted?: SimpleEvent<unknown>
+}
+
+Migrations.early($CURRENT_VERSION, () => {
+  for (const project of getAllProjects()) {
+    const old = project as unknown as OldProject
+    if (old.settings) continue
+
+    const blueprintBookTemplate = old.blueprintBookTemplateInv
+      ? BlueprintBookTemplate._fromOldInventory(old.blueprintBookTemplateInv)
+      : new BlueprintBookTemplate()
+    delete old.blueprintBookTemplateInv
+
+    const stageSettings: Record<number, StageSettingsData> = {}
+    const surfaces: LuaSurface[] = []
+    const numStages = luaLength(old.stages)
+    for (const i of $range(1, numStages)) {
+      const oldStage = old.stages[i] as OldStage
+      stageSettings[i] = {
+        name: oldStage.name!,
+        blueprintOverrideSettings: oldStage.blueprintOverrideSettings!,
+        stageBlueprintSettings: oldStage.stageBlueprintSettings!,
+      }
+      surfaces.push(oldStage.surface!)
+
+      delete oldStage.surface
+      delete oldStage.surfaceIndex
+      delete oldStage.blueprintOverrideSettings
+      delete oldStage.stageBlueprintSettings
+      delete oldStage.name
+      delete oldStage.subscription
+    }
+
+    old.settings = ProjectSettings._fromOld({
+      projectName: old.name!,
+      landfillTile: old.landfillTile!,
+      stagedTilesEnabled: old.stagedTilesEnabled!,
+      defaultBlueprintSettings: old.defaultBlueprintSettings!,
+      surfaceSettings: old.surfaceSettings ?? getDefaultSurfaceSettings(),
+      blueprintBookTemplate,
+      stageSettings,
+    })
+
+    old.surfaces = ProjectSurfaces._fromExisting(surfaces, old.settings)
+
+    delete old.name
+    delete old.landfillTile
+    delete old.stagedTilesEnabled
+    delete old.defaultBlueprintSettings
+    delete old.surfaceSettings
+
+    old.localEvents?.closeAll()
+    delete old.localEvents
+
+    old.stageAdded ??= new SimpleEvent()
+    old.preStageDeleted ??= new SimpleEvent()
+    old.stageDeleted ??= new SimpleEvent()
+  }
+})
 
 Migrations.to("2.2.0", () => {
   for (const project of getAllProjects()) {
