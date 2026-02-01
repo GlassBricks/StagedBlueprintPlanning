@@ -36,6 +36,7 @@ These are run as part of full rebuild.
 - Explicit module boundary types
 - Test files end with `.test.ts`
 - Never cast to `any` or `Record<..., unknown>` or the like in new code if a more specific type is possible. Always create an explicit type; derive from existing types if applicable, add new type definition if needed.
+- Do NOT use properties `get foo()`; use `getFoo(), setFoo()` instead.
 
 ### Lua
 
@@ -43,7 +44,11 @@ Since Typescript code compiles to Lua:
 
 - Use `==` instead of `===`, `!=` instead of `!==`
 - Use `nil` instead of `undefined`, avoid `null`
-- Avoid properties like `get foo()`, not performant; use `getFoo(), setFoo()` instead.
+
+Storage:
+- The `storage` table is persistent/serialized
+- Mod needs to behave the same when reloaded at any point
+- CANNOT serialize functions -- use instead either classes and methods with @RegisterClass, or the FuncRef system (see lib)
 
 ## Architecture
 

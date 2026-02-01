@@ -88,8 +88,6 @@ declare const storage: {
   projects: ProjectImpl[]
   surfaceIndexToStage: LuaMap<SurfaceIndex, StageImpl>
   nextStageId?: StageId
-
-  allRecipesPromptShown?: never
 }
 Events.on_init(() => {
   storage.nextProjectId = 1 as ProjectId
