@@ -10,7 +10,7 @@ import { BBox } from "../../lib/geometry"
 import { Project } from "../../project/Project"
 import { SpacePlatformSettings } from "../../project/surfaces"
 import { _deleteAllProjects, createProject } from "../../project/Project"
-import { assertEntityCorrect, createOldPipelineProjectOps } from "./integration-test-util"
+import { assertEntityCorrect } from "./integration-test-util"
 import { createWorldPresentationQueries } from "./test-world-queries"
 
 before_each(() => {
@@ -115,9 +115,8 @@ describe("space platform tiles", () => {
         }
       }
     }
-    const projectOps = createOldPipelineProjectOps(project)
     for (const position of positionsToRemove) {
-      projectOps.deleteTile(position)
+      project.actions.deleteTile(position)
     }
 
     const newStage = project.insertStage(project.settings.stageCount())

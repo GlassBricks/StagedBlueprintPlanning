@@ -385,7 +385,25 @@ describe("MutableProjectContent mutations", () => {
       )
       content.addEntity(entity)
       observer.onEntityChanged.clear()
-      content.setUndergroundBeltType(entity, "output")
+      content.setTypeProperty(entity, "output")
+      expect(observer.onEntityChanged).toHaveBeenCalledWith(entity, entity.firstStage)
+    })
+  })
+
+  describe("setUndergroundBeltDirectionAndType()", () => {
+    test("sets both direction and type atomically, fires onEntityChanged once", () => {
+      const entity: UndergroundBeltProjectEntity = newProjectEntity(
+        { name: "underground-belt", type: "input" } as UndergroundBeltEntity,
+        { x: 0, y: 0 },
+        0,
+        1,
+      )
+      content.addEntity(entity)
+      observer.onEntityChanged.clear()
+      content.setUndergroundBeltDirectionAndType(entity, defines.direction.west, "output")
+      expect(entity.direction).toBe(defines.direction.west)
+      expect(entity.firstValue.type).toBe("output")
+      expect(observer.onEntityChanged).toHaveBeenCalledTimes(1)
       expect(observer.onEntityChanged).toHaveBeenCalledWith(entity, entity.firstStage)
     })
   })

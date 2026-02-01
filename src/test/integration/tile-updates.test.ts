@@ -8,18 +8,14 @@ import expect from "tstl-expect"
 import { Pos } from "../../lib/geometry"
 import { Project } from "../../project/Project"
 import { createProject } from "../../project/Project"
-import { createOldPipelineProjectOps, TestProjectOps } from "./integration-test-util"
 
 describe("Tiles integration tests", () => {
   let project: Project
   let player: LuaPlayer
-  let projectOps: TestProjectOps
-
   before_each(() => {
     project = createProject("Test", 6)
     project.settings.stagedTilesEnabled.set(true)
     player = game.players[1]
-    projectOps = createOldPipelineProjectOps(project)
   })
 
   after_each(() => {
@@ -103,7 +99,7 @@ describe("Tiles integration tests", () => {
   test("tile change stops propagating when entity blocks it", () => {
     const pos = Pos(25, 25)
 
-    projectOps.setTileAtStage(pos, 1, "concrete")
+    project.actions.setTileAtStage(pos, 1, "concrete")
 
     const tile = project.content.tiles.get(25, 25)!
     expect(tile.getTileAtStage(1)).toBe("concrete")
@@ -120,7 +116,7 @@ describe("Tiles integration tests", () => {
       position: { x: pos.x + 0.5, y: pos.y + 0.5 },
     })
 
-    projectOps.setTileAtStage(pos, 1, "water")
+    project.actions.setTileAtStage(pos, 1, "water")
 
     expect(tile.getTileAtStage(1)).toBe("water")
     expect(tile.getTileAtStage(2)).toBe("water")
@@ -134,8 +130,8 @@ describe("Tiles integration tests", () => {
   test("changing tile to water at middle stage stops at entity in later stage", () => {
     const pos = Pos(30, 30)
 
-    projectOps.setTileAtStage(pos, 1, "concrete")
-    projectOps.setTileAtStage(pos, 5, "stone-path")
+    project.actions.setTileAtStage(pos, 1, "concrete")
+    project.actions.setTileAtStage(pos, 5, "stone-path")
 
     const tile = project.content.tiles.get(30, 30)!
     expect(tile.getTileAtStage(1)).toBe("concrete")
@@ -148,7 +144,7 @@ describe("Tiles integration tests", () => {
       position: { x: pos.x + 0.5, y: pos.y + 0.5 },
     })
 
-    projectOps.setTileAtStage(pos, 2, "water")
+    project.actions.setTileAtStage(pos, 2, "water")
 
     expect(tile.getTileAtStage(1)).toBe("concrete")
     expect(tile.getTileAtStage(2)).toBe("water")

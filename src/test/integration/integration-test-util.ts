@@ -6,12 +6,12 @@ import { BlueprintEntity, LuaEntity, LuaPlayer, LuaSurface, SurfaceCreateEntity,
 import expect from "tstl-expect"
 import { oppositedirection } from "util"
 import { Prototypes } from "../../constants"
-import { Entity, LuaEntityInfo } from "../../entity/Entity"
+import { LuaEntityInfo } from "../../entity/Entity"
 import { ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { isPreviewEntity } from "../../entity/prototype-info"
 import { canBeAnyDirection, saveEntity } from "../../entity/save-load"
 import { assert } from "../../lib"
-import { Position, Pos } from "../../lib/geometry"
+import { Pos } from "../../lib/geometry"
 import { checkForEntityUpdates } from "../../project/event-handlers"
 import { Project } from "../../project/Project"
 import { _deleteAllProjects, createProject } from "../../project/Project"
@@ -26,12 +26,6 @@ import { createWorldPresentationQueries, TestWorldQueries } from "./test-world-q
 
 export { TestWorldQueries } from "./test-world-queries"
 
-export type Pipeline = "old" | "new"
-
-export function describeDualPipeline(name: string, fn: (pipeline: Pipeline) => void): void {
-  describe.each<[Pipeline]>([["old"], ["new"]])(`${name} (%s pipeline)`, (pipeline) => fn(pipeline))
-}
-
 export interface TestWorldOps {
   rebuildStage(stage: StageNumber): void
   rebuildAllStages(): void
@@ -41,42 +35,6 @@ export interface TestWorldOps {
   updateWorldEntities(entity: ProjectEntity, stage: StageNumber): void
   updateAllHighlights(entity: ProjectEntity): void
   resyncWithWorld(): void
-}
-
-export interface TestProjectOps {
-  resetProp<T extends Entity>(entity: ProjectEntity<T>, stage: StageNumber, prop: keyof T): boolean
-  movePropDown<T extends Entity>(entity: ProjectEntity<T>, stage: StageNumber, prop: keyof T): boolean
-  resetAllProps(entity: ProjectEntity, stage: StageNumber): boolean
-  moveAllPropsDown(entity: ProjectEntity, stage: StageNumber): boolean
-  setTileAtStage(position: Position, stage: StageNumber, value: string | nil): void
-  deleteTile(position: Position): boolean
-  trySetLastStage(
-    entity: ProjectEntity,
-    stage: StageNumber | nil,
-  ): import("../../project/ProjectActions").StageMoveResult
-  trySetFirstStage(entity: ProjectEntity, stage: StageNumber): import("../../project/ProjectActions").StageMoveResult
-  addNewEntity(entity: LuaEntity, stage: StageNumber): ProjectEntity | nil
-  deleteEntityOrCreateSettingsRemnant(entity: ProjectEntity): void
-  tryReviveSettingsRemnant(
-    entity: ProjectEntity,
-    stage: StageNumber,
-  ): import("../../project/ProjectActions").StageMoveResult
-}
-
-export function createOldPipelineProjectOps(project: Project): TestProjectOps {
-  return {
-    resetProp: (entity, stage, prop) => project.actions.resetProp(entity, stage, prop),
-    movePropDown: (entity, stage, prop) => project.actions.movePropDown(entity, stage, prop),
-    resetAllProps: (entity, stage) => project.actions.resetAllProps(entity, stage),
-    moveAllPropsDown: (entity, stage) => project.actions.moveAllPropsDown(entity, stage),
-    setTileAtStage: (position, stage, value) => project.actions.setTileAtStage(position, stage, value),
-    deleteTile: (position) => project.actions.deleteTile(position),
-    trySetLastStage: (entity, stage) => project.actions.trySetLastStage(entity, stage),
-    trySetFirstStage: (entity, stage) => project.actions.trySetFirstStage(entity, stage),
-    addNewEntity: (entity, stage) => project.actions.addNewEntity(entity, stage),
-    deleteEntityOrCreateSettingsRemnant: (entity) => project.actions.deleteEntityOrCreateSettingsRemnant(entity),
-    tryReviveSettingsRemnant: (entity, stage) => project.actions.tryReviveSettingsRemnant(entity, stage),
-  }
 }
 
 export function applyDiffViaWorld(
@@ -229,7 +187,6 @@ export interface EntityTestContext {
   surfaces: LuaSurface[]
   player: LuaPlayer
   worldOps: TestWorldOps
-  projectOps: TestProjectOps
   worldQueries: TestWorldQueries
   assertEntityCorrect(entity: ProjectEntity, expectError: number | false): void
   assertEntityNotPresent(entity: ProjectEntity): void
@@ -250,7 +207,6 @@ export function setupEntityIntegrationTest(numStages = 6): EntityTestContext {
     surfaces: nil!,
     player: nil!,
     worldOps: nil!,
-    projectOps: nil!,
     worldQueries: nil!,
     assertEntityCorrect(entity: ProjectEntity, expectError: number | false) {
       assertEntityCorrect(ctx.project, entity, expectError, ctx.worldQueries)
@@ -324,7 +280,6 @@ export function setupEntityIntegrationTest(numStages = 6): EntityTestContext {
       updateAllHighlights: (entity) => wu.updateAllHighlights(entity),
       resyncWithWorld: () => wu.resyncWithWorld(),
     }
-    ctx.projectOps = createOldPipelineProjectOps(ctx.project)
     ctx.worldQueries = createWorldPresentationQueries(ctx.project.worldPresentation)
   })
 

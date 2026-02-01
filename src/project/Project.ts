@@ -106,7 +106,7 @@ class ProjectImpl implements Project {
   readonly settings: ProjectSettings
   readonly surfaces: ProjectSurfaces
 
-  content = newProjectContent()
+  content: MutableProjectContent
 
   readonly stageAdded = new SimpleEvent<Stage>()
   readonly preStageDeleted = new SimpleEvent<Stage>()
@@ -122,11 +122,14 @@ class ProjectImpl implements Project {
     readonly id: ProjectId,
     name: string,
     initialNumStages: number,
-    surfaceSettings: SurfaceSettings = getDefaultSurfaceSettings(),
+    surfaceSettings: SurfaceSettings | nil = getDefaultSurfaceSettings(),
+    content: MutableProjectContent = newProjectContent(),
   ) {
+    this.content = content
     this.settings = new ProjectSettings(name, surfaceSettings)
     this.surfaces = new ProjectSurfaces(this.settings)
     this.actions = new ProjectActions(this, this.content, this.worldPresentation, this.settings)
+    this.content.setObserver(this.worldPresentation)
     for (const i of $range(1, initialNumStages)) {
       this.settings.insertStageSettings(i, `Stage ${i}`)
       const [surface] = this.surfaces.createSurface(i, this.content.computeBoundingBox())
@@ -139,9 +142,16 @@ class ProjectImpl implements Project {
   static create(
     name: string,
     initialNumStages: number,
-    surfaceSettings: SurfaceSettings = getDefaultSurfaceSettings(),
+    surfaceSettings: SurfaceSettings | nil = getDefaultSurfaceSettings(),
+    content?: MutableProjectContent,
   ): ProjectImpl {
-    const project = new ProjectImpl(storage.nextProjectId++ as ProjectId, name, initialNumStages, surfaceSettings)
+    const project = new ProjectImpl(
+      storage.nextProjectId++ as ProjectId,
+      name,
+      initialNumStages,
+      surfaceSettings,
+      content,
+    )
     addProject(project)
     project.registerEvents()
     if (project.settings.isSpacePlatform()) {
@@ -230,27 +240,13 @@ class ProjectImpl implements Project {
     if (isMerge) {
       this.content.mergeStage(index)
     } else {
-      this.doDiscard(index)
+      this.content.discardStage(index)
     }
     const adjacentStage = index == 1 ? 1 : index - 1
     this.worldPresentation.rebuildStage(adjacentStage)
 
     this.stageDeleted.raise(stage)
     globalStageDeleted.raise(this, stage)
-  }
-
-  private doDiscard(stage: StageNumber): void {
-    const worldUpdates = this.worldPresentation.getWorldUpdates()
-    const [deletedEntities, updatedEntities, updatedTiles] = this.content.discardStage(stage)
-    for (const entity of deletedEntities) {
-      this.actions.forceDeleteEntity(entity)
-    }
-    for (const entity of updatedEntities) {
-      worldUpdates.updateWorldEntities(entity, stage)
-    }
-    for (const tilePosition of updatedTiles) {
-      worldUpdates.updateTilesInRange(tilePosition, stage, nil)
-    }
   }
 
   mergeStage(index: StageNumber): void {
@@ -321,9 +317,10 @@ function initSpacePlatform(project: ProjectImpl): void {
 export function createProject(
   name: string,
   initialNumStages: number,
-  surfaceSettings: SurfaceSettings = getDefaultSurfaceSettings(),
+  surfaceSettings: SurfaceSettings | nil = getDefaultSurfaceSettings(),
+  content?: MutableProjectContent,
 ): Project {
-  return ProjectImpl.create(name, initialNumStages, surfaceSettings)
+  return ProjectImpl.create(name, initialNumStages, surfaceSettings, content)
 }
 
 export function _deleteAllProjects(): void {

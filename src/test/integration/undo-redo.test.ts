@@ -8,13 +8,13 @@ import { Events } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { getProjectPlayerData } from "../../project/player-project-data"
 import { _simulateUndo } from "../../project/undo"
-import { applyDiffViaWorld, describeDualPipeline, setupEntityIntegrationTest } from "./integration-test-util"
+import { applyDiffViaWorld, setupEntityIntegrationTest } from "./integration-test-util"
 
 const pos = Pos(10.5, 10.5)
 const pos2 = Pos(12.5, 10.5)
 const pos3 = Pos(14.5, 10.5)
 
-describeDualPipeline("undo-redo", () => {
+describe("undo-redo", () => {
   const ctx = setupEntityIntegrationTest()
 
   describe("force delete undo", () => {

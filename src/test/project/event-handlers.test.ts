@@ -809,7 +809,7 @@ describe.each<[boolean, string]>([
     expect(entity).toBeAny()
     expect(entity.position).toEqual(position)
 
-    expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(entity, 1, expect._, 1, nil)
+    expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(entity, 1, expect._, 1, nil, nil, false)
   }
 
   function waitForPaste(fn: () => void): void {
@@ -961,7 +961,7 @@ describe.each<[boolean, string]>([
 
     waitForPaste(() => {
       expect(project.actions.onEntityCreated).not.toHaveBeenCalled()
-      expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(tank, 1, nil, player.index, nil)
+      expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(tank, 1, nil, player.index, nil, nil, false)
       if (useBplib) {
         expect(project.actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(tank, 1, 1)
         expectedNumCalls = 2
@@ -1021,7 +1021,7 @@ describe.each<[boolean, string]>([
     fakeFlippedPaste(Pos(0.5, 0.5))
 
     expect(project.actions.onEntityCreated).not.toHaveBeenCalled()
-    expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(tank, 1, nil, player.index, nil)
+    expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(tank, 1, nil, player.index, nil, nil, true)
   })
 
   test("doesn't break when creating ghost entity", () => {
@@ -1278,7 +1278,7 @@ test("splitter has correct values when not flipped", () => {
   player.build_from_cursor({ position: Pos(0, 0.5) })
 
   expect(project.actions.onEntityCreated).not.toHaveBeenCalled()
-  expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(splitter, 1, nil, player.index, nil)
+  expect(project.actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(splitter, 1, nil, player.index, nil, nil, false)
 })
 
 // tiles

@@ -5,6 +5,7 @@
 import { BaseBlueprintEntity, LuaItemStack } from "factorio:runtime"
 import { updateBasicBlueprintSettings } from "../blueprints/edit-blueprint-settings"
 import { Entity } from "../entity/Entity"
+import { newProjectContent } from "../entity/ProjectContent"
 import { newProjectEntity, ProjectEntity } from "../entity/ProjectEntity"
 import { Project } from "../project/Project"
 import { createProject } from "../project/Project"
@@ -29,7 +30,7 @@ export function convertBookToProjectDataOnly(stack: LuaItemStack): Project {
     }
   }
 
-  const project = createProject(stack.label ?? "", blueprintStacks.length)
+  const content = newProjectContent()
 
   let curStageNum = 0
 
@@ -38,18 +39,12 @@ export function convertBookToProjectDataOnly(stack: LuaItemStack): Project {
     curStageNum++
 
     const entities = blueprintStack.get_blueprint_entities() ?? []
-    // add or update entities
     const thisStageEntities = new LuaSet<ProjectEntity>()
     const entityNumToProjectEntity = new LuaMap<number, ProjectEntity>()
     for (const entity of entities) {
       const thisValue = makeCleanEntity(entity)
       const entityDirection = entity.direction ?? 0
-      const existingEntity = project.content.findCompatibleEntity(
-        entity.name,
-        entity.position,
-        entityDirection,
-        curStageNum,
-      )
+      const existingEntity = content.findCompatibleEntity(entity.name, entity.position, entityDirection, curStageNum)
       let curEntity: ProjectEntity
       if (existingEntity) {
         existingEntity._asMut().applyUpgradeAtStage(curStageNum, thisValue)
@@ -57,14 +52,13 @@ export function convertBookToProjectDataOnly(stack: LuaItemStack): Project {
         curEntity = existingEntity
       } else {
         const newEntity = newProjectEntity(thisValue, entity.position, entityDirection, curStageNum)
-        project.content.addEntity(newEntity)
+        content.addEntity(newEntity)
         curEntity = newEntity
       }
       thisStageEntities.add(curEntity)
       entityNumToProjectEntity.set(entity.entity_number, curEntity)
     }
 
-    // add wires
     for (const { wires } of entities) {
       if (!wires) continue
       for (const wire of wires) {
@@ -72,16 +66,21 @@ export function convertBookToProjectDataOnly(stack: LuaItemStack): Project {
         const fromEntity = entityNumToProjectEntity.get(fromNumber)
         const toEntity = entityNumToProjectEntity.get(toNumber)
         if (fromEntity && toEntity) {
-          project.content.addWireConnection({ fromEntity, toEntity, fromId, toId })
+          content.addWireConnection({ fromEntity, toEntity, fromId, toId })
         }
       }
     }
-    // set lastStage for entities that have disappeared
     for (const entity of unaccountedLastStageEntities) {
       entity._asMut().setLastStageUnchecked(curStageNum - 1)
     }
-    // set stage blueprint settings
-    const stage = project.getStage(curStageNum)!
+    unaccountedLastStageEntities = thisStageEntities
+  }
+
+  const project = createProject(stack.label ?? "", blueprintStacks.length, nil, content)
+
+  for (let stageIdx = 1; stageIdx <= blueprintStacks.length; stageIdx++) {
+    const blueprintStack = blueprintStacks[stageIdx - 1]
+    const stage = project.getStage(stageIdx)!
     if (blueprintStack.label != nil) {
       stage.getSettings().name.set(blueprintStack.label)
     }
@@ -94,7 +93,6 @@ export function convertBookToProjectDataOnly(stack: LuaItemStack): Project {
         stageSettings[`icon${index}`].set(icon.signal)
       }
     }
-    unaccountedLastStageEntities = thisStageEntities
   }
 
   return project

@@ -42,7 +42,7 @@ test("rebuildStage", () => {
     position: pos.add(3, 0),
     direction: direction.west,
   })
-  expect(ctx.projectOps.trySetLastStage(entityPastLastStage, 1)).toEqual(StageMoveResult.Updated)
+  expect(ctx.project.actions.trySetLastStage(entityPastLastStage, 1)).toEqual(StageMoveResult.Updated)
   entityPresent._asMut()._applyDiffAtStage(4, { name: "bulk-inserter" })
   ctx.worldOps.refreshAllEntities(entityPresent)
   ctx.assertEntityCorrect(entityPresent, false)
@@ -128,7 +128,7 @@ describe("stage deletion", () => {
       name: "inserter",
       position: pos.add(3, 0),
     })
-    ctx.projectOps.trySetLastStage(entityWithLastStage, 3)
+    ctx.project.actions.trySetLastStage(entityWithLastStage, 3)
 
     return { entityAtStage, entityAfterStage, entityWithLastStage }
   }

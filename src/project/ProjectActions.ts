@@ -1,4 +1,4 @@
-import { BlueprintInsertPlan, LuaEntity, LuaTrain, nil, PlayerIndex } from "factorio:runtime"
+import { BlueprintEntity, BlueprintInsertPlan, LuaEntity, LuaTrain, nil, PlayerIndex } from "factorio:runtime"
 import { Colors, L_Game, Settings } from "../constants"
 import { Entity, LuaEntityInfo, TrainEntity } from "../entity/Entity"
 import { MutableProjectContent } from "../entity/ProjectContent"
@@ -14,26 +14,21 @@ import {
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "../entity/ProjectEntity"
-import {
-  allowOverlapDifferentDirection,
-  areUpgradeableTypes,
-  getPrototypeInfo,
-} from "../entity/prototype-info"
+import { allowOverlapDifferentDirection, areUpgradeableTypes, getPrototypeInfo } from "../entity/prototype-info"
 import { canBeAnyDirection, forceFlipUnderground, saveEntity } from "../entity/save-load"
 import { findUndergroundPair, undergroundCanReach } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
 import { fromExportStageDiffs, StageInfoExport } from "../import-export/entity"
-import { assertNever, deepCompare, RegisterClass } from "../lib"
+import { assertNever, deepCompare, Mutable, RegisterClass } from "../lib"
 import { Pos, Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { createProjectTile, ProjectTile } from "../tiles/ProjectTile"
-import { ProjectBase, Project } from "./Project"
 import { createIndicator, createNotification } from "./notifications"
+import { Project, ProjectBase } from "./Project"
 import { ProjectSettings } from "./ProjectSettings"
 import { prepareArea } from "./surfaces"
 import { registerUndoAction, UndoAction, UndoHandler } from "./undo"
-import { WorldPresentation, WorldPresenter } from "./WorldPresentation"
-import min = math.min
+import { WorldPresenter } from "./WorldPresentation"
 
 export declare const enum EntityUpdateResult {
   Updated = "updated",
@@ -124,7 +119,6 @@ export const lastStageChangeUndo = UndoHandler(
 
 @RegisterClass("ProjectActions")
 export class ProjectActions {
-  private readonly wp: WorldPresentation
   private readonly blueprintableTiles: ReadonlyLuaSet<string>
 
   constructor(
@@ -133,7 +127,6 @@ export class ProjectActions {
     readonly worldPresenter: WorldPresenter,
     readonly settings: ProjectSettings,
   ) {
-    this.wp = worldPresenter as WorldPresentation
     this.blueprintableTiles = getPrototypeInfo().blueprintableTiles
   }
 
@@ -153,7 +146,7 @@ export class ProjectActions {
     stage: StageNumber,
     byPlayer: PlayerIndex | nil,
   ): UndoAction | nil {
-    this.wp.replaceWorldOrPreviewEntity(projectEntity, stage, luaEntity)
+    this.worldPresenter.replaceWorldOrPreviewEntity(projectEntity, stage, luaEntity)
     if (projectEntity.isSettingsRemnant) {
       this.userRevivedSettingsRemnant(projectEntity, stage, byPlayer)
       return nil
@@ -207,8 +200,6 @@ export class ProjectActions {
   ): ProjectEntity | nil {
     const projectEntity = this.createNewProjectEntity(entity, stage, stagedInfo, items)
     if (!projectEntity) return nil
-    this.wp.replaceWorldOrPreviewEntity(projectEntity, stage, entity)
-    this.content.addEntity(projectEntity)
 
     this.fixNewUndergroundBelt(projectEntity, entity, stage)
 
@@ -216,18 +207,16 @@ export class ProjectActions {
       projectEntity._asMut().isNewRollingStock = true
     }
 
-    this.wp.getWorldUpdates().updateNewWorldEntitiesWithoutWires(projectEntity)
-    const hasDiff = saveWireConnections(
+    this.worldPresenter.replaceWorldOrPreviewEntity(projectEntity, stage, entity)
+    this.content.addEntity(projectEntity)
+
+    saveWireConnections(
       this.content,
       projectEntity,
       stage,
       this.project.lastStageFor(projectEntity),
-      this.wp,
+      this.worldPresenter,
     )
-    if (hasDiff) {
-      this.wp.getWorldUpdates().updateWireConnections(projectEntity)
-    }
-    this.wp.getHighlights().updateAllHighlights(projectEntity)
 
     return projectEntity
   }
@@ -266,7 +255,7 @@ export class ProjectActions {
     if (diffs) {
       projectEntity.setStageDiffsDirectly(fromExportStageDiffs(diffs))
     }
-    this.replaceUnstagedValue(projectEntity, stageInfo)
+    this.replaceUnstagedValueDirect(projectEntity, stageInfo)
     return projectEntity
   }
 
@@ -304,10 +293,8 @@ export class ProjectActions {
 
   deleteEntityOrCreateSettingsRemnant(entity: ProjectEntity): void {
     if (this.shouldMakeSettingsRemnant(entity)) {
-      entity._asMut().isSettingsRemnant = true
-      this.wp.getWorldUpdates().makeSettingsRemnant(entity)
+      this.content.makeEntitySettingsRemnant(entity)
     } else {
-      this.wp.getWorldUpdates().deleteWorldEntities(entity)
       this.content.deleteEntity(entity)
     }
   }
@@ -318,7 +305,7 @@ export class ProjectActions {
     if (!connections) return false
     const stage = entity.firstStage
     for (const [otherEntity] of connections) {
-      if (this.wp.getWorldEntity(otherEntity, stage) == nil) {
+      if (this.worldPresenter.getWorldEntity(otherEntity, stage) == nil) {
         return true
       }
     }
@@ -326,13 +313,11 @@ export class ProjectActions {
   }
 
   forceDeleteEntity(entity: ProjectEntity): void {
-    this.wp.getWorldUpdates().deleteWorldEntities(entity)
     this.content.deleteEntity(entity)
   }
 
   readdDeletedEntity(entity: ProjectEntity): void {
     this.content.addEntity(entity)
-    this.wp.getWorldUpdates().updateWorldEntities(entity, 1)
   }
 
   // === Entity updates ===
@@ -344,6 +329,7 @@ export class ProjectActions {
     byPlayer: PlayerIndex | nil,
     stagedInfo?: StageInfoExport,
     items?: BlueprintInsertPlan[],
+    knownMirror?: boolean,
   ): ProjectEntity | nil {
     if (stagedInfo) {
       return this.handlePasteValue(entity, stage, previousDirection, byPlayer, stagedInfo, items)
@@ -359,7 +345,7 @@ export class ProjectActions {
     )
     if (!projectEntity) return
 
-    const result = this.tryUpdateEntityFromWorld(projectEntity, stage, items)
+    const result = this.tryUpdateEntityFromWorld(projectEntity, stage, items, knownMirror)
     this.notifyIfUpdateError(result, projectEntity, byPlayer)
     return projectEntity
   }
@@ -383,7 +369,7 @@ export class ProjectActions {
       return nil
     }
 
-    this.wp.replaceWorldOrPreviewEntity(compatible, stage, entity)
+    this.worldPresenter.replaceWorldOrPreviewEntity(compatible, stage, entity)
     const result = this.setValueFromStagedInfo(compatible, stagedInfo, items, entity)
     this.notifyIfMoveError(result, compatible, byPlayer)
     return compatible
@@ -408,7 +394,7 @@ export class ProjectActions {
       return nil
     }
 
-    this.wp.replaceWorldOrPreviewEntity(compatible, stage, worldEntity)
+    this.worldPresenter.replaceWorldOrPreviewEntity(compatible, stage, worldEntity)
     return compatible
   }
 
@@ -416,20 +402,21 @@ export class ProjectActions {
     entity: ProjectEntity,
     stage: StageNumber,
     items: BlueprintInsertPlan[] | nil,
+    knownMirror?: boolean,
   ): EntityUpdateResult {
-    const entitySource = this.wp.getWorldEntity(entity, stage)
+    const entitySource = this.worldPresenter.getWorldEntity(entity, stage)
     if (!entitySource) return EntityUpdateResult.NoChange
-    return this.handleUpdate(entity, entitySource, stage, entitySource.direction, nil, true, items)
+    return this.handleUpdate(entity, entitySource, stage, entitySource.direction, nil, true, items, knownMirror)
   }
 
   tryRotateEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult {
-    const entitySource = this.wp.getWorldEntity(entity, stage)
+    const entitySource = this.worldPresenter.getWorldEntity(entity, stage)
     if (!entitySource) return EntityUpdateResult.NoChange
     return this.handleUpdate(entity, entitySource, stage, entitySource.direction, nil, false, nil)
   }
 
   tryUpgradeEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult {
-    const entitySource = this.wp.getWorldEntity(entity, stage)
+    const entitySource = this.worldPresenter.getWorldEntity(entity, stage)
     if (!entitySource) return EntityUpdateResult.NoChange
 
     const [upgradeName, upgradeQuality] = entitySource.get_upgrade_target()
@@ -445,6 +432,7 @@ export class ProjectActions {
     targetUpgrade: NameAndQuality | nil,
     getBpValue: boolean,
     items: BlueprintInsertPlan[] | nil,
+    knownMirror?: boolean,
   ): EntityUpdateResult {
     if (entity.isUndergroundBelt()) {
       return this.handleUndergroundBeltUpdate(
@@ -460,18 +448,20 @@ export class ProjectActions {
     if (rotated) {
       const rotateAllowed = stage == entity.firstStage
       if (rotateAllowed) {
-        entity._asMut().direction = targetDirection
+        this.content.setEntityDirection(entity, targetDirection)
         const entityType = entitySource.type
         if (entityType == "loader" || entityType == "loader-1x1") {
           assume<LoaderProjectEntity>(entity)
-          entity._asMut().setTypeProperty(entitySource.loader_type)
+          this.content.setTypeProperty(entity, entitySource.loader_type)
         } else if (entityType == "inserter") {
           assume<InserterProjectEntity>(entity)
-          const inserterMut = entity._asMut()
-          if (entity.firstValue.pickup_position)
-            inserterMut.setPickupPosition(Pos.minus(entitySource.pickup_position, entitySource.position))
-          if (entity.firstValue.drop_position)
-            inserterMut.setDropPosition(Pos.minus(entitySource.drop_position, entitySource.position))
+          const pickup = entity.firstValue.pickup_position
+            ? Pos.minus(entitySource.pickup_position, entitySource.position)
+            : nil
+          const drop = entity.firstValue.drop_position
+            ? Pos.minus(entitySource.drop_position, entitySource.position)
+            : nil
+          this.content.setInserterPositions(entity, pickup, drop)
         }
       } else {
         this.worldPresenter.refreshEntity(entity, stage)
@@ -479,21 +469,20 @@ export class ProjectActions {
       }
     }
     let hasDiff = false
-    if (getBpValue && this.applyValueFromWorld(stage, entity, entitySource, items)) {
+    if (getBpValue && this.applyValueFromWorld(stage, entity, entitySource, items, knownMirror)) {
       hasDiff = true
     } else if (targetUpgrade) {
       this.checkUpgradeType(entity, targetUpgrade.name)
-      if (entity._asMut().applyUpgradeAtStage(stage, targetUpgrade)) {
+      if (this.content.applyEntityUpgrade(entity, stage, targetUpgrade)) {
         hasDiff = true
       }
     }
     if (rotated || hasDiff) {
-      this.wp.getWorldUpdates().updateWorldEntities(entity, stage)
       return EntityUpdateResult.Updated
     }
 
     if (entity.getUnstagedValue(stage)?.items) {
-      this.wp.getWorldUpdates().updateWorldEntities(entity, stage)
+      this.worldPresenter.refreshEntity(entity, stage)
     }
     return EntityUpdateResult.NoChange
   }
@@ -503,13 +492,21 @@ export class ProjectActions {
     entity: ProjectEntity,
     entitySource: LuaEntity,
     items: BlueprintInsertPlan[] | nil,
+    knownMirror?: boolean,
   ): boolean {
     const [value, unstagedValue] = saveEntity(entitySource, items)
     if (value == nil) return false
+    if (knownMirror != nil) {
+      assume<Mutable<BlueprintEntity>>(value)
+      if (knownMirror) {
+        value.mirror = true
+      } else {
+        delete value.mirror
+      }
+    }
 
-    const mut = entity._asMut()
-    const hasDiff = mut.adjustValueAtStage(stage, value)
-    const hasUnstagedDiff = mut.setUnstagedValue(stage, unstagedValue)
+    const hasDiff = this.content.adjustEntityValue(entity, stage, value)
+    const hasUnstagedDiff = this.content.setEntityUnstagedValue(entity, stage, unstagedValue)
     return hasDiff || hasUnstagedDiff
   }
 
@@ -526,11 +523,8 @@ export class ProjectActions {
     entity2: UndergroundBeltProjectEntity,
     entity2Stage: StageNumber,
   ): void {
-    const wu = this.wp.getWorldUpdates()
-    wu.updateWorldEntities(entity1, entity1Stage, false)
-    wu.updateWorldEntities(entity2, entity2Stage, false)
-    wu.updateAllHighlights(entity1)
-    wu.updateAllHighlights(entity2)
+    this.worldPresenter.refreshEntity(entity1, entity1Stage)
+    this.worldPresenter.refreshEntity(entity2, entity2Stage)
   }
 
   private handleUndergroundFlippedBack(
@@ -541,7 +535,7 @@ export class ProjectActions {
     pair: UndergroundBeltProjectEntity | nil,
   ): EntityUpdateResult {
     if (!pair) {
-      this.wp.getWorldUpdates().updateWorldEntities(entity, stage)
+      this.worldPresenter.refreshEntity(entity, stage)
       return EntityUpdateResult.NoChange
     }
     if (pair.direction == targetDirection) {
@@ -553,10 +547,8 @@ export class ProjectActions {
       forceFlipUnderground(worldEntity)
       return EntityUpdateResult.CannotRotate
     }
-    const pairMut = pair._asMut()
-    pairMut.direction = worldEntity.direction
     const oppositeType = worldEntity.belt_to_ground_type == "input" ? "output" : "input"
-    pairMut.setTypeProperty(oppositeType)
+    this.content.setUndergroundBeltDirectionAndType(pair, worldEntity.direction, oppositeType)
     this.updatePair(entity, entity.firstStage, pair, pair.firstStage)
     return EntityUpdateResult.Updated
   }
@@ -588,15 +580,11 @@ export class ProjectActions {
         return EntityUpdateResult.CannotRotate
       }
 
-      const thisUgMut = thisUg._asMut()
-      thisUgMut.direction = targetDirection
       const oldType = thisUg.firstValue.type
       const newType = oldType == "input" ? "output" : "input"
-      thisUgMut.setTypeProperty(newType)
+      this.content.setUndergroundBeltDirectionAndType(thisUg, targetDirection, newType)
       if (pair) {
-        const pairMut = pair._asMut()
-        pairMut.direction = targetDirection
-        pairMut.setTypeProperty(oldType)
+        this.content.setUndergroundBeltDirectionAndType(pair, targetDirection, oldType)
       }
     }
 
@@ -605,7 +593,7 @@ export class ProjectActions {
     let cannotUpgradeChangedPair = false
     let newPair: UndergroundBeltProjectEntity | nil = nil
     if (upgraded) {
-      thisUg._asMut().applyUpgradeAtStage(applyStage, targetUpgrade)
+      this.content.applyEntityUpgrade(thisUg, applyStage, targetUpgrade)
       newPair = findUndergroundPair(this.content, thisUg, stage, targetUpgrade.name)
       if (pair == nil) {
         if (newPair != nil) {
@@ -616,10 +604,10 @@ export class ProjectActions {
         cannotUpgradeChangedPair = newPair != nil && newPair != pair
       }
       if (cannotUpgradeChangedPair) {
-        thisUg._asMut().applyUpgradeAtStage(stage, oldUpgrade)
+        this.content.applyEntityUpgrade(thisUg, stage, oldUpgrade)
       } else if (pair) {
         if (undergroundCanReach(thisUg, pair, targetUpgrade.name)) {
-          pair._asMut().applyUpgradeAtStage(pairApplyStage, targetUpgrade)
+          this.content.applyEntityUpgrade(pair, pairApplyStage, targetUpgrade)
         } else {
           pair = nil
         }
@@ -630,7 +618,7 @@ export class ProjectActions {
       this.worldPresenter.refreshEntity(thisUg, stage)
       if (pair) this.worldPresenter.refreshEntity(pair, stage)
     } else if (!pair) {
-      this.wp.getWorldUpdates().updateWorldEntities(thisUg, applyStage)
+      this.worldPresenter.refreshEntity(thisUg, applyStage)
     } else {
       this.updatePair(thisUg, applyStage, pair, pairApplyStage)
     }
@@ -647,12 +635,12 @@ export class ProjectActions {
     const pair = findUndergroundPair(this.content, entity, stage)
     const updateResult = this.doUndergroundBeltUpdate(entity, worldEntity, pair, stage, targetDirection, targetUpgrade)
 
-    const newWorldEntity = this.wp.getWorldEntity(entity, stage)
+    const newWorldEntity = this.worldPresenter.getWorldEntity(entity, stage)
     if (newWorldEntity) {
       const worldPair = newWorldEntity.neighbours as LuaEntity | nil
-      if (worldPair && (!pair || this.wp.getWorldEntity(pair, stage) != worldPair)) {
+      if (worldPair && (!pair || this.worldPresenter.getWorldEntity(pair, stage) != worldPair)) {
         const worldPairEntity = this.content.findCompatibleWithLuaEntity(worldPair, nil, stage)
-        if (worldPairEntity) this.wp.getHighlights().updateAllHighlights(worldPairEntity)
+        if (worldPairEntity) this.worldPresenter.refreshEntity(worldPairEntity, stage)
       }
     }
 
@@ -669,27 +657,24 @@ export class ProjectActions {
   ): void {
     const projectEntity = this.getCompatibleAtCurrentStageOrAdd(entity, stage, previousDirection, byPlayer)
     if (projectEntity) {
-      this.handleRotate(entity, projectEntity, stage, byPlayer)
+      this.handleRotate(projectEntity, stage, byPlayer)
     }
   }
 
-  private handleRotate(
-    worldEntity: LuaEntity,
-    projectEntity: ProjectEntity,
-    stage: StageNumber,
-    byPlayer: PlayerIndex | nil,
-  ): void {
+  private handleRotate(projectEntity: ProjectEntity, stage: StageNumber, byPlayer: PlayerIndex | nil): void {
     const result = this.tryRotateEntityFromWorld(projectEntity, stage)
     this.notifyIfUpdateError(result, projectEntity, byPlayer)
 
     if (projectEntity.isUndergroundBelt()) {
-      const worldPair = worldEntity.neighbours as LuaEntity | nil
+      const freshWorldEntity = this.worldPresenter.getWorldEntity(projectEntity, stage)
+      if (!freshWorldEntity) return
+      const worldPair = freshWorldEntity.neighbours as LuaEntity | nil
       if (!worldPair) return
       const pairEntity = this.getCompatibleAtCurrentStageOrAdd(worldPair, stage, nil, byPlayer)
       if (!pairEntity) return
       const expectedPair = findUndergroundPair(this.content, projectEntity, stage)
       if (pairEntity != expectedPair) {
-        this.wp.getHighlights().updateAllHighlights(pairEntity)
+        this.worldPresenter.refreshEntity(pairEntity, stage)
       }
     }
   }
@@ -698,7 +683,7 @@ export class ProjectActions {
     const projectEntity = this.content.findCompatibleWithLuaEntity(entity, nil, stage)
     if (!projectEntity || !projectEntity.isUndergroundBelt()) return
     if (!entity.rotate()) return
-    this.handleRotate(entity, projectEntity, stage, byPlayer)
+    this.handleRotate(projectEntity, stage, byPlayer)
   }
 
   // === Wires ===
@@ -713,10 +698,8 @@ export class ProjectActions {
   }
 
   updateWiresFromWorld(entity: ProjectEntity, stage: StageNumber): WireUpdateResult {
-    const connectionsChanged = saveWireConnections(this.content, entity, stage, stage, this.wp)
+    const connectionsChanged = saveWireConnections(this.content, entity, stage, stage, this.worldPresenter)
     if (!connectionsChanged) return WireUpdateResult.NoChange
-
-    this.wp.getWorldUpdates().updateWorldEntities(entity, entity.firstStage)
     return WireUpdateResult.Updated
   }
 
@@ -744,7 +727,7 @@ export class ProjectActions {
       if (deleteSettingsRemnants) {
         this.forceDeleteEntity(existing)
       }
-    } else if (this.wp.hasErrorAt(existing, stage)) {
+    } else if (this.worldPresenter.hasErrorAt(existing, stage)) {
       this.worldPresenter.refreshAllEntities(existing)
     }
   }
@@ -778,10 +761,7 @@ export class ProjectActions {
     if (entity.isPersistent()) return StageMoveResult.EntityIsPersistent
     const result = this.checkCanSetFirstStage(entity, stage)
     if (result == StageMoveResult.Updated || result == StageMoveResult.NoChange) {
-      const mut = entity._asMut()
-      mut.setFirstStageUnchecked(stage)
-      mut.isSettingsRemnant = nil
-      this.wp.getWorldUpdates().reviveSettingsRemnant(entity)
+      this.content.reviveEntity(entity, stage)
     }
     return result
   }
@@ -789,14 +769,7 @@ export class ProjectActions {
   trySetFirstStage(entity: ProjectEntity, stage: StageNumber): StageMoveResult {
     const result = this.checkCanSetFirstStage(entity, stage)
     if (result == StageMoveResult.Updated) {
-      const oldFirstStage = entity.firstStage
-      const stageToUpdate = min(oldFirstStage, stage)
-      const oldLastStage = entity.lastStage
-      entity._asMut().setFirstStageUnchecked(stage)
-      if (entity.isMovable() && stage < oldFirstStage) {
-        this.wp.getWorldUpdates().updateWorldEntitiesOnLastStageChanged(entity, oldLastStage)
-      }
-      this.wp.getWorldUpdates().updateWorldEntities(entity, stageToUpdate)
+      this.content.setEntityFirstStage(entity, stage)
     }
     return result
   }
@@ -804,9 +777,7 @@ export class ProjectActions {
   trySetLastStage(entity: ProjectEntity, stage: StageNumber | nil): StageMoveResult {
     const result = this.checkCanSetLastStage(entity, stage)
     if (result == StageMoveResult.Updated) {
-      const oldLastStage = entity.lastStage
-      entity._asMut().setLastStageUnchecked(stage)
-      this.wp.getWorldUpdates().updateWorldEntitiesOnLastStageChanged(entity, oldLastStage)
+      this.content.setEntityLastStage(entity, stage)
     }
     return result
   }
@@ -864,28 +835,21 @@ export class ProjectActions {
     if (targetStage != entity.firstStage) {
       const result = this.checkCanSetFirstStage(entity, targetStage)
       if (result != StageMoveResult.Updated) return result
-      entity._asMut().setFirstStageUnchecked(targetStage)
+      this.content.setEntityFirstStage(entity, targetStage)
     }
     const lastStage = info.lastStage
     const oldLastStage = entity.lastStage
     if (lastStage != oldLastStage) {
       const result = this.checkCanSetLastStage(entity, lastStage)
       if (result != StageMoveResult.Updated) return result
-      entity._asMut().setLastStageUnchecked(lastStage)
-
-      if (lastStage != nil && (oldLastStage == nil || lastStage < oldLastStage))
-        this.wp.getWorldUpdates().updateWorldEntitiesOnLastStageChanged(entity, oldLastStage)
+      this.content.setEntityLastStage(entity, lastStage)
     }
 
     const oldStageDiffs = entity.stageDiffs
 
-    const entityMut = entity._asMut()
-    entityMut.setFirstValueDirectly(firstValue)
     const stageDiffs = info.stageDiffs ? fromExportStageDiffs(info.stageDiffs) : nil
-    entityMut.setStageDiffsDirectly(stageDiffs)
-    this.replaceUnstagedValue(entity, info)
-
-    this.wp.getWorldUpdates().updateWorldEntities(entity, 1)
+    this.content.setEntityValue(entity, firstValue, stageDiffs)
+    this.replaceUnstagedValueViaContent(entity, info)
 
     if (entity.isUndergroundBelt()) {
       this.handleUndergroundBeltValueSet(entity, oldStageDiffs, stageDiffs)
@@ -893,7 +857,7 @@ export class ProjectActions {
     return StageMoveResult.Updated
   }
 
-  private replaceUnstagedValue(entity: ProjectEntity<Entity>, info: StageInfoExport<Entity>): void {
+  private replaceUnstagedValueDirect(entity: ProjectEntity<Entity>, info: StageInfoExport<Entity>): void {
     const unstagedValues = info.unstagedValue
     if (unstagedValues != nil) {
       const entityMut = entity._asMut()
@@ -902,6 +866,18 @@ export class ProjectActions {
         const stageNumber = tonumber(stage)
         if (stageNumber == nil) continue
         entityMut.setUnstagedValue(stageNumber, value)
+      }
+    }
+  }
+
+  private replaceUnstagedValueViaContent(entity: ProjectEntity<Entity>, info: StageInfoExport<Entity>): void {
+    const unstagedValues = info.unstagedValue
+    if (unstagedValues != nil) {
+      this.content.clearEntityUnstagedValues(entity)
+      for (const [stage, value] of pairs(unstagedValues)) {
+        const stageNumber = tonumber(stage)
+        if (stageNumber == nil) continue
+        this.content.setEntityUnstagedValue(entity, stageNumber, value)
       }
     }
   }
@@ -924,47 +900,33 @@ export class ProjectActions {
       if (pair) ugPairs.add(pair)
     }
     for (const pair of ugPairs) {
-      this.wp.getHighlights().updateAllHighlights(pair)
+      this.worldPresenter.refreshEntity(pair, pair.firstStage)
     }
   }
 
   // === Props ===
 
   resetProp<T extends Entity>(entity: ProjectEntity<T>, stage: StageNumber, prop: keyof T): boolean {
-    const moved = entity._asMut().resetProp(stage, prop)
-    if (moved) this.wp.getWorldUpdates().updateWorldEntities(entity, stage)
-    return moved
+    return this.content.resetEntityProp(entity, stage, prop)
   }
 
   movePropDown<T extends Entity>(entity: ProjectEntity<T>, stage: StageNumber, prop: keyof T): boolean {
-    const movedStage = entity._asMut().movePropDown(stage, prop)
-    if (movedStage) {
-      this.wp.getWorldUpdates().updateWorldEntities(entity, movedStage)
-      return true
-    }
-    return false
+    return this.content.moveEntityPropDown(entity, stage, prop) != nil
   }
 
   resetAllProps(entity: ProjectEntity, stage: StageNumber): boolean {
-    const moved = entity._asMut().resetValue(stage)
-    if (moved) this.wp.getWorldUpdates().updateWorldEntities(entity, stage)
-    return moved
+    return this.content.resetEntityValue(entity, stage)
   }
 
   moveAllPropsDown(entity: ProjectEntity, stage: StageNumber): boolean {
-    const movedStage = entity._asMut().moveValueDown(stage)
-    if (movedStage) {
-      this.wp.getWorldUpdates().updateWorldEntities(entity, movedStage)
-      return true
-    }
-    return false
+    return this.content.moveEntityValueDown(entity, stage) != nil
   }
 
   // === Vehicles ===
 
   resetVehicleLocation(entity: MovableProjectEntity): void {
     const stage = entity.firstStage
-    const luaEntity = this.wp.getWorldEntity(entity, stage)
+    const luaEntity = this.worldPresenter.getWorldEntity(entity, stage)
     if (!luaEntity) {
       this.worldPresenter.refreshEntity(entity, stage)
       return
@@ -973,7 +935,7 @@ export class ProjectActions {
     const train = luaEntity.train
     if (train) {
       const projectEntities = train.carriages.map((e) => this.content.findCompatibleWithLuaEntity(e, nil, stage)!)
-      for (const entity of projectEntities) this.wp.destroyAllWorldOrPreviewEntities(entity)
+      for (const entity of projectEntities) this.worldPresenter.destroyAllWorldOrPreviewEntities(entity)
       for (const entity of projectEntities) this.worldPresenter.rebuildEntity(entity, stage)
     } else {
       this.worldPresenter.rebuildEntity(entity, stage)
@@ -982,7 +944,7 @@ export class ProjectActions {
 
   setVehicleLocationHere(entity: MovableProjectEntity): void {
     const stage = entity.firstStage
-    const luaEntity = this.wp.getWorldEntity(entity, stage)
+    const luaEntity = this.worldPresenter.getWorldEntity(entity, stage)
     if (!luaEntity) return
 
     const train = luaEntity.train
@@ -1002,7 +964,7 @@ export class ProjectActions {
       if (projectEntity) {
         this.content.changeEntityPosition(projectEntity, luaEntity.position)
         assume<ProjectEntity<TrainEntity>>(projectEntity)
-        projectEntity._asMut().setPropAtStage(projectEntity.firstStage, "orientation", luaEntity.orientation)
+        this.content.setEntityProp(projectEntity, projectEntity.firstStage, "orientation", luaEntity.orientation)
         this.worldPresenter.rebuildEntity(projectEntity, stage)
       } else {
         this.addNewEntity(luaEntity, stage)
@@ -1078,7 +1040,7 @@ export class ProjectActions {
     }
 
     for (const [position, tile] of tilesToUpdateArray) {
-      this.wp.getWorldUpdates().updateTilesInRange(position, tile.getFirstStage(), tile.getLastStage())
+      this.worldPresenter.updateTiles(position, tile.getFirstStage())
     }
   }
 
@@ -1156,7 +1118,7 @@ export class ProjectActions {
     byPlayer: PlayerIndex,
   ): UndoAction | nil {
     if (fromStage == toStage) return
-    const projectEntity = this.content.findEntityExact(entity, entity.position, fromStage, this.wp)
+    const projectEntity = this.content.findEntityExact(entity, entity.position, fromStage, this.worldPresenter)
     if (
       !projectEntity ||
       projectEntity.isSettingsRemnant ||
@@ -1182,7 +1144,7 @@ export class ProjectActions {
   rebuildEntity(worldEntity: LuaEntity, stageNumber: StageNumber): void {
     const projectEntity = this.getCompatibleAtCurrentStageOrAdd(worldEntity, stageNumber, nil, nil)
     if (projectEntity) {
-      this.wp.replaceWorldOrPreviewEntity(projectEntity, stageNumber, worldEntity)
+      this.worldPresenter.replaceWorldOrPreviewEntity(projectEntity, stageNumber, worldEntity)
       this.worldPresenter.rebuildEntity(projectEntity, stageNumber)
     }
   }
