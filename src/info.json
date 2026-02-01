@@ -1,6 +1,6 @@
 {
   "name": "bp100",
-  "version": "2.13.1",
+  "version": "2.13.2",
   "title": "Staged Blueprint Planning",
   "description": "The ultimate mod for designing staged blueprints.",
   "homepage": "https://github.com/GlassBricks/StagedBlueprintPlanning/",
@@ -22,7 +22,7 @@
       "prepublish": "npm run check && npm run subst-current-version",
       "postpackage": "npm run postpackage"
     },
-    "git_publish_branch": "main",
+    "git_publish_branch": "release",
     "ignore": [
       "**/test/**/*",
       "**/*.xcf",

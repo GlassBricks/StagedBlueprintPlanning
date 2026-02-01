@@ -173,6 +173,28 @@ test("excludes entities from future blueprints when excludeFromFutureBlueprints 
   expect(entities2[0].position).toEqual(e1.position)
 })
 
+test("includes entity with only unstaged value when stageLimit is active", () => {
+  const [stage1, , stage3] = project.getAllStages()
+
+  const e1 = createEntity(stage1, [0.5, 0.5], "fast-inserter")
+  const projectEntity = project.content.findCompatibleWithLuaEntity(e1, nil, 1)!
+  projectEntity.setUnstagedValue(3, {
+    items: [simpleInsertPlan(defines.inventory.crafter_input, "iron-ore", 0, 10)],
+  })
+
+  const stack = player.cursor_stack!
+  stage3.blueprintOverrideSettings.stageLimit.set(1)
+  stage3.blueprintOverrideSettings.snapToGrid.set(Pos(2, 2))
+  stage3.blueprintOverrideSettings.positionOffset.set(Pos(0, 0))
+
+  const ret = takeStageBlueprint(stage3, stack)
+  expect(ret).toBe(true)
+
+  const entities = stack.get_blueprint_entities()!
+  expect(entities).toHaveLength(1)
+  expect(entities[0].name).toBe("fast-inserter")
+})
+
 test("creates blueprint book with all stages", () => {
   for (const i of $range(1, project.settings.stageCount())) {
     createEntity(project.getStage(i)!, [i + 0.5, i + 0.5])

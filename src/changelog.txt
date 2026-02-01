@@ -1,9 +1,14 @@
 ---------------------------------------------------------------------------------------------------
-Version: 2.13.1
+Version: 2.13.2
 Date: ????
   Bugfixes:
     - Fixed that "Exclude from future blueprints" was not highlighted when using a per-stage override.
   Changes:
+---------------------------------------------------------------------------------------------------
+Version: 2.13.1
+Date: 2026-02-01
+  Bugfixes:
+    - Fixed that entities with only item request changes at a stage were excluded from blueprints when using stage limit or "exclude from future blueprints".
 ---------------------------------------------------------------------------------------------------
 Version: 2.13.0
 Date: 2026-01-26
