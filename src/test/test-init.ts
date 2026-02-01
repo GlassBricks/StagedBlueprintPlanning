@@ -6,7 +6,6 @@
 import * as mod_gui from "mod-gui"
 import { Settings } from "../constants"
 import { Events } from "../lib"
-import { Migrations } from "../lib/migration"
 import { debugPrint, getLastDebugPrintCall } from "../lib/test/misc"
 import { Project } from "../project/Project"
 import { deleteAllFreeSurfaces } from "../project/surfaces"
@@ -14,7 +13,6 @@ import { UndoHandler } from "../project/undo"
 import { createProject } from "../project/Project"
 import { getProjectEntityOfEntity } from "../ui/entity-util"
 import { teleportToProject } from "../ui/player-current-stage"
-import { refreshCurrentProject } from "../ui/project-settings"
 
 // better source map traceback
 declare const ____lualib: {
@@ -45,10 +43,6 @@ interface SourceMap {
 
 declare const storage: {
   printEvents?: boolean
-  rerunMode?: "test" | "reloadOnly" | "off"
-
-  reloadPending?: boolean
-  reloadAction?: "tests" | "migrate"
 }
 
 Events.on_player_created((p) => {
@@ -84,7 +78,6 @@ if ("factorio-test" in script.active_mods) {
       if (surface.index != 1) game.delete_surface(surface)
     }
     Events.raiseFakeEventNamed("on_init", nil!)
-    storage.rerunMode = oldGlobal.rerunMode
     storage.printEvents = oldGlobal.printEvents
   }
 
@@ -142,74 +135,6 @@ if ("factorio-test" in script.active_mods) {
     tagBlacklist.push("after_mod_reload")
   }
 }
-
-// auto test rerunning
-
-function isTestsRunning() {
-  if (remote.interfaces["factorio-test"]?.isRunning) {
-    return remote.call("factorio-test", "isRunning") || remote.call("factorio-test", "getTestStage") == "NotRun"
-  }
-  return true
-}
-
-Events.on_udp_packet_received((event) => {
-  if (event.payload != "rerun") return
-  if (storage.rerunMode == "off") {
-    game.print("Rerun request ignored")
-  }
-
-  if (storage.rerunMode == "test" || storage.rerunMode == nil) {
-    storage.reloadPending = true
-    storage.reloadAction = "tests"
-  } else if (storage.rerunMode == "reloadOnly") {
-    storage.reloadPending = true
-    storage.reloadAction = "migrate"
-  }
-})
-
-helpers.recv_udp()
-Events.on_tick(() => {
-  helpers.recv_udp()
-  if (isTestsRunning()) return
-  if (storage.reloadPending) {
-    storage.reloadPending = nil
-    game.reload_mods()
-    return
-  }
-  switch (storage.reloadAction) {
-    case "tests": {
-      if (remote.interfaces["factorio-test"]?.runTests) {
-        storage.reloadAction = nil
-        remote.call("factorio-test", "runTests")
-      }
-      break
-    }
-    case "migrate": {
-      game.print("Reloaded")
-      Migrations.doMigrations(script.active_mods[script.mod_name]!)
-      refreshCurrentProject()
-      storage.reloadAction = nil
-      break
-    }
-  }
-})
-
-commands.add_command("rr", "", (e) => {
-  const arg = e.parameter
-  if (arg == "test") {
-    storage.rerunMode = "test"
-  } else if (arg == "only") {
-    storage.rerunMode = "reloadOnly"
-  } else if (arg == "off") {
-    storage.rerunMode = "off"
-  } else if (arg == nil) {
-    game.print("Reloading now")
-    game.reload_mods()
-  } else {
-    game.print("Expected 'test', 'only', 'off' or nothing")
-  }
-  game.print("Reload mode mode: " + storage.rerunMode)
-})
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function setupManualTests(_project: Project) {

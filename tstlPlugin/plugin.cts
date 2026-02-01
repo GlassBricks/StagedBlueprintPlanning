@@ -21,7 +21,6 @@ import {
   Visitors,
 } from "typescript-to-lua"
 import { createSerialDiagnosticFactory } from "typescript-to-lua/dist/utils"
-import * as dgram from "dgram"
 
 const invalidAccessSplitCall = createSerialDiagnosticFactory((node: ts.Node) => ({
   file: ts.getOriginalNode(node).getSourceFile(),
@@ -93,24 +92,8 @@ export default function plugin(options: { hasTests: boolean }): Plugin {
     }
   }
 
-  const client = dgram.createSocket("udp4")
-  const afterEmit: Plugin["afterEmit"] = function (_, __, ___, files) {
-    if (!options.hasTests || files.length == 0) return
-    try {
-      const message = Buffer.from("rerun")
-      client.send(message, 14434, "localhost", (err) => {
-        if (err) {
-          console.error("Failed to send UDP packet:", err)
-        }
-      })
-    } catch (e) {
-      console.warn("Failed to send UDP packet:", e)
-    }
-  }
-
   return {
     visitors,
     beforeEmit,
-    afterEmit,
   }
 }
