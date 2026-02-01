@@ -110,8 +110,6 @@ export const lastStageChangeUndo = UndoHandler(
 
 @RegisterClass("ProjectActions")
 export class ProjectActions {
-  private readonly blueprintableTiles: ReadonlyLuaSet<string>
-
   valid = true
 
   constructor(
@@ -119,9 +117,7 @@ export class ProjectActions {
     private readonly worldPresenter: WorldPresenter,
     private readonly settings: ProjectSettings,
     private readonly surfaces: SurfaceProvider,
-  ) {
-    this.blueprintableTiles = getPrototypeInfo().blueprintableTiles
-  }
+  ) {}
 
   // === Entity creation ===
 
@@ -1053,7 +1049,7 @@ export class ProjectActions {
   // === Tile events ===
 
   onTileBuilt(position: Position, name: string, stage: StageNumber): void {
-    if (!this.blueprintableTiles.has(name)) {
+    if (!getPrototypeInfo().blueprintableTiles.has(name)) {
       this.setTileAtStage(position, stage, nil)
       return
     }
