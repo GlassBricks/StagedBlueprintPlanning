@@ -46,6 +46,7 @@ Since Typescript code compiles to Lua:
 - Use `nil` instead of `undefined`, avoid `null`
 
 Storage:
+
 - The `storage` table is persistent/serialized
 - Mod needs to behave the same when reloaded at any point
 - CANNOT serialize functions -- use instead either classes and methods with @RegisterClass, or the FuncRef system (see lib)
@@ -64,14 +65,17 @@ src/
 ├── project/            # Main backend: project state & logic
 ├── entity/             # Entity handling
 │   ├── ProjectEntity.ts      # Individual entity data
-│   └── ProjectContent.ts     # Project's entities collection
-├── blueprints/         # Blueprint import/export
+│   └── ProjectContent.ts     # Project's entities collection (observable)
+├── blueprints/         # Blueprint-specific logic
+├── import-export/      # Blueprint import/export
+├── tiles/              # Tile handling
 ├── ui/                 # Frontend UI components
+│   └── project-settings/  # Project settings tabs
 ├── lib/                # Core libraries
 │   ├── event/          # Custom event system (Event, Property, GlobalEvent)
 │   ├── factoriojsx/    # Custom JSX framework for Factorio GUI
 │   ├── geometry/       # Geometry utilities
-│   ├── references.ts   # Function storage system (uses custom TSTL plugin)
+│   ├── references.ts   # Function storage system 
 │   └── migration.ts    # Migration framework
 ├── utils/              # General utilities
 ├── test/               # Tests (mirrors src/ structure)
@@ -80,19 +84,22 @@ src/
 ```
 
 - `src/entity/ProjectEntity.ts` - Individual entity data structure
-- `src/entity/ProjectContent.ts` - Project entities collection
-- `src/project/UserProject.ts` - Full project & stage definitions
-- `src/ui/ProjectSettings.tsx` - Main UI component
+- `src/entity/ProjectContent.ts` - Project entities collection (observable via ContentObserver)
+- `src/project/Project.ts` - Main project interface and implementation
+- `src/project/ProjectActions.ts` - All player action handling
+- `src/project/WorldPresentation.ts` - World state sync (implements ContentObserver)
+- `src/project/entity-highlights.ts` - Entity highlight visualization
 - `src/lib/references.ts` - Global function storage system
 
 #### Main Event Pipeline
 
 in `src/project/`:
 
-1. `event-handlers.ts` - Parses Factorio events into custom events
-2. `user-actions.ts` - Handles player interactions, decides actions
-3. `project-updates.ts` - Updates ProjectContent
-4. `world-updates.ts`, `entity-highlights.ts` - Syncs world state with project
+1. `event-handlers.ts` - Parses Factorio events, dispatches to actions
+2. `ProjectActions` - Handles player interactions and state changes
+3. `ProjectContent` (observable) - State changes notify observer
+4. `WorldPresentation` (ContentObserver) - Syncs world state with project
+5. `entity-highlights.ts` - Manages entity visual highlights
 
 ### Custom Libraries
 
@@ -120,26 +127,13 @@ See [docs/Migrations.md](docs/Migrations.md) for full reference and patterns.
 - Framework: factorio-test (Jest-like), assertions via tstl-expect
 - Lifecycle hooks: `before_each`, `after_each`, `before_all`, `after_all`
 
-**Test Naming Standards:**
-
-- Test names: Lowercase descriptive sentences starting with action verbs
-  - `test("returns nil when stage is lower than first stage", ...)`
-  - `test("should throw error when moving past last stage", ...)`
-- Describe blocks: Use method names with `()` or feature names
-  - `describe("adjustValueAtStage()", ...)`
-  - `describe("wire connection lifecycle", ...)`
-- Parameterized tests: Use `test.each()` with descriptive format strings. jest-like var substitutions supported
-  - `test.each([...])("%$: %s + %s = %s", (a, b, expected) => ...)`
-
 **Test Structure:**
 
-- Use specific matchers: `toBe`, `toEqual`, `toBeNil`, `toHaveLength`, `toError()`
 - Extract complex setup to helper functions or factory files
 - One logical assertion per test (multiple expects OK if testing same concept)
 
-For Factorio API documentation, prefer inspecting `node_modules/typed-factorio/**/*.d.ts` instead of online documentation.
-
 ## Notes
 
+- For Factorio API documentation, prefer inspecting `node_modules/typed-factorio/**/*.d.ts` instead of online documentation.
 - with `noEmitOnError`, TSTL warnings will cause no emit, possibly failing tests
 - For user-visible changes, also update src/changelog.txt
