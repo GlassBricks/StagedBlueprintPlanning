@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.13.1
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fixed that entities with only item request changes at a stage were excluded from blueprints when using stage limit or "exclude from future blueprints".
 ---------------------------------------------------------------------------------------------------
 Version: 2.13.0
 Date: 2026-01-26

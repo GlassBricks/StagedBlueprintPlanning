@@ -105,6 +105,13 @@ class ComputeChangedEntitiesStep implements BlueprintStep {
           changedEntities.get(stage)!.add(entity)
         }
       }
+
+      const unstagedValues = entity.getPropertyAllStages("unstagedValue")
+      if (unstagedValues) {
+        for (const [stage] of pairs(unstagedValues)) {
+          changedEntities.get(stage)!.add(entity)
+        }
+      }
     }
 
     this.projectPlan.changedEntities!.set(changedEntities)
