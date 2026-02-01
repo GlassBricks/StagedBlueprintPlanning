@@ -1,12 +1,4 @@
-import {
-  HighlightBoxEntity,
-  LocalisedString,
-  LuaEntity,
-  LuaRenderObject,
-  MapPosition,
-  nil,
-  TileWrite,
-} from "factorio:runtime"
+import { LocalisedString, LuaEntity, MapPosition, nil, TileWrite } from "factorio:runtime"
 import { Prototypes } from "../constants"
 import { UnstagedEntityProps } from "../entity/Entity"
 import { ContentObserver, MutableProjectContent } from "../entity/ProjectContent"
@@ -34,7 +26,7 @@ import { LoopTask, submitTask } from "../lib/task"
 import { L_GuiTasks } from "../locale"
 import { ProjectTile } from "../tiles/ProjectTile"
 import { withTileEventsDisabled } from "../tiles/tile-events"
-import { EntityHighlights, SurfaceProvider } from "./entity-highlights"
+import { EntityHighlights, HighlightTypes, SurfaceProvider } from "./entity-highlights"
 import { EntityStorage } from "./EntityStorage"
 import { ProjectSettings } from "./ProjectSettings"
 
@@ -67,16 +59,8 @@ export interface TileCollision {
   actualValue: string
 }
 
-export interface WorldEntityTypes {
+export interface WorldEntityTypes extends HighlightTypes {
   worldOrPreviewEntity: LuaEntity
-  errorOutline: HighlightBoxEntity
-  errorElsewhereIndicator: LuaRenderObject
-  settingsRemnantHighlight: HighlightBoxEntity
-  configChangedHighlight: HighlightBoxEntity
-  configChangedLaterHighlight: LuaRenderObject
-  stageDeleteHighlight: LuaRenderObject
-  itemRequestHighlight: LuaRenderObject
-  itemRequestHighlightOverlay: LuaRenderObject
 }
 
 const raise_destroy = script.raise_script_destroy

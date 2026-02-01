@@ -9,7 +9,7 @@ import { Prototypes } from "../../constants"
 import { Entity } from "../../entity/Entity"
 import { newProjectEntity, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { Pos } from "../../lib/geometry"
-import { EntityHighlights, HighlightEntities } from "../../project/entity-highlights"
+import { EntityHighlights, HighlightTypes } from "../../project/entity-highlights"
 import { simpleInsertPlan } from "../entity/entity-util"
 import { moduleMock } from "../module-mock"
 import { simpleMock } from "../simple-mock"
@@ -305,7 +305,7 @@ test("deleteAllHighlights", () => {
   entityHighlights.updateAllHighlights(entity)
   entityHighlights.deleteAllHighlights(entity)
   for (let i = 1; i <= 5; i++) {
-    for (const type of keys<HighlightEntities>()) {
+    for (const type of keys<HighlightTypes>()) {
       expect(es().get(entity, type, i)).toBeNil()
     }
   }

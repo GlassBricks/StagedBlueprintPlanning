@@ -29,17 +29,18 @@ export interface SurfaceProvider {
   getSurface(stage: StageNumber): LuaSurface | nil
 }
 
-export type HighlightEntity = HighlightBoxEntity | LuaRenderObject
-export interface HighlightEntities {
-  errorOutline?: HighlightBoxEntity
-  errorElsewhereIndicator?: LuaRenderObject
-  settingsRemnantHighlight?: HighlightBoxEntity
-  configChangedHighlight?: HighlightBoxEntity
-  configChangedLaterHighlight?: LuaRenderObject
-  stageDeleteHighlight?: LuaRenderObject
-  itemRequestHighlight?: LuaRenderObject
-  itemRequestHighlightOverlay?: LuaRenderObject
+export interface HighlightTypes {
+  errorOutline: HighlightBoxEntity
+  errorElsewhereIndicator: LuaRenderObject
+  settingsRemnantHighlight: HighlightBoxEntity
+  configChangedHighlight: HighlightBoxEntity
+  configChangedLaterHighlight: LuaRenderObject
+  stageDeleteHighlight: LuaRenderObject
+  itemRequestHighlight: LuaRenderObject
+  itemRequestHighlightOverlay: LuaRenderObject
 }
+
+type HighlightEntity = HighlightBoxEntity | LuaRenderObject
 
 interface HighlightConfig {
   readonly type: "highlight"
@@ -68,7 +69,7 @@ export const enum HighlightConstants {
   ItemRequest = "entity/item-request-proxy",
 }
 const highlightConfigs: {
-  [P in keyof HighlightEntities]-?: HighlightConfig | SpriteConfig
+  [P in keyof HighlightTypes]-?: HighlightConfig | SpriteConfig
 } = {
   errorOutline: {
     type: "highlight",
@@ -146,39 +147,39 @@ export class EntityHighlights {
     return entity.lastStageWith(this.stageCount)
   }
 
-  private getExtraEntity<T extends keyof HighlightEntities>(
+  private getExtraEntity<T extends keyof HighlightTypes>(
     entity: ProjectEntity,
     type: T,
     stage: StageNumber,
-  ): HighlightEntities[T] | nil {
-    const value = this.entityStorage.get(entity, type, stage) as HighlightEntities[T] | nil
+  ): HighlightTypes[T] | nil {
+    const value = this.entityStorage.get(entity, type, stage) as HighlightTypes[T] | nil
     if (value && value.valid) return value
     if (value) this.entityStorage.delete(entity, type, stage)
     return nil
   }
 
-  private replaceExtraEntity<T extends keyof HighlightEntities>(
+  private replaceExtraEntity<T extends keyof HighlightTypes>(
     entity: ProjectEntity,
     type: T,
     stage: StageNumber,
-    value: HighlightEntities[T] | nil,
+    value: HighlightTypes[T] | nil,
   ): void {
     if (value == nil) {
       this.destroyExtraEntity(entity, type, stage)
       return
     }
-    const existing = this.entityStorage.get(entity, type, stage) as HighlightEntities[T] | nil
+    const existing = this.entityStorage.get(entity, type, stage) as HighlightTypes[T] | nil
     if (existing && existing.valid && existing != value) existing.destroy()
     this.entityStorage.set(entity, type, stage, value as WorldEntityTypes[T & keyof WorldEntityTypes])
   }
 
-  private destroyExtraEntity(entity: ProjectEntity, type: keyof HighlightEntities, stage: StageNumber): void {
+  private destroyExtraEntity(entity: ProjectEntity, type: keyof HighlightTypes, stage: StageNumber): void {
     const existing = this.entityStorage.get(entity, type, stage) as HighlightEntity | nil
     if (existing && existing.valid) existing.destroy()
     this.entityStorage.delete(entity, type, stage)
   }
 
-  private destroyAllExtraEntities(entity: ProjectEntity, type: keyof HighlightEntities): void {
+  private destroyAllExtraEntities(entity: ProjectEntity, type: keyof HighlightTypes): void {
     for (const [, value] of this.entityStorage.iterateType(entity, type)) {
       const highlight = value as unknown as HighlightEntity
       if (highlight && highlight.valid) highlight.destroy()
@@ -186,13 +187,13 @@ export class EntityHighlights {
     this.entityStorage.deleteAllOfType(entity, type)
   }
 
-  private createHighlight<T extends keyof HighlightEntities>(
+  private createHighlight<T extends keyof HighlightTypes>(
     entity: ProjectEntity,
     stage: StageNumber,
     surface: LuaSurface,
     type: T,
     spriteNameOverride?: string,
-  ): HighlightEntities[T] {
+  ): HighlightTypes[T] {
     const config = highlightConfigs[type]
     const existing = this.getExtraEntity(entity, type, stage)
     const entityTarget = this.worldEntities.getWorldOrPreviewEntity(entity, stage)
@@ -239,22 +240,22 @@ export class EntityHighlights {
       assertNever(config)
     }
 
-    this.replaceExtraEntity(entity, type, stage, result as HighlightEntities[T])
-    return result as HighlightEntities[T]
+    this.replaceExtraEntity(entity, type, stage, result as HighlightTypes[T])
+    return result as HighlightTypes[T]
   }
 
-  private removeHighlight(entity: ProjectEntity, stageNumber: StageNumber, type: keyof HighlightEntities): void {
+  private removeHighlight(entity: ProjectEntity, stageNumber: StageNumber, type: keyof HighlightTypes): void {
     this.destroyExtraEntity(entity, type, stageNumber)
   }
 
-  private removeHighlightFromAllStages(entity: ProjectEntity, type: keyof HighlightEntities): void {
+  private removeHighlightFromAllStages(entity: ProjectEntity, type: keyof HighlightTypes): void {
     this.destroyAllExtraEntities(entity, type)
   }
 
   private updateHighlight(
     entity: ProjectEntity,
     stage: StageNumber,
-    type: keyof HighlightEntities,
+    type: keyof HighlightTypes,
     value: boolean | nil,
   ): HighlightEntity | nil {
     if (value) return this.createHighlight(entity, stage, this.surfaces.getSurface(stage)!, type)
@@ -373,12 +374,12 @@ export class EntityHighlights {
   }
 
   deleteAllHighlights(entity: ProjectEntity): void {
-    for (const type of keys<HighlightEntities>()) this.destroyAllExtraEntities(entity, type)
+    for (const type of keys<HighlightTypes>()) this.destroyAllExtraEntities(entity, type)
   }
 
   makeSettingsRemnantHighlights(entity: ProjectEntity): void {
     if (!entity.isSettingsRemnant) return
-    for (const type of keys<HighlightEntities>()) this.destroyAllExtraEntities(entity, type)
+    for (const type of keys<HighlightTypes>()) this.destroyAllExtraEntities(entity, type)
     for (const stage of $range(1, this.lastStageFor(entity))) {
       this.updateHighlight(entity, stage, "settingsRemnantHighlight", true)
     }
