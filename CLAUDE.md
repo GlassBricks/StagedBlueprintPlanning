@@ -67,7 +67,7 @@ src/
 │   ├── ProjectEntity.ts      # Individual entity data
 │   └── ProjectContent.ts     # Project's entities collection (observable)
 ├── blueprints/         # Blueprint-specific logic
-├── import-export/      # Blueprint import/export
+├── import-export/      # Import/export to string
 ├── tiles/              # Tile handling
 ├── ui/                 # Frontend UI components
 │   └── project-settings/  # Project settings tabs
