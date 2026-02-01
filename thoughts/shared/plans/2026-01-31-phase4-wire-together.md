@@ -60,8 +60,8 @@ Still in place:
 
 Three sub-phases, each compilable and tested:
 1. **4a**: Create `ProjectActions` class that delegates to existing `ProjectUpdates` + `UserActions` (adapter)
-2. **4b**: Wire `WorldPresentation` as `ContentObserver`, migrate `ProjectActions` internals from imperative world sync to observer-based content mutations
-3. **4c**: Delete old code, remove `LazyLoadClass` wrappers
+2. **4b**: Implement `ContentObserver` on `WorldPresentation`, consolidate `project-updates.ts` + `user-actions.ts` logic into `ProjectActions` class
+3. **4c**: Wire observer, migrate to reactive content mutations, update import flows, delete old code
 
 ---
 
@@ -238,15 +238,27 @@ Remove `ProjectUpdates` re-export from `Project.ts` and any barrel exports.
 
 ---
 
-## Phase 4b: Wire ContentObserver + Migrate to Content Mutations
+## Phase 4b: Consolidate Logic into ProjectActions
 
 ### Overview
 
-Wire `WorldPresentation` as `ContentObserver`, then migrate `ProjectActions` internals from imperative `WorldUpdates` calls to `MutableProjectContent` mutation methods (which trigger observer notifications). This is the architectural switch from imperative to reactive world sync.
+Implement `ContentObserver` on `WorldPresentation` (not yet wired), then consolidate all logic from `project-updates.ts` and `user-actions.ts` into the `ProjectActions` class. The observer wiring and reactive migration are deferred to 4c (see deviation note below).
+
+#### Deviation: Observer wiring deferred to 4c
+
+The original plan assumed observer notifications would fire as no-ops after existing imperative calls. In practice, `ContentObserver` notifications fire *during* content mutations (e.g., `content.addEntity()` calls `observer.onEntityAdded()` before returning). This means:
+- If the observer is wired while imperative WorldUpdates calls still exist, both the observer and the imperative code process the same entity, causing conflicts (duplicate world entity creation, crashes on fake entity names in tests, etc.)
+- Observer wiring, `_asMut()` removal, and import flow changes must happen atomically — after old imperative code is deleted
+
+The following are deferred to Phase 4c:
+- `content.setObserver(worldPresentation)` in Project constructor
+- Replacing `entity._asMut()` calls with `MutableProjectContent` mutation methods
+- Import flows constructing content before project (4b.4)
+- Removing `Project.doDiscard` (4b.5)
 
 ### Sub-step 4b.1: Implement ContentObserver on WorldPresentation
 
-`WorldPresentation` implements `ContentObserver` by delegating to its internal `WorldUpdates` + `EntityHighlights`. These are internal implementation details — `ProjectActions` never sees them.
+`WorldPresentation` implements `ContentObserver` by delegating to its internal `WorldUpdates` + `EntityHighlights`. These are internal implementation details — `ProjectActions` never sees them. Observer is NOT wired in this step.
 
 ```typescript
 class WorldPresentation implements ContentObserver, WorldPresenter {
@@ -324,40 +336,24 @@ class WorldPresentation implements ContentObserver, WorldPresenter {
 
 Note: `refreshEntity` combines `refreshWorldEntityAtStage` + `updateAllHighlights` into one call, so `ProjectActions` never needs to think about highlights. Every place in `user-actions.ts` that previously called `updateAllHighlights` (e.g., for underground belt pair error state refresh at line 428) now calls `worldPresenter.refreshEntity` instead.
 
-#### Wire observer in Project constructor
+#### Wire observer in Project constructor — DEFERRED TO 4c
 
-```typescript
-constructor(id, name, numStages, surfaceSettings, content = newProjectContent()) {
-  this.content = content
-  // ... existing setup ...
-  this.content.setObserver(this.worldPresentation)
-}
-```
+Observer wiring cannot happen while imperative WorldUpdates calls still exist (see deviation note above). The observer methods on `WorldPresentation` are implemented but not connected.
 
-The `content` parameter defaults to a fresh `MutableProjectContent` for normal project creation. Import flows pass pre-populated content (see §Import Flow below). Observer is always wired in the constructor — no detach/reattach dance needed.
+### Sub-step 4b.2-3: Consolidate logic into ProjectActions class
 
-At this point, observer notifications fire but are redundant with the existing imperative calls in `ProjectUpdates`. Both paths produce the same world state — the imperative calls happen first, then the observer fires and produces no-ops (world entities already correct). This is safe but redundant.
+All logic from `project-updates.ts` and `user-actions.ts` is moved into the `ProjectActions` class. This replaces the old closure-based factories with a single `@RegisterClass` class.
 
-### Sub-step 4b.2: Migrate ProjectActions to use MutableProjectContent mutations
+The code still uses `entity._asMut()` and imperative `this.wp.getWorldUpdates()` calls — the reactive migration (replacing these with `MutableProjectContent` mutation methods) happens in 4c after old code is deleted and observer is wired.
 
-Replace direct `entity._asMut()` calls and imperative `WorldUpdates` calls with `MutableProjectContent` mutation methods. The observer handles world sync automatically.
+Key changes:
+- All `ProjectUpdates` functions become `ProjectActions` methods
+- All `UserActions` functions become `ProjectActions` methods
+- Undo handlers move to module-level constants in `ProjectActions.ts`, exported so `user-actions.ts` can reference them (avoiding duplicate registration)
+- `WorldPresenter` interface used for rebuild/refresh/delete operations
+- Direct `wp.getWorldUpdates()` / `wp.getHighlights()` calls for operations not yet on `WorldPresenter`
 
-This is the bulk of the work. For each operation in `project-updates.ts`:
-
-**Pattern: Before (imperative)**
-```typescript
-const internal = entity._asMut()
-internal.adjustValueAtStage(stage, value)
-worldUpdates.updateWorldEntities(entity, stage)
-```
-
-**Pattern: After (reactive)**
-```typescript
-content.adjustEntityValue(entity, stage, value)
-// observer fires onEntityChanged → WorldPresentation updates world
-```
-
-#### Migration by operation category:
+#### Reactive migration mapping (for Phase 4c):
 
 **Entity value mutations** — straightforward replacement:
 - `entity._asMut().adjustValueAtStage(stage, value)` + `updateWorldEntities` → `content.adjustEntityValue(entity, stage, value)`
@@ -454,7 +450,9 @@ The notification helpers from `user-actions.ts` become private methods:
 - `createIndicator` → private method
 - `notifyIfUpdateError` / `notifyIfMoveError` → private helpers
 
-### Sub-step 4b.4: Update import flows
+### Sub-step 4b.4: Update import flows — DEFERRED TO 4c
+
+Requires observer wiring. Import flows also need the project to exist for settings access (stage names, blueprint settings), so separating content construction from project construction requires restructuring.
 
 Migrate `from-blueprint-book.ts` and `project.ts` to construct content before the project:
 
@@ -507,9 +505,9 @@ constructor(id, name, numStages, surfaceSettings, content = newProjectContent())
 }
 ```
 
-### Sub-step 4b.5: Update Project.doDiscard
+### Sub-step 4b.5: Update Project.doDiscard — DEFERRED TO 4c
 
-Currently `doDiscard` imperatively handles discarded entities/tiles. After wiring `ContentObserver`, `discardStage` fires `onStageDiscarded` which `WorldPresentation` handles. Remove `doDiscard` entirely:
+Requires observer wiring. Currently `doDiscard` imperatively handles discarded entities/tiles. After wiring `ContentObserver`, `discardStage` fires `onStageDiscarded` which `WorldPresentation` handles. Remove `doDiscard` entirely:
 
 ```typescript
 // Before:
@@ -555,12 +553,16 @@ if (isMerge) {
 
 ### Success Criteria
 
-#### Automated
-- [ ] `pnpm run build:test` compiles
-- [ ] `pnpm run test` passes
-- [ ] `pnpm run lint` passes
-- [ ] `pnpm run format:fix` clean
-- [ ] `WorldPresentation` implements `ContentObserver`
+#### Automated (completed)
+- [x] `pnpm run build:test` compiles
+- [x] `pnpm run test` passes
+- [x] `pnpm run lint` passes
+- [x] `pnpm run format:fix` clean
+- [x] `WorldPresentation` implements `ContentObserver`
+- [x] `ProjectActions` contains all logic from `project-updates.ts` and `user-actions.ts`
+- [x] Undo handlers defined in `ProjectActions.ts`, exported to avoid duplicate registration
+
+#### Deferred to 4c
 - [ ] `content.setObserver(worldPresentation)` called in Project constructor
 - [ ] No `entity._asMut()` calls outside of `MutableProjectContent` implementation and entity-internal code
 - [ ] `ProjectActions` has zero imports of `WorldUpdates`, `EntityHighlights`, or `EntityStorage`
@@ -569,11 +571,19 @@ if (isMerge) {
 
 ---
 
-## Phase 4c: Delete Old Code + Cleanup
+## Phase 4c: Delete Old Code + Wire Observer + Reactive Migration
 
 ### Overview
 
-Delete `project-updates.ts` and `user-actions.ts`. Clean up `ProjectBase`, remove `LazyLoadClass` usage, remove dual-pipeline test scaffold.
+Delete `project-updates.ts` and `user-actions.ts`, wire the `ContentObserver`, migrate `ProjectActions` from imperative `_asMut()`/WorldUpdates calls to reactive `MutableProjectContent` mutations, update import flows, and clean up.
+
+This phase combines the original 4c scope with the deferred work from 4b (observer wiring, reactive migration, import flows, doDiscard removal). The order is:
+1. Delete old files (removes duplicate code paths)
+2. Wire observer in Project constructor
+3. Migrate `ProjectActions` to use `MutableProjectContent` mutations instead of `_asMut()` + imperative WorldUpdates
+4. Update import flows to construct content before project
+5. Remove `Project.doDiscard` (observer handles it)
+6. Clean up imports, remove dual-pipeline test scaffold
 
 ### Changes
 
@@ -602,13 +612,27 @@ interface ProjectBase {
 }
 ```
 
-#### 4. Clean up imports
+#### 4. Wire observer in Project constructor
+Add `this.content.setObserver(this.worldPresentation)` after constructing `ProjectActions`.
+
+#### 5. Migrate ProjectActions to reactive content mutations
+Replace `entity._asMut()` calls and imperative `this.wp.getWorldUpdates()` calls with `MutableProjectContent` mutation methods. See the reactive migration mapping in Phase 4b for the full list.
+
+After this, `ProjectActions` should have zero imports of `WorldUpdates`, `EntityHighlights`, or `EntityStorage`, and depend only on `WorldPresenter` interface.
+
+#### 6. Update import flows (deferred from 4b.4)
+See Sub-step 4b.4 above. Construct `MutableProjectContent` independently, populate with entities/wires, pass to `createProjectWithContent`. Import flows also need project for settings, so the entity population portion is separated from settings configuration.
+
+#### 7. Remove Project.doDiscard (deferred from 4b.5)
+See Sub-step 4b.5 above. Observer handles `discardStage` via `onStageDiscarded`.
+
+#### 8. Clean up imports
 Remove all imports of `ProjectUpdates`, `UserActions`, `LazyLoadClass` across the codebase.
 
-#### 5. Remove `worldUpdates` getter from `ProjectImpl`
+#### 9. Remove `worldUpdates` getter from `ProjectImpl`
 The `get worldUpdates()` accessor is no longer needed since nothing accesses `project.worldUpdates` externally.
 
-#### 6. Remove dual-pipeline test scaffold
+#### 10. Remove dual-pipeline test scaffold
 
 The integration tests have a partially-built dual-pipeline scaffold that was intended for running tests against both old and new architectures. Since Phase 4b migrates everything in-place (no feature flag), this scaffold is dead code.
 
@@ -636,6 +660,12 @@ Where tests use `ctx.projectOps.*` (the `TestProjectOps` abstraction), replace w
 - [ ] No imports of `ProjectUpdates` or `UserActions` remain
 - [ ] No `LazyLoadClass` usage remains in `Project.ts`
 - [ ] No references to `describeDualPipeline`, `TestProjectOps`, `createOldPipelineProjectOps`, or `Pipeline` type remain
+- [ ] `content.setObserver(worldPresentation)` called in Project constructor
+- [ ] No `entity._asMut()` calls outside of `MutableProjectContent` implementation and entity-internal code
+- [ ] `ProjectActions` has zero imports of `WorldUpdates`, `EntityHighlights`, or `EntityStorage`
+- [ ] `ProjectActions` depends only on `WorldPresenter` interface (not `WorldPresentation` class)
+- [ ] Import flows construct content before project
+- [ ] `Project.doDiscard` removed
 
 #### Manual
 - [ ] Mod loads correctly in Factorio
