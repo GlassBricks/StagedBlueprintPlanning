@@ -46,7 +46,7 @@ function wp() {
 let worldUpdates: WorldUpdates
 before_each(() => {
   project = createMockProject(surfaces)
-  project.worldUpdates = worldUpdates = WorldUpdates(project, entityHighlights)
+  ;(project as any).worldUpdates = worldUpdates = WorldUpdates(project, entityHighlights)
   entity = newProjectEntity(
     {
       name: "inserter",

@@ -37,3 +37,13 @@ export function fStub<T>(value: T): mock.MockedObjectNoSelf<T> {
   }
   return setmetatable(value, anyMockMt)
 }
+
+const classMockMt: LuaMetatable<any> = {
+  __index(key: string) {
+    return (this[key] = mock.fn())
+  },
+}
+
+export function fStubClass<T>(value: T): mock.MockedObject<T> {
+  return setmetatable(value, classMockMt)
+}

@@ -122,8 +122,8 @@ Migrations.to("2.2.0", () => {
         const oldLastStage = entity.lastStage
         if (oldLastStage != entity.firstStage) {
           entity._asMut().setLastStageUnchecked(entity.firstStage)
-          project.worldUpdates.updateWorldEntitiesOnLastStageChanged(entity, oldLastStage)
-          project.updates.resetVehicleLocation(entity)
+          project.worldPresentation.getWorldUpdates().updateWorldEntitiesOnLastStageChanged(entity, oldLastStage)
+          project.actions.resetVehicleLocation(entity)
         }
       }
     }

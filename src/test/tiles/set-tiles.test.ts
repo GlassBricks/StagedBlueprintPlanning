@@ -9,7 +9,7 @@ import { Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
 import { setTiles, setTilesAndCheckerboard, setTilesAndWater, setTilesAndWaterForStage } from "../../tiles/set-tiles"
 import { createProject } from "../../project/Project"
-import { fStub } from "../f-mock"
+import { fStubClass } from "../f-mock"
 
 let surface: LuaSurface
 before_each(() => {
@@ -119,9 +119,9 @@ test("setTilesAndCheckerboard", () => {
 
 test("setTilesAndWater with staged tiles enabled", () => {
   const project = createProject("test", 2)
-  const updates = fStub(project.updates)
+  const actions = fStubClass(project.actions)
   project.settings.stagedTilesEnabled.set(true)
 
   setTilesAndWaterForStage(project.getStage(1)!)
-  expect(updates.setTileAtStage).toHaveBeenCalledWith(expect.anything(), 1)
+  expect(actions.setTileAtStage).toHaveBeenCalledWith(expect.anything(), 1)
 })

@@ -65,17 +65,17 @@ export interface TestProjectOps {
 
 export function createOldPipelineProjectOps(project: Project): TestProjectOps {
   return {
-    resetProp: (entity, stage, prop) => project.updates.resetProp(entity, stage, prop),
-    movePropDown: (entity, stage, prop) => project.updates.movePropDown(entity, stage, prop),
-    resetAllProps: (entity, stage) => project.updates.resetAllProps(entity, stage),
-    moveAllPropsDown: (entity, stage) => project.updates.moveAllPropsDown(entity, stage),
-    setTileAtStage: (position, stage, value) => project.updates.setTileAtStage(position, stage, value),
-    deleteTile: (position) => project.updates.deleteTile(position),
-    trySetLastStage: (entity, stage) => project.updates.trySetLastStage(entity, stage),
-    trySetFirstStage: (entity, stage) => project.updates.trySetFirstStage(entity, stage),
-    addNewEntity: (entity, stage) => project.updates.addNewEntity(entity, stage),
-    deleteEntityOrCreateSettingsRemnant: (entity) => project.updates.deleteEntityOrCreateSettingsRemnant(entity),
-    tryReviveSettingsRemnant: (entity, stage) => project.updates.tryReviveSettingsRemnant(entity, stage),
+    resetProp: (entity, stage, prop) => project.actions.resetProp(entity, stage, prop),
+    movePropDown: (entity, stage, prop) => project.actions.movePropDown(entity, stage, prop),
+    resetAllProps: (entity, stage) => project.actions.resetAllProps(entity, stage),
+    moveAllPropsDown: (entity, stage) => project.actions.moveAllPropsDown(entity, stage),
+    setTileAtStage: (position, stage, value) => project.actions.setTileAtStage(position, stage, value),
+    deleteTile: (position) => project.actions.deleteTile(position),
+    trySetLastStage: (entity, stage) => project.actions.trySetLastStage(entity, stage),
+    trySetFirstStage: (entity, stage) => project.actions.trySetFirstStage(entity, stage),
+    addNewEntity: (entity, stage) => project.actions.addNewEntity(entity, stage),
+    deleteEntityOrCreateSettingsRemnant: (entity) => project.actions.deleteEntityOrCreateSettingsRemnant(entity),
+    tryReviveSettingsRemnant: (entity, stage) => project.actions.tryReviveSettingsRemnant(entity, stage),
   }
 }
 
@@ -312,15 +312,17 @@ export function setupEntityIntegrationTest(numStages = 6): EntityTestContext {
     ctx.project = createProject("test", numStages)
     ctx.surfaces = ctx.project.getAllStages().map((stage) => stage.getSurface())
     ctx.player = game.players[1]
+    const wp = ctx.project.worldPresentation
+    const wu = wp.getWorldUpdates()
     ctx.worldOps = {
-      rebuildStage: (stage) => ctx.project.worldUpdates.rebuildStage(stage),
-      rebuildAllStages: () => ctx.project.worldUpdates.rebuildAllStages(),
-      refreshEntity: (entity, stage) => ctx.project.worldUpdates.refreshWorldEntityAtStage(entity, stage),
-      refreshAllEntities: (entity) => ctx.project.worldUpdates.refreshAllWorldEntities(entity),
-      rebuildEntity: (entity, stage) => ctx.project.worldUpdates.rebuildWorldEntityAtStage(entity, stage),
-      updateWorldEntities: (entity, stage) => ctx.project.worldUpdates.updateWorldEntities(entity, stage),
-      updateAllHighlights: (entity) => ctx.project.worldUpdates.updateAllHighlights(entity),
-      resyncWithWorld: () => ctx.project.worldUpdates.resyncWithWorld(),
+      rebuildStage: (stage) => wp.rebuildStage(stage),
+      rebuildAllStages: () => wp.rebuildAllStages(),
+      refreshEntity: (entity, stage) => wp.refreshEntity(entity, stage),
+      refreshAllEntities: (entity) => wp.refreshAllEntities(entity),
+      rebuildEntity: (entity, stage) => wp.rebuildEntity(entity, stage),
+      updateWorldEntities: (entity, stage) => wu.updateWorldEntities(entity, stage),
+      updateAllHighlights: (entity) => wu.updateAllHighlights(entity),
+      resyncWithWorld: () => wu.resyncWithWorld(),
     }
     ctx.projectOps = createOldPipelineProjectOps(ctx.project)
     ctx.worldQueries = createWorldPresentationQueries(ctx.project.worldPresentation)

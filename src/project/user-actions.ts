@@ -17,6 +17,7 @@ import { createIndicator, createNotification } from "./notifications"
 import { EntityUpdateResult, ProjectUpdates, StageMoveResult } from "./project-updates"
 
 import { ProjectBase, Project } from "./Project"
+import type { ProjectActions } from "./ProjectActions"
 import { prepareArea } from "./surfaces"
 import { registerUndoAction, UndoAction, UndoHandler } from "./undo"
 import { WorldUpdates } from "./world-updates"
@@ -88,7 +89,7 @@ export interface UserActions {
 }
 
 /** @noSelf */
-interface InternalUserActions extends UserActions {
+export interface InternalUserActions extends UserActions {
   findCompatibleEntityForUndo(entity: ProjectEntity): ProjectEntity | nil
   userTryMoveEntityToStage(
     entity: ProjectEntity,
@@ -113,12 +114,12 @@ interface StageChangeRecord extends ProjectEntityRecord {
 }
 
 interface InternalProject extends Project {
-  actions: InternalUserActions
+  actions: ProjectActions
 }
 
 const undoDeleteEntity = UndoHandler<ProjectEntityRecord>("delete entity", (_, { project, entity }) => {
-  const updates = (project as InternalProject).updates
-  updates.readdDeletedEntity(entity)
+  const actions = (project as InternalProject).actions
+  actions.readdDeletedEntity(entity)
 })
 
 const undoManualStageMove = UndoHandler<StageChangeRecord>("stage move", (player, { project, entity, oldStage }) => {

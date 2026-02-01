@@ -185,6 +185,6 @@ export class StageSettingsTab extends Component<{ project: Project }> {
 
   private scanExistingTiles() {
     const stage = playerCurrentStage(this.playerIndex).get()
-    if (stage) stage.project.updates.scanProjectForExistingTiles()
+    if (stage) stage.project.actions.scanProjectForExistingTiles()
   }
 }

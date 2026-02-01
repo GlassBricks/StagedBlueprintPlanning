@@ -43,8 +43,6 @@ export function createMockProject(stages: number | LuaSurface[]): ProjectBase {
     content: newProjectContent(),
     valid: true,
     actions: "actions not mocked" as any,
-    updates: "updates not mocked" as any,
-    worldUpdates: "entityUpdates not mocked" as any,
     worldPresentation: nil!,
   }
   project.worldPresentation = new WorldPresentation(project)

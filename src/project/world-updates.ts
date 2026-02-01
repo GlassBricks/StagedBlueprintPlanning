@@ -81,7 +81,7 @@ class RebuildAllStagesTask extends LoopTask {
     return [L_GuiTasks.RebuildAllStages]
   }
   protected override doStep(i: number): void {
-    this.project.worldUpdates.rebuildStage(i + 1)
+    this.project.worldPresentation.rebuildStage(i + 1)
   }
   protected getTitleForStep(step: number): LocalisedString {
     return [L_GuiTasks.RebuildingStage, this.project.settings.getStageName(step + 1)]
@@ -107,7 +107,7 @@ class ResyncWithWorldTask extends LoopTask {
     } else {
       const rebuildStage = i - numStages + 1
       if (rebuildStage == 1) worldUpdatesBlocked = false
-      this.project.worldUpdates.rebuildStage(rebuildStage)
+      this.project.worldPresentation.rebuildStage(rebuildStage)
     }
   }
 

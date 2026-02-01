@@ -136,7 +136,7 @@ function setTilesUnderEntities(
 
   if (freeTiles && project.settings.stagedTilesEnabled.get()) {
     for (const { position } of freeTiles) {
-      project.updates.setTileAtStage(position, stage.stageNumber, nil)
+      project.actions.setTileAtStage(position, stage.stageNumber, nil)
     }
   }
 
@@ -173,7 +173,7 @@ function syncStagedTiles(stage: Stage, bbox: BBox, optimized: LuaSet<string>, ti
     const k = posToKey([gridX, gridY])
 
     const tileValue = optimized.has(k) ? tileName : nil
-    project.updates.setTileAtStage({ x, y }, stage.stageNumber, tileValue)
+    project.actions.setTileAtStage({ x, y }, stage.stageNumber, tileValue)
   }
 }
 

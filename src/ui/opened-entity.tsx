@@ -23,9 +23,8 @@ import { DraggableSpace, HorizontalPusher, RefreshButton, TitleBar } from "../li
 import { Migrations } from "../lib/migration"
 import { L_GuiEntityInfo } from "../locale"
 import { checkForEntityUpdates, getCurrentlyOpenedModdedGui } from "../project/event-handlers"
-import { ProjectUpdates } from "../project/project-updates"
+import { ProjectActions } from "../project/ProjectActions"
 import { Stage } from "../project/Project"
-import { UserActions } from "../project/user-actions"
 
 import { getProjectEntityOfEntity } from "./entity-util"
 import { PlayerChangedStageEvent, teleportToStage } from "./player-current-stage"
@@ -70,8 +69,7 @@ function SmallToolButton(props: ElemProps<"sprite-button">) {
 class EntityProjectInfo extends Component<EntityStageInfoProps> {
   playerIndex!: PlayerIndex
   stage!: Stage
-  actions!: UserActions
-  updates!: ProjectUpdates
+  actions!: ProjectActions
   entity!: ProjectEntity
 
   override render(props: EntityStageInfoProps, context: RenderContext): Element {
@@ -84,7 +82,6 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
     const project = stage.project
 
     this.actions = project.actions
-    this.updates = project.updates
 
     const isRollingStock = entity.isMovable()
 
@@ -191,14 +188,14 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
     this.rerender(false)
   }
   private resetVehicleLocation() {
-    this.updates.resetVehicleLocation(this.entity)
+    this.actions.resetVehicleLocation(this.entity)
   }
   private setVehicleLocationHere() {
-    this.updates.setVehicleLocationHere(this.entity)
+    this.actions.setVehicleLocationHere(this.entity)
   }
 
   private deleteEntity() {
-    this.updates.forceDeleteEntity(this.entity)
+    this.actions.forceDeleteEntity(this.entity)
   }
 
   private renderStageDiffSettings(stageDiff: StageDiff<BlueprintEntity>): Element {
@@ -238,18 +235,18 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
   private resetProp(event: OnGuiClickEvent) {
     const prop = event.element.tags.prop as keyof BlueprintEntity | true
     if (prop == true) {
-      this.updates.resetAllProps(this.entity, this.stage.stageNumber)
+      this.actions.resetAllProps(this.entity, this.stage.stageNumber)
     } else {
-      this.updates.resetProp(this.entity, this.stage.stageNumber, prop as keyof Entity)
+      this.actions.resetProp(this.entity, this.stage.stageNumber, prop as keyof Entity)
     }
     this.rerender(true)
   }
   private applyToLowerStage(event: OnGuiClickEvent) {
     const prop = event.element.tags.prop as keyof BlueprintEntity | true
     if (prop == true) {
-      this.updates.moveAllPropsDown(this.entity, this.stage.stageNumber)
+      this.actions.moveAllPropsDown(this.entity, this.stage.stageNumber)
     } else {
-      this.updates.movePropDown(this.entity, this.stage.stageNumber, prop as keyof Entity)
+      this.actions.movePropDown(this.entity, this.stage.stageNumber, prop as keyof Entity)
     }
     this.rerender(false)
   }

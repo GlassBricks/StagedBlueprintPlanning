@@ -11,7 +11,7 @@ import { importProjectDataOnly, ProjectExport } from "./project"
 function doImport(fn: () => Project): Project | string {
   const [success, result] = xpcall(fn, getErrorWithStacktrace)
   if (success) {
-    result.worldUpdates.rebuildAllStages()
+    result.worldPresentation.rebuildAllStages()
     return result
   }
   const [msg, stacktrace] = result

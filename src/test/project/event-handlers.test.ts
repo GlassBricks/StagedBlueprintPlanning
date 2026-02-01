@@ -14,17 +14,17 @@ import { BBox, Pos, Position, PositionClass } from "../../lib/geometry"
 import { _assertInValidState } from "../../project/event-handlers"
 import { getProjectPlayerData } from "../../project/player-project-data"
 import { Project } from "../../project/Project"
+import { ProjectActions } from "../../project/ProjectActions"
 import { UndoHandler, _simulateUndo } from "../../project/undo"
-import { UserActions } from "../../project/user-actions"
 import { _deleteAllProjects, createProject } from "../../project/Project"
 import * as _createBpWithStageInfo from "../../ui/create-blueprint-with-stage-info"
-import { fStub } from "../f-mock"
+import { fStubClass } from "../f-mock"
 import { moduleMock } from "../module-mock"
 import { reviveGhost } from "../test-util"
 import direction = defines.direction
 
 let project: Project & {
-  actions: mock.MockedObjectNoSelf<UserActions>
+  actions: mock.MockedObject<ProjectActions>
 }
 const CreateBpWithStageInfo = moduleMock(_createBpWithStageInfo, false)
 let surface: LuaSurface
@@ -35,7 +35,7 @@ before_all(() => {
   player = game.players[1]
 
   project = createProject("Test", 2) as any
-  fStub(project.actions)
+  fStubClass(project.actions)
   surface = project.getStage(1)!.getSurface()
 
   player.teleport(pos, surface)

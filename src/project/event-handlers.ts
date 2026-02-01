@@ -227,7 +227,7 @@ Events.registerEarly(defines.events.on_object_destroyed, (e) => {
   if (!surfaceIndex) return
   const stage = getStageAtSurface(surfaceIndex)
   if (!stage) return
-  stage.project.updates.maybeDeleteProjectEntity(entity, stage.stageNumber)
+  stage.project.actions.maybeDeleteProjectEntity(entity, stage.stageNumber)
 })
 
 Events.on_robot_mined_entity((e) => luaEntityDeleted(e.entity))
@@ -1030,27 +1030,27 @@ function onCleanupToolSelected(e: OnPlayerSelectedAreaEvent): void {
   if (!stage) return
   const updateLater: LuaEntity[] = []
   const { stageNumber } = stage
-  const onCleanupToolUsed = stage.actions.onCleanupToolUsed
+  const { actions } = stage
   for (const entity of e.entities) {
     if (entity.train) {
       updateLater.push(entity)
     } else {
-      onCleanupToolUsed(entity, stageNumber)
+      actions.onCleanupToolUsed(entity, stageNumber)
     }
   }
   for (const entity of updateLater) {
-    onCleanupToolUsed(entity, stageNumber)
+    actions.onCleanupToolUsed(entity, stageNumber)
   }
 }
 function onCleanupToolReverseSelected(e: OnPlayerSelectedAreaEvent): void {
   const playerIndex = e.player_index
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
-  const onEntityForceDeleteUsed = stage.actions.onEntityForceDeleteUsed
+  const { actions } = stage
   const stageNumber = stage.stageNumber
   const undoActions: UndoAction[] = []
   for (const entity of e.entities) {
-    const undoAction = onEntityForceDeleteUsed(entity, stageNumber, playerIndex)
+    const undoAction = actions.onEntityForceDeleteUsed(entity, stageNumber, playerIndex)
     if (undoAction) undoActions.push(undoAction)
   }
   registerGroupUndoAction(undoActions)
@@ -1076,10 +1076,10 @@ function stageMoveToolUsed(e: OnPlayerSelectedAreaEvent): void {
   }
   const { stageNumber } = stage
   const undoActions: UndoAction[] = []
-  const onSendToStageUsed = stage.actions.onSendToStageUsed
+  const { actions } = stage
   const onlyIfMatchesFirstStage = e.name != defines.events.on_player_alt_selected_area
   for (const entity of e.entities) {
-    const undoAction = onSendToStageUsed(entity, stageNumber, targetStage, onlyIfMatchesFirstStage, playerIndex)
+    const undoAction = actions.onSendToStageUsed(entity, stageNumber, targetStage, onlyIfMatchesFirstStage, playerIndex)
     if (undoAction) undoActions.push(undoAction)
   }
   registerGroupUndoAction(undoActions)
@@ -1097,12 +1097,11 @@ function selectionToolUsed(
   const stage = getStageAtSurface(e.surface.index)
   if (!stage) return
 
-  const { stageNumber } = stage
+  const { stageNumber, actions } = stage
   const undoActions: UndoAction[] = []
-  const fn = stage.actions[action]
   const playerIndex = e.player_index
   for (const entity of e.entities) {
-    const undoAction = fn(entity, stageNumber, playerIndex)
+    const undoAction = actions[action](entity, stageNumber, playerIndex)
     if (undoAction) undoActions.push(undoAction)
   }
 
@@ -1169,11 +1168,10 @@ addSelectionToolHandlers(Prototypes.StagedCopyTool, {
 function forceDeleteToolUsed(event: OnPlayerSelectedAreaEvent): void {
   const stage = getStageAtSurface(event.surface.index)
   if (!stage) return
-  const { stageNumber } = stage
+  const { stageNumber, actions } = stage
   const undoActions: UndoAction[] = []
-  const onEntityForceDeleteUsed = stage.actions.onEntityForceDeleteUsed
   for (const entity of event.entities) {
-    const undoAction = onEntityForceDeleteUsed(entity, stageNumber, event.player_index)
+    const undoAction = actions.onEntityForceDeleteUsed(entity, stageNumber, event.player_index)
     if (undoAction) undoActions.push(undoAction)
   }
   registerGroupUndoAction(undoActions)
@@ -1280,9 +1278,9 @@ Events.on_chunk_generated((e) => {
   })
   const { stageNumber, project } = stage
 
-  const onChunkGenerated = stage.actions.onChunkGeneratedForEntity
+  const { actions } = stage
   for (const entity of entities) {
-    if (entity.valid) onChunkGenerated(entity, stageNumber)
+    if (entity.valid) actions.onChunkGeneratedForEntity(entity, stageNumber)
   }
 
   const status = defines.chunk_generated_status.entities

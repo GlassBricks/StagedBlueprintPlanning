@@ -2,16 +2,34 @@ import { HighlightBoxEntity, LuaEntity, LuaRenderObject, nil } from "factorio:ru
 import { ProjectEntity, StageNumber, UndergroundBeltProjectEntity } from "../entity/ProjectEntity"
 import { isPreviewEntity, movableTypes } from "../entity/prototype-info"
 import { RegisterClass } from "../lib"
+import { Position } from "../lib/geometry"
 import { registerEntity } from "../entity/registration"
 import { EntityHighlights } from "./entity-highlights"
 import { EntityStorage } from "./EntityStorage"
 import { ProjectBase } from "./Project"
-import { WorldUpdates } from "./world-updates"
+import { TileCollision, WorldUpdates } from "./world-updates"
 
 export interface WorldEntityLookup {
   getWorldOrPreviewEntity(entity: ProjectEntity, stage: StageNumber): LuaEntity | nil
   getWorldEntity(entity: ProjectEntity, stage: StageNumber): LuaEntity | nil
   hasErrorAt(entity: ProjectEntity, stage: StageNumber): boolean
+}
+
+export interface WorldPresenter extends WorldEntityLookup {
+  replaceWorldOrPreviewEntity(entity: ProjectEntity, stage: StageNumber, luaEntity: LuaEntity | nil): void
+
+  rebuildStage(stage: StageNumber): void
+  rebuildAllStages(): void
+  rebuildEntity(entity: ProjectEntity, stage: StageNumber): void
+  refreshEntity(entity: ProjectEntity, stage: StageNumber): void
+  refreshAllEntities(entity: ProjectEntity): void
+  deleteEntityAtStage(entity: ProjectEntity, stage: StageNumber): void
+  resetUnderground(entity: ProjectEntity, stage: StageNumber): void
+
+  updateTiles(position: Position, fromStage: StageNumber): TileCollision | nil
+
+  disableAllEntitiesInStage(stage: StageNumber): void
+  enableAllEntitiesInStage(stage: StageNumber): void
 }
 
 export interface WorldEntityTypes {
@@ -47,7 +65,7 @@ function getClosures(wp: WorldPresentation): Closures {
 }
 
 @RegisterClass("WorldPresentation")
-export class WorldPresentation implements WorldEntityLookup {
+export class WorldPresentation implements WorldEntityLookup, WorldPresenter {
   readonly entityStorage = new EntityStorage<WorldEntityTypes>()
 
   constructor(readonly project: ProjectBase) {}
@@ -139,5 +157,46 @@ export class WorldPresentation implements WorldEntityLookup {
     for (const entity of this.project.content.allEntities()) {
       this.entityStorage.shiftStageKeysDown(entity, stageNumber)
     }
+  }
+
+  rebuildStage(stage: StageNumber): void {
+    this.getWorldUpdates().rebuildStage(stage)
+  }
+
+  rebuildAllStages(): void {
+    this.getWorldUpdates().rebuildAllStages()
+  }
+
+  rebuildEntity(entity: ProjectEntity, stage: StageNumber): void {
+    this.getWorldUpdates().rebuildWorldEntityAtStage(entity, stage)
+  }
+
+  refreshEntity(entity: ProjectEntity, stage: StageNumber): void {
+    this.getWorldUpdates().refreshWorldEntityAtStage(entity, stage)
+    this.getHighlights().updateAllHighlights(entity)
+  }
+
+  refreshAllEntities(entity: ProjectEntity): void {
+    this.getWorldUpdates().refreshAllWorldEntities(entity)
+  }
+
+  deleteEntityAtStage(entity: ProjectEntity, stage: StageNumber): void {
+    this.getWorldUpdates().clearWorldEntityAtStage(entity, stage)
+  }
+
+  resetUnderground(entity: ProjectEntity, stage: StageNumber): void {
+    this.getWorldUpdates().resetUnderground(entity as UndergroundBeltProjectEntity, stage)
+  }
+
+  updateTiles(position: Position, fromStage: StageNumber): TileCollision | nil {
+    return this.getWorldUpdates().updateTilesInRange(position, fromStage, nil)
+  }
+
+  disableAllEntitiesInStage(stage: StageNumber): void {
+    this.getWorldUpdates().disableAllEntitiesInStage(stage)
+  }
+
+  enableAllEntitiesInStage(stage: StageNumber): void {
+    this.getWorldUpdates().enableAllEntitiesInStage(stage)
   }
 }

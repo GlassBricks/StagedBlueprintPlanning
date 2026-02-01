@@ -7,7 +7,7 @@ import { LuaPlayer, SurfaceCreateEntity, SurfaceIndex } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { AssemblingMachineEntity, Entity } from "../../entity/Entity"
-import { StageNumber } from "../../entity/ProjectEntity"
+import { ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { StageInfoExport } from "../../import-export/entity"
 import { Pos } from "../../lib/geometry"
 import { getPlayer } from "../../lib/test/misc"
@@ -31,7 +31,7 @@ function addEntity<E extends Entity = Entity>(stage: StageNumber, args: SurfaceC
   const entity = project.surfaces.getSurface(stage)!.create_entity(args)!
   assert(entity)
 
-  return assert(project.updates.addNewEntity<E>(entity, stage, nil))
+  return assert(project.actions.addNewEntity(entity, stage, nil)) as ProjectEntity<E>
 }
 
 test("create blueprint of simple entity", () => {

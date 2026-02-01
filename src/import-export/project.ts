@@ -81,7 +81,7 @@ export function importProjectDataOnly(project: ProjectExport): Project {
   if (result.settings.isSpacePlatform()) {
     const hub = next(result.content.allEntities())[0] as ProjectEntity | nil
     if (hub) {
-      result.updates.forceDeleteEntity(hub)
+      result.actions.forceDeleteEntity(hub)
     }
   }
 

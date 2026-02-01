@@ -24,6 +24,31 @@ import { createMockProject, setupTestSurfaces } from "./Project-mock"
 import _notifications = require("../../project/notifications")
 
 const notifications = moduleMock(_notifications, true)
+
+/**
+ * Wraps noSelf functions so they can be called as class methods (with self parameter).
+ * When called as obj:method(a, b), the self parameter is dropped and the original
+ * noSelf function is called as fn(a, b).
+ */
+function wrapNoSelfAsClass(...sources: object[]): Record<string, (...args: any[]) => any> {
+  const cache = new LuaMap<string, (...args: any[]) => any>()
+  const selfMt: LuaMetatable<any> = {
+    __index(_key: string) {
+      let cached = cache.get(_key)
+      if (cached) return cached
+      for (const source of sources) {
+        const fn = (source as any)[_key]
+        if (fn != nil) {
+          cached = ((_self: any, ...args: any[]) => fn(...args)) as any
+          cache.set(_key, cached!)
+          return cached
+        }
+      }
+      return nil
+    },
+  }
+  return setmetatable({}, selfMt)
+}
 let expectedNumCalls = 1
 
 const surfaces = setupTestSurfaces(6)
@@ -38,9 +63,11 @@ let userActions: UserActions
 
 before_each(() => {
   project = createMockProject(surfaces)
-  project.worldUpdates = worldUpdates
-  project.updates = projectUpdates
-  project.actions = userActions = UserActions(project, projectUpdates, worldUpdates)
+  const projectAny = project as any
+  projectAny.worldUpdates = worldUpdates
+  projectAny.updates = projectUpdates
+  userActions = UserActions(project, projectUpdates, worldUpdates)
+  project.actions = wrapNoSelfAsClass(userActions, projectUpdates) as any
 })
 
 before_each(() => {

@@ -14,7 +14,7 @@ commands.add_command(
       for (const entity of project.content.allEntities()) {
         const broken = project.worldPresentation.getWorldEntity(entity, entity.firstStage) == nil
         if (broken) {
-          project.updates.forceDeleteEntity(entity)
+          project.actions.forceDeleteEntity(entity)
           numDeleted++
         }
       }

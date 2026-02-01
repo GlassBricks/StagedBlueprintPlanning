@@ -49,8 +49,10 @@ const wireSaver = moduleMock(_wireHandler, true)
 let projectUpdates: ProjectUpdates
 before_each(() => {
   project = createMockProject(surfaces)
-  project.worldUpdates = worldUpdates
-  project.updates = projectUpdates = ProjectUpdates(project, project.worldUpdates)
+  const projectAny = project as any
+  projectAny.worldUpdates = worldUpdates
+  projectUpdates = ProjectUpdates(project, worldUpdates)
+  projectAny.updates = projectUpdates
 })
 
 let expectedWuCalls: number

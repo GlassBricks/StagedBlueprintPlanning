@@ -9,15 +9,12 @@ import { StageNumber } from "../entity/ProjectEntity"
 import { ReadonlyStagedValue } from "../entity/StagedValue"
 import { Events, Mutable, RegisterClass, SimpleEvent, SimpleSubscribable } from "../lib"
 import { BBox } from "../lib/geometry"
-import { LazyLoadClass } from "../lib/LazyLoad"
 import { getStageAtSurface } from "./project-refs"
-import { ProjectUpdates } from "./project-updates"
+import { ProjectActions } from "./ProjectActions"
 import { addProject, stageDeleted as globalStageDeleted, removeProject } from "./ProjectList"
 import { ProjectSettings, StageSettingsData } from "./ProjectSettings"
 import { ProjectSurfaces } from "./ProjectSurfaces"
 import { getDefaultSurfaceSettings, SurfaceSettings } from "./surfaces"
-import { UserActions } from "./user-actions"
-import { WorldUpdates } from "./world-updates"
 import { WorldPresentation } from "./WorldPresentation"
 import min = math.min
 
@@ -38,9 +35,7 @@ export interface ProjectBase {
 
   readonly valid: boolean
 
-  actions: UserActions
-  updates: ProjectUpdates
-  worldUpdates: WorldUpdates
+  actions: ProjectActions
   worldPresentation: WorldPresentation
 }
 
@@ -78,7 +73,7 @@ export interface Stage {
 
   getID(): StageId
 
-  readonly actions: UserActions
+  readonly actions: ProjectActions
 
   getSettings(): StageSettingsData
   getBlueprintSettingsView(): BlueprintSettingsTable
@@ -120,12 +115,8 @@ class ProjectImpl implements Project {
   valid = true
   private readonly stages: Record<number, StageImpl> = {}
 
-  actions = UserActionsClass({ project: this })
-  updates = ProjectUpdatesClass({ project: this })
   worldPresentation: WorldPresentation = new WorldPresentation(this)
-  get worldUpdates(): WorldUpdates {
-    return this.worldPresentation.getWorldUpdates()
-  }
+  actions!: ProjectActions
 
   constructor(
     readonly id: ProjectId,
@@ -135,6 +126,7 @@ class ProjectImpl implements Project {
   ) {
     this.settings = new ProjectSettings(name, surfaceSettings)
     this.surfaces = new ProjectSurfaces(this.settings)
+    this.actions = new ProjectActions(this, this.content, this.worldPresentation, this.settings)
     for (const i of $range(1, initialNumStages)) {
       this.settings.insertStageSettings(i, `Stage ${i}`)
       const [surface] = this.surfaces.createSurface(i, this.content.computeBoundingBox())
@@ -206,7 +198,7 @@ class ProjectImpl implements Project {
     if (hub) {
       this.actions.rebuildEntity(hub, stageNumber)
     }
-    this.worldUpdates.rebuildStage(stageNumber)
+    this.worldPresentation.rebuildStage(stageNumber)
     this.stageAdded.raise(newStage)
     return newStage
   }
@@ -241,22 +233,23 @@ class ProjectImpl implements Project {
       this.doDiscard(index)
     }
     const adjacentStage = index == 1 ? 1 : index - 1
-    this.worldUpdates.rebuildStage(adjacentStage)
+    this.worldPresentation.rebuildStage(adjacentStage)
 
     this.stageDeleted.raise(stage)
     globalStageDeleted.raise(this, stage)
   }
 
   private doDiscard(stage: StageNumber): void {
+    const worldUpdates = this.worldPresentation.getWorldUpdates()
     const [deletedEntities, updatedEntities, updatedTiles] = this.content.discardStage(stage)
     for (const entity of deletedEntities) {
-      this.updates.forceDeleteEntity(entity)
+      this.actions.forceDeleteEntity(entity)
     }
     for (const entity of updatedEntities) {
-      this.worldUpdates.updateWorldEntities(entity, stage)
+      worldUpdates.updateWorldEntities(entity, stage)
     }
     for (const tilePosition of updatedTiles) {
-      this.worldUpdates.updateTilesInRange(tilePosition, stage, nil)
+      worldUpdates.updateTilesInRange(tilePosition, stage, nil)
     }
   }
 
@@ -310,17 +303,6 @@ class ProjectImpl implements Project {
   }
 }
 
-interface HasProject {
-  project: Project
-}
-
-const UserActionsClass = LazyLoadClass<HasProject, UserActions>("UserActions", ({ project }) =>
-  UserActions(project, project.updates, project.worldUpdates),
-)
-const ProjectUpdatesClass = LazyLoadClass<HasProject, ProjectUpdates>("ProjectUpdates", ({ project }) =>
-  ProjectUpdates(project, project.worldUpdates),
-)
-
 function initSpacePlatform(project: ProjectImpl): void {
   for (const stage of project.getAllStages()) {
     const surface = stage.getSurface()
@@ -357,7 +339,7 @@ export function _deleteAllProjects(): void {
 class StageImpl implements Stage {
   readonly valid = true
 
-  actions: UserActions
+  actions: ProjectActions
 
   id?: StageId
 

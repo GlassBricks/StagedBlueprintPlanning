@@ -135,27 +135,27 @@ export class EditorTab extends Component<{ project: Project }> {
   private rebuildStage() {
     const stage = playerCurrentStage(this.playerIndex).get()
     if (!(stage && stage.valid)) return
-    stage.project.worldUpdates.rebuildStage(stage.stageNumber)
+    stage.project.worldPresentation.rebuildStage(stage.stageNumber)
   }
 
   private rebuildAllStages() {
-    this.project.worldUpdates.rebuildAllStages()
+    this.project.worldPresentation.rebuildAllStages()
   }
 
   private resyncWithWorld() {
-    this.project.worldUpdates.resyncWithWorld()
+    this.project.worldPresentation.getWorldUpdates().resyncWithWorld()
   }
 
   private disableAllEntities() {
     const stage = playerCurrentStage(this.playerIndex).get()
     if (!stage || !stage.valid) return
-    stage.project.worldUpdates.disableAllEntitiesInStage(stage.stageNumber)
+    stage.project.worldPresentation.disableAllEntitiesInStage(stage.stageNumber)
   }
 
   private enableAllEntities() {
     const stage = playerCurrentStage(this.playerIndex).get()
     if (!stage || !stage.valid) return
-    stage.project.worldUpdates.enableAllEntitiesInStage(stage.stageNumber)
+    stage.project.worldPresentation.enableAllEntitiesInStage(stage.stageNumber)
   }
 
   private setLabTiles() {

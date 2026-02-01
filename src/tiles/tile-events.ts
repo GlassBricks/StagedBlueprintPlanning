@@ -38,11 +38,10 @@ export function withTileEventsDisabled<A extends any[], R>(f: (this: void, ...ar
 function onTileBuilt(e: OnPlayerBuiltTileEvent | OnRobotBuiltTileEvent | OnSpacePlatformBuiltTileEvent): void {
   const stage = getStageAtSurface(e.surface_index)
   if (!stage || !stage.project.settings.stagedTilesEnabled.get()) return
-  const { stageNumber } = stage
+  const { stageNumber, actions } = stage
   const name = e.tile.name
-  const onTileBuilt = stage.actions.onTileBuilt
   for (const posData of e.tiles) {
-    onTileBuilt(posData.position, name, stageNumber)
+    actions.onTileBuilt(posData.position, name, stageNumber)
   }
 }
 Events.on_player_built_tile(onTileBuilt)
@@ -51,10 +50,9 @@ Events.script_raised_set_tiles((e) => {
   if (e.mod_name == script.mod_name) return
   const stage = getStageAtSurface(e.surface_index)
   if (!stage || !stage.project.settings.stagedTilesEnabled.get()) return
-  const { stageNumber } = stage
-  const onTileBuilt = stage.actions.onTileBuilt
+  const { stageNumber, actions } = stage
   for (const posData of e.tiles) {
-    onTileBuilt(posData.position, posData.name, stageNumber)
+    actions.onTileBuilt(posData.position, posData.name, stageNumber)
   }
 })
 Events.on_space_platform_built_tile(onTileBuilt)
@@ -65,10 +63,9 @@ export function handleTileMined(
 ): void {
   const stage = getStageAtSurface(surface_index)
   if (!stage || !stage.project.settings.stagedTilesEnabled.get()) return
-  const { stageNumber } = stage
-  const onTileMined = stage.actions.onTileMined
+  const { stageNumber, actions } = stage
   for (const posData of tiles) {
-    onTileMined(posData.position, stageNumber)
+    actions.onTileMined(posData.position, stageNumber)
   }
 }
 
