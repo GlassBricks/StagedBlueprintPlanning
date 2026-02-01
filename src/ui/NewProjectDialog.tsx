@@ -20,7 +20,7 @@ import { L_GuiProjectSelector } from "../locale"
 import { createProject } from "../project/Project"
 import { MapGenSettingsForm, PlanetSelect } from "./MapGenSettings"
 import { teleportToProject } from "./player-current-stage"
-import { bringSettingsWindowToFront } from "./ProjectSettings"
+import { bringSettingsWindowToFront } from "./project-settings"
 import { SpacePlatformSettings, SurfaceSettings } from "../project/surfaces"
 import { closeAllProjects } from "./AllProjectsDec"
 

@@ -14,7 +14,7 @@ import { UndoHandler } from "../project/undo"
 import { createProject } from "../project/Project"
 import { getProjectEntityOfEntity } from "../ui/entity-util"
 import { teleportToProject } from "../ui/player-current-stage"
-import { refreshCurrentProject } from "../ui/ProjectSettings"
+import { refreshCurrentProject } from "../ui/project-settings"
 
 // better source map traceback
 declare const ____lualib: {

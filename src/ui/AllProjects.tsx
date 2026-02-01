@@ -39,7 +39,7 @@ import {
 import { showImportBlueprintWindow } from "./blueprint-string"
 import { openNewProjectDialog } from "./NewProjectDialog"
 import { exitProject, PlayerChangedStageEvent, playerCurrentStage, teleportToProject } from "./player-current-stage"
-import { bringSettingsWindowToFront } from "./ProjectSettings"
+import { bringSettingsWindowToFront } from "./project-settings"
 import mouse_button_type = defines.mouse_button_type
 import { AllProjectsName, closeAllProjects } from "./AllProjectsDec"
 

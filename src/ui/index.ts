@@ -13,7 +13,7 @@ import "./misc-controls"
 import "./mod-button"
 import "./opened-entity"
 import "./player-navigation"
-import "./ProjectSettings"
+import "./project-settings"
 import "./stage-move-tool"
 import "./toggle-staged-copy"
 
