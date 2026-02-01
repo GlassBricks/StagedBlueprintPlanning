@@ -563,8 +563,8 @@ Use ast-grep, regex search-replace, or parallel haiku agents:
 - [x] No `UserProject` type references remain (except `@RegisterClass("Assembly")`)
 
 #### Manual Verification:
-- [ ] Mod loads correctly in Factorio
-- [ ] Can create project, add/delete stages, all UI functional
+- [x] Mod loads correctly in Factorio
+- [x] Can create project, add/delete stages, all UI functional
 
 ---
 
@@ -679,13 +679,7 @@ No migration needed for `ProjectList` — it's a module with functions operating
 
 ### Testing
 
-**File**: `src/test/project/migration.test.ts`
-
-Test the migration by:
-1. Setting up storage in the old format (raw fields on project and stage objects)
-2. Running the migration function
-3. Verifying the new structure: `project.settings`, `project.surfaces` exist with correct data
-4. Verifying old fields are cleaned up
+Migration was manually verified by loading an older save file.
 
 ### Success Criteria
 
@@ -693,6 +687,15 @@ Test the migration by:
 - [x] `pnpm run test` passes
 - [x] `pnpm run lint` passes
 - [x] Manual testing with older save verifies migration works correctly
+
+## Deviations from Plan
+
+- **`stage.actions` kept on Stage** (Phase 3e): Plan specified removing `stage.actions` and having callers use `stage.project.actions`. Instead, Stage keeps `readonly actions` as a convenience accessor delegating to `project.actions`.
+- **`stage.deleteByMerging()` / `stage.discardInProject()` kept on Stage** (Phase 3e): Plan specified removing these. Kept as convenience methods delegating to the project.
+- **Stage name accessed via `stage.getSettings().name`** instead of a dedicated `stage.getName()` method.
+- **`ProjectList` exports additional `stageDeleted` global event** not in the original plan.
+- **`BlueprintBookTemplate.get()` takes `projectName` parameter**; plan showed no params.
+- **`ProjectSettings.stageSettings` uses `Record<StageNumber, StageSettingsData>`** instead of parallel arrays.
 
 ## References
 
