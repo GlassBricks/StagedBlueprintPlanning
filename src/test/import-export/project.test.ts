@@ -6,6 +6,7 @@
 import { MapGenSettings } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Entity } from "../../entity/Entity"
+import { newProjectContent } from "../../entity/ProjectContent"
 import { newProjectEntity } from "../../entity/ProjectEntity"
 import { exportProject, importProjectDataOnly, ProjectExport } from "../../import-export/project"
 import { asMutable, deepCopy, Mutable } from "../../lib"
@@ -20,15 +21,7 @@ after_each(() => {
 const fromId = 2
 const toId = 4
 function createSampleProject() {
-  const project = createProject("name", 2)
-  project.settings.defaultBlueprintSettings.snapToGrid.set({ x: 4, y: 5 })
-
-  const [stage1, stage2] = project.getAllStages()
-  stage1.getSettings().name.set("foo")
-  stage2.getSettings().name.set("bar")
-
-  stage1.getSettings().blueprintOverrideSettings.snapToGrid.set({ x: 4, y: 5 })
-  stage2.getSettings().stageBlueprintSettings.description.set("Foo")
+  const content = newProjectContent()
 
   const entity1 = newProjectEntity(
     {
@@ -47,21 +40,30 @@ function createSampleProject() {
     2,
     1,
   )
-  project.content.addEntity(entity1)
-  project.content.addEntity(entity2)
+  content.addEntity(entity1)
+  content.addEntity(entity2)
 
-  project.content.addWireConnection({
+  content.addWireConnection({
     fromEntity: entity1,
     toEntity: entity2,
     fromId,
     toId,
   })
 
-  // Add unstaged values for testing
   const unstagedValue1 = { items: [simpleInsertPlan(defines.inventory.chest, "iron-ore", 0, 10)] }
   const unstagedValue2 = { items: [simpleInsertPlan(defines.inventory.chest, "copper-plate", 1, 25)] }
   entity1.setUnstagedValue(2, unstagedValue1)
   entity2.setUnstagedValue(1, unstagedValue2)
+
+  const project = createProject("name", 2, nil, content)
+  project.settings.defaultBlueprintSettings.snapToGrid.set({ x: 4, y: 5 })
+
+  const [stage1, stage2] = project.getAllStages()
+  stage1.getSettings().name.set("foo")
+  stage2.getSettings().name.set("bar")
+
+  stage1.getSettings().blueprintOverrideSettings.snapToGrid.set({ x: 4, y: 5 })
+  stage2.getSettings().stageBlueprintSettings.description.set("Foo")
 
   return project
 }

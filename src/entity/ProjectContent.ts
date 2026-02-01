@@ -4,11 +4,12 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import { BoundingBox, LuaEntity, MapPosition } from "factorio:runtime"
-import { WorldEntityLookup } from "../project/WorldPresentation"
 import { oppositedirection } from "util"
 import { Prototypes } from "../constants"
 import { isEmpty, PRecord, RegisterClass } from "../lib"
 import { BBox, Position } from "../lib/geometry"
+import { WorldEntityLookup } from "../project/WorldPresentation"
+import { ProjectTile } from "../tiles/ProjectTile"
 import { Entity, EntityIdentification, UnstagedEntityProps } from "./Entity"
 import { LinkedMap2D, newLinkedMap2d, newMap2d, ReadonlyMap2D } from "./map2d"
 import {
@@ -19,8 +20,6 @@ import {
   StageNumber,
   UndergroundBeltProjectEntity,
 } from "./ProjectEntity"
-import { ProjectWireConnection } from "./wire-connection"
-import { ProjectTile } from "../tiles/ProjectTile"
 import {
   isMovableEntity,
   isPreviewEntity,
@@ -31,6 +30,7 @@ import {
 } from "./prototype-info"
 import { getRegisteredProjectEntity } from "./registration"
 import { getUndergroundDirection } from "./underground-belt"
+import { ProjectWireConnection } from "./wire-connection"
 
 export interface ContentObserver {
   onEntityAdded(entity: ProjectEntity): void
@@ -99,9 +99,7 @@ export interface MutableProjectContent extends ProjectContent {
   /** Modifies all entities */
   insertStage(stageNumber: StageNumber): void
   mergeStage(stageNumber: StageNumber): void
-  discardStage(
-    stageNumber: StageNumber,
-  ): LuaMultiReturn<[deleted: ProjectEntity[], updated: ProjectEntity[], updatedTiles: MapPosition[]]>
+  discardStage(stageNumber: StageNumber): void
 
   setEntityDirection(entity: ProjectEntity, direction: defines.direction): void
 
@@ -136,7 +134,12 @@ export interface MutableProjectContent extends ProjectContent {
   addWireConnection(connection: ProjectWireConnection): void
   removeWireConnection(connection: ProjectWireConnection): void
 
-  setUndergroundBeltType(entity: UndergroundBeltProjectEntity, type: "input" | "output"): void
+  setTypeProperty(entity: UndergroundBeltProjectEntity, type: "input" | "output"): void
+  setUndergroundBeltDirectionAndType(
+    entity: UndergroundBeltProjectEntity,
+    direction: defines.direction,
+    type: "input" | "output",
+  ): void
   setInserterPositions(entity: InserterProjectEntity, pickup: Position | nil, drop: Position | nil): void
 }
 
@@ -380,9 +383,7 @@ class ProjectContentImpl implements MutableProjectContent {
     this.observer?.onStageMerged(stageNumber)
   }
 
-  discardStage(
-    stageNumber: StageNumber,
-  ): LuaMultiReturn<[deleted: ProjectEntity[], updated: ProjectEntity[], updatedTiles: MapPosition[]]> {
+  discardStage(stageNumber: StageNumber): void {
     const deleted: ProjectEntity[] = []
     const updated: ProjectEntity[] = []
     const updatedTiles: MapPosition[] = []
@@ -414,7 +415,6 @@ class ProjectContentImpl implements MutableProjectContent {
       this.deleteTile(pos)
     }
     this.observer?.onStageDiscarded(stageNumber, deleted, updated, updatedTiles)
-    return $multi(deleted, updated, updatedTiles)
   }
 
   setEntityDirection(entity: ProjectEntity, direction: defines.direction): void {
@@ -424,8 +424,12 @@ class ProjectContentImpl implements MutableProjectContent {
 
   setEntityFirstStage(entity: ProjectEntity, stage: StageNumber): void {
     const oldFirstStage = entity.firstStage
+    const oldLastStage = entity.lastStage
     entity._asMut().setFirstStageUnchecked(stage)
     this.observer?.onEntityChanged(entity, math.min(stage, oldFirstStage))
+    if (entity.lastStage != oldLastStage) {
+      this.observer?.onEntityLastStageChanged(entity, oldLastStage)
+    }
   }
 
   setEntityLastStage(entity: ProjectEntity, stage: StageNumber | nil): void {
@@ -529,7 +533,17 @@ class ProjectContentImpl implements MutableProjectContent {
     this.observer?.onWiresChanged(connection.toEntity)
   }
 
-  setUndergroundBeltType(entity: UndergroundBeltProjectEntity, type: "input" | "output"): void {
+  setTypeProperty(entity: UndergroundBeltProjectEntity, type: "input" | "output"): void {
+    entity._asMut().setTypeProperty(type)
+    this.observer?.onEntityChanged(entity, entity.firstStage)
+  }
+
+  setUndergroundBeltDirectionAndType(
+    entity: UndergroundBeltProjectEntity,
+    direction: defines.direction,
+    type: "input" | "output",
+  ): void {
+    entity._asMut().direction = direction
     entity._asMut().setTypeProperty(type)
     this.observer?.onEntityChanged(entity, entity.firstStage)
   }

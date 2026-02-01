@@ -23,13 +23,13 @@ describe("train entities", () => {
 
   test("create train entity", () => {
     const train = createRollingStock(ctx.surfaces[3 - 1])
-    const entity = ctx.projectOps.addNewEntity(train, 3)!
+    const entity = ctx.project.actions.addNewEntity(train, 3)!
     expect(entity).toBeAny()
     assertTrainEntityCorrect(entity, false)
   })
   test("train entity error", () => {
     const train = createRollingStock(ctx.surfaces[3 - 1])
-    const entity = ctx.projectOps.addNewEntity(train, 3)!
+    const entity = ctx.project.actions.addNewEntity(train, 3)!
     train.destroy()
     ctx.surfaces[3 - 1].find_entities().forEach((e) => e.destroy())
 
@@ -38,7 +38,7 @@ describe("train entities", () => {
   })
   test("inserting a stage keeps train in same stage", () => {
     const train = createRollingStock(ctx.surfaces[3 - 1])
-    const entity = ctx.projectOps.addNewEntity(train, 3)!
+    const entity = ctx.project.actions.addNewEntity(train, 3)!
     expect(entity).toBeAny()
     expect(entity.lastStage).toBe(3)
     ctx.project.insertStage(4)
@@ -48,8 +48,8 @@ describe("train entities", () => {
   })
   test("Moving a train also sets its last stage", () => {
     const train = createRollingStock(ctx.surfaces[3 - 1])
-    const entity = ctx.projectOps.addNewEntity(train, 3)!
-    ctx.projectOps.trySetFirstStage(entity, 2)
+    const entity = ctx.project.actions.addNewEntity(train, 3)!
+    ctx.project.actions.trySetFirstStage(entity, 2)
     expect(entity.firstStage).toBe(2)
     expect(entity.lastStage).toBe(2)
     assertTrainEntityCorrect(entity, 2)

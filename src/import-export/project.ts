@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import { OverrideableBlueprintSettings, StageBlueprintSettings } from "../blueprints/blueprint-settings"
-import { ProjectEntity } from "../entity/ProjectEntity"
+import { newProjectContent } from "../entity/ProjectContent"
 import { Stage, StageSettings, Project } from "../project/Project"
 import { type SurfaceSettings } from "../project/surfaces"
 import { createProject } from "../project/Project"
@@ -54,21 +54,26 @@ export function exportStage(this: unknown, stage: Stage): StageExport {
   }
 }
 
-export function importProjectDataOnly(project: ProjectExport): Project {
-  const stages = project.stages
-  const result = createProject(project.name ?? "", stages?.length ?? 3, project?.surfaceSettings)
+export function importProjectDataOnly(data: ProjectExport): Project {
+  const stages = data.stages
+  const numStages = stages?.length ?? 3
 
-  if (project.landfillTile != nil) {
-    result.settings.landfillTile.set(project.landfillTile)
+  const content = newProjectContent()
+  importAllEntities(content, assert(data.entities))
+
+  const result = createProject(data.name ?? "", numStages, data?.surfaceSettings, content)
+
+  if (data.landfillTile != nil) {
+    result.settings.landfillTile.set(data.landfillTile)
   }
-  if (project.stagedTilesEnabled != nil) {
-    result.settings.stagedTilesEnabled.set(project.stagedTilesEnabled)
+  if (data.stagedTilesEnabled != nil) {
+    result.settings.stagedTilesEnabled.set(data.stagedTilesEnabled)
   }
 
-  if (project.defaultBlueprintSettings != nil) {
+  if (data.defaultBlueprintSettings != nil) {
     setCurrentValuesOf<OverrideableBlueprintSettings>(
       result.settings.defaultBlueprintSettings,
-      project.defaultBlueprintSettings,
+      data.defaultBlueprintSettings,
       keys<OverrideableBlueprintSettings>(),
     )
   }
@@ -78,14 +83,6 @@ export function importProjectDataOnly(project: ProjectExport): Project {
       importStage(stage, result.getStage(i)!)
     }
   }
-  if (result.settings.isSpacePlatform()) {
-    const hub = next(result.content.allEntities())[0] as ProjectEntity | nil
-    if (hub) {
-      result.actions.forceDeleteEntity(hub)
-    }
-  }
-
-  importAllEntities(result.content, assert(project.entities))
 
   return result
 }

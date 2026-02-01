@@ -18,6 +18,7 @@ export interface WorldEntityLookup {
 
 export interface WorldPresenter extends WorldEntityLookup {
   replaceWorldOrPreviewEntity(entity: ProjectEntity, stage: StageNumber, luaEntity: LuaEntity | nil): void
+  destroyAllWorldOrPreviewEntities(entity: ProjectEntity): void
 
   rebuildStage(stage: StageNumber): void
   rebuildAllStages(): void
@@ -73,7 +74,6 @@ export class WorldPresentation implements WorldEntityLookup, WorldPresenter, Con
 
   onEntityAdded(entity: ProjectEntity): void {
     this.getWorldUpdates().updateNewWorldEntitiesWithoutWires(entity)
-    this.getWorldUpdates().updateWireConnections(entity)
     this.getHighlights().updateAllHighlights(entity)
   }
 
@@ -121,7 +121,6 @@ export class WorldPresentation implements WorldEntityLookup, WorldPresenter, Con
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onStageMerged(_stageNumber: StageNumber): void {}
-
 
   getWorldUpdates(): WorldUpdates {
     return getClosures(this).worldUpdates

@@ -147,10 +147,10 @@ describe.each([
         const entity = buildEntity<InserterBlueprintEntity>(1)
         entity._asMut()._applyDiffAtStage(3, { override_stack_size: 2 })
         entity._asMut()._applyDiffAtStage(5, { override_stack_size: 3 })
-        ctx.projectOps.deleteEntityOrCreateSettingsRemnant(entity)
+        ctx.project.actions.deleteEntityOrCreateSettingsRemnant(entity)
         ctx.assertIsSettingsRemnant(entity)
 
-        assert(ctx.projectOps.tryReviveSettingsRemnant(entity, reviveStage))
+        assert(ctx.project.actions.tryReviveSettingsRemnant(entity, reviveStage))
         expect(entity.isSettingsRemnant).toBeFalsy()
         expect(reviveStage).toBe(entity.firstStage)
 
@@ -171,10 +171,10 @@ describe.each([
       test("settings remnant 2->3, revive at stage 1", () => {
         const entity = buildEntity<InserterBlueprintEntity>(2)
         entity._asMut()._applyDiffAtStage(3, { override_stack_size: 3 })
-        ctx.projectOps.deleteEntityOrCreateSettingsRemnant(entity)
+        ctx.project.actions.deleteEntityOrCreateSettingsRemnant(entity)
         ctx.assertIsSettingsRemnant(entity)
 
-        ctx.projectOps.tryReviveSettingsRemnant(entity, 1)
+        ctx.project.actions.tryReviveSettingsRemnant(entity, 1)
         expect(entity.isSettingsRemnant).toBeFalsy()
         expect(1).toBe(entity.firstStage)
 
@@ -358,7 +358,7 @@ describe.each([
       const entity = buildEntity(3)
       entity._asMut()._applyDiffAtStage(4, diff)
       for (const key of keys) {
-        ctx.projectOps.resetProp(entity, 4, key as keyof BlueprintEntity)
+        ctx.project.actions.resetProp(entity, 4, key as keyof BlueprintEntity)
       }
       expect(entity.hasStageDiff()).toBe(false)
       expect(entity.firstValue).not.toMatchTable(diff)
@@ -370,7 +370,7 @@ describe.each([
       const entity = buildEntity(3)
       entity._asMut()._applyDiffAtStage(4, diff)
       for (const key of keys) {
-        ctx.projectOps.movePropDown(entity, 4, key as keyof BlueprintEntity)
+        ctx.project.actions.movePropDown(entity, 4, key as keyof BlueprintEntity)
       }
       expect(entity.hasStageDiff()).toBe(false)
       expect(entity.firstValue).toMatchTable(diff)
@@ -380,7 +380,7 @@ describe.each([
     test("resetAllProps", () => {
       const entity = buildEntity(3)
       entity._asMut()._applyDiffAtStage(4, diff)
-      ctx.projectOps.resetAllProps(entity, 4)
+      ctx.project.actions.resetAllProps(entity, 4)
       expect(entity.hasStageDiff()).toBe(false)
       expect(entity.firstValue).not.toMatchTable(diff)
       ctx.assertEntityCorrect(entity, false)
@@ -389,7 +389,7 @@ describe.each([
     test("moveAllPropsDown", () => {
       const entity = buildEntity(3)
       entity._asMut()._applyDiffAtStage(4, diff)
-      ctx.projectOps.moveAllPropsDown(entity, 4)
+      ctx.project.actions.moveAllPropsDown(entity, 4)
       expect(entity.hasStageDiff()).toBe(false)
       expect(entity.firstValue).toMatchTable(diff)
       ctx.assertEntityCorrect(entity, false)

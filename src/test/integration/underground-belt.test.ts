@@ -145,9 +145,6 @@ describe("underground belt inconsistencies", () => {
     })
     test("When flipping an left paired with multiple undergrounds, error is shown in stage where left flip failed", () => {
       const leftStage1 = ctx.worldQueries.getWorldEntity(leftUnderground, 1)!
-      const rightStage1 = ctx.worldQueries.getWorldEntity(rightUnderground, 1)!
-      const leftStage2 = ctx.worldQueries.getWorldEntity(leftUnderground, 2)!
-
       leftStage1.rotate({ by_player: ctx.player })
 
       expect(leftUnderground).toMatchTable({
@@ -163,15 +160,15 @@ describe("underground belt inconsistencies", () => {
         direction: defines.direction.east,
       })
 
-      expect(leftStage1).toMatchTable({
+      expect(ctx.worldQueries.getWorldEntity(leftUnderground, 1)).toMatchTable({
         direction: defines.direction.west,
         belt_to_ground_type: "output",
       })
-      expect(rightStage1).toMatchTable({
+      expect(ctx.worldQueries.getWorldEntity(rightUnderground, 1)).toMatchTable({
         direction: defines.direction.west,
         belt_to_ground_type: "input",
       })
-      expect(leftStage2).toMatchTable({
+      expect(ctx.worldQueries.getWorldEntity(leftUnderground, 2)).toMatchTable({
         direction: defines.direction.east,
         belt_to_ground_type: "input",
       })
@@ -183,9 +180,6 @@ describe("underground belt inconsistencies", () => {
     })
     test("when flipping middle, middle succeeds, but error is shown in left where the flip failed", () => {
       const middle = ctx.worldQueries.getWorldEntity(middleUnderground, 2)!
-      const leftStage1 = ctx.worldQueries.getWorldEntity(leftUnderground, 1)!
-      const leftStage2 = ctx.worldQueries.getWorldEntity(leftUnderground, 2)!
-
       middle.rotate({ by_player: ctx.player })
 
       expect(leftUnderground).toMatchTable({
@@ -201,13 +195,13 @@ describe("underground belt inconsistencies", () => {
         direction: defines.direction.east,
       })
 
-      expect(leftStage1).toMatchTable({
+      expect(ctx.worldQueries.getWorldEntity(leftUnderground, 1)).toMatchTable({
         direction: defines.direction.east,
         belt_to_ground_type: "input",
       })
       expect(ctx.worldQueries.hasErrorAt(leftUnderground, 1)).toBe(true)
 
-      expect(leftStage2).toMatchTable({
+      expect(ctx.worldQueries.getWorldEntity(leftUnderground, 2)).toMatchTable({
         direction: defines.direction.west,
         belt_to_ground_type: "output",
       })
@@ -240,17 +234,15 @@ describe("underground belt inconsistencies", () => {
         direction: defines.direction.west,
       })
 
-      const middle = ctx.worldQueries.getWorldEntity(middleUnderground, 2)!
-
-      expect(leftStage1).toMatchTable({
+      expect(ctx.worldQueries.getWorldEntity(leftUnderground, 1)).toMatchTable({
         direction: defines.direction.west,
         belt_to_ground_type: "output",
       })
-      expect(leftStage2).toMatchTable({
+      expect(ctx.worldQueries.getWorldEntity(leftUnderground, 2)).toMatchTable({
         direction: defines.direction.west,
         belt_to_ground_type: "output",
       })
-      expect(middle).toMatchTable({
+      expect(ctx.worldQueries.getWorldEntity(middleUnderground, 2)).toMatchTable({
         direction: defines.direction.west,
         belt_to_ground_type: "input",
       })
@@ -327,7 +319,7 @@ describe("underground belt inconsistencies", () => {
       ctx.assertEntityCorrect(rightUnderground, 1)
     })
     test("flipping an underground with a pair with error project.updates highlight on pair", () => {
-      leftWorldEntity.rotate({ by_player: ctx.player })
+      ctx.worldQueries.getWorldEntity(leftUnderground, 1)!.rotate({ by_player: ctx.player })
       expect(leftUnderground).toMatchTable({
         firstValue: { type: "output" },
         direction: defines.direction.west,
@@ -351,7 +343,7 @@ describe("underground belt inconsistencies", () => {
         firstValue: { type: "input" },
         direction: defines.direction.west,
       })
-      expect(leftWorldEntity).toMatchTable({
+      expect(ctx.worldQueries.getWorldEntity(leftUnderground, 1)).toMatchTable({
         belt_to_ground_type: "input",
         direction: defines.direction.east,
       })
