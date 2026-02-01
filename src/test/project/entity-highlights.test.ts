@@ -10,7 +10,6 @@ import { Entity } from "../../entity/Entity"
 import { newProjectEntity, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { Pos } from "../../lib/geometry"
 import { EntityHighlights, HighlightEntities } from "../../project/entity-highlights"
-import { ProjectBase } from "../../project/Project"
 import { simpleInsertPlan } from "../entity/entity-util"
 import { moduleMock } from "../module-mock"
 import { simpleMock } from "../simple-mock"
@@ -27,7 +26,7 @@ interface FooEntity extends Entity {
   foo?: number
 }
 let entity: ProjectEntity<FooEntity>
-let project: ProjectBase
+let project: ReturnType<typeof createMockProject>
 
 import _highlightCreator = require("../../project/create-highlight")
 
@@ -46,7 +45,12 @@ function es() {
 
 before_each(() => {
   project = createMockProject(surfaces)
-  entityHighlights = EntityHighlights(project, project.worldPresentation, project.worldPresentation.entityStorage)
+  entityHighlights = new EntityHighlights(
+    project.surfaces,
+    project.settings,
+    project.worldPresentation,
+    project.worldPresentation.entityStorage,
+  )
   wq = createWorldPresentationQueries(project.worldPresentation)
   highlightCreator.createSprite.invokes((params) => simpleMock(params as any))
   entity = newProjectEntity({ name: "stone-furnace" }, Pos(1, 1), 0, 2)

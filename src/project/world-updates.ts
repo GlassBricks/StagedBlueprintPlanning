@@ -68,7 +68,6 @@ export interface WorldUpdates {
 
   updateTilesInRange(position: Position, fromStage: StageNumber, toStage: StageNumber | nil): TileCollision | nil
 
-  // passed from EntityHighlights
   updateAllHighlights(entity: ProjectEntity): void
 }
 
@@ -145,12 +144,6 @@ OnPrototypeInfoLoaded.addListener((info) => {
 export function WorldUpdates(project: ProjectBase, highlights: EntityHighlights): WorldUpdates {
   const content = project.content
   const wp = project.worldPresentation
-  const {
-    updateAllHighlights,
-    deleteAllHighlights,
-    makeSettingsRemnantHighlights,
-    updateHighlightsOnReviveSettingsRemnant,
-  } = highlights
 
   const deconstructibleTiles = Object.keys(
     prototypes.get_tile_filtered([
@@ -178,7 +171,7 @@ export function WorldUpdates(project: ProjectBase, highlights: EntityHighlights)
     resetUnderground,
     rebuildAllStages,
     resyncWithWorld,
-    updateAllHighlights: updateAllHighlightsIfNotBlocked,
+    updateAllHighlights: (entity: ProjectEntity) => updateAllHighlightsIfNotBlocked(entity),
     updateTilesInRange,
   }
 
@@ -188,7 +181,7 @@ export function WorldUpdates(project: ProjectBase, highlights: EntityHighlights)
 
   function updateAllHighlightsIfNotBlocked(entity: ProjectEntity): void {
     if (worldUpdatesBlocked) return
-    updateAllHighlights(entity)
+    highlights.updateAllHighlights(entity)
   }
 
   function makePreviewEntity(
@@ -214,7 +207,7 @@ export function WorldUpdates(project: ProjectBase, highlights: EntityHighlights)
   function clearWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void {
     const previewName = Prototypes.PreviewEntityPrefix + entity.getPropAtStage(stage, "name")[0]
     makePreviewEntity(stage, entity, entity.getPreviewDirection(), previewName)
-    updateAllHighlights(entity)
+    highlights.updateAllHighlights(entity)
   }
   function setEntityUpdateable(entity: LuaEntity, updateable: boolean) {
     entity.minable = updateable
@@ -295,7 +288,7 @@ export function WorldUpdates(project: ProjectBase, highlights: EntityHighlights)
     // kinda hacky spot for this, but no better place as of now
     if (updatedNeighbors) {
       for (const neighbor of updatedNeighbors) {
-        updateAllHighlights(neighbor)
+        highlights.updateAllHighlights(neighbor)
       }
     }
 
@@ -317,7 +310,7 @@ export function WorldUpdates(project: ProjectBase, highlights: EntityHighlights)
     if (lastStage < startStage) return
     updateWorldEntitiesInRange(entity, startStage, lastStage)
     updateWires(entity, startStage)
-    if (updateHighlights) updateAllHighlights(entity)
+    if (updateHighlights) highlights.updateAllHighlights(entity)
   }
 
   function updateNewWorldEntitiesWithoutWires(entity: ProjectEntity): void {
@@ -326,7 +319,7 @@ export function WorldUpdates(project: ProjectBase, highlights: EntityHighlights)
     // performance: if there are no errors, then there are no highlights to update
     // (no stage diff or last stage, either)
     const mayHaveHighlights = hasError || entity.getPropertyAllStages("unstagedValue") != nil
-    if (mayHaveHighlights) updateAllHighlights(entity)
+    if (mayHaveHighlights) highlights.updateAllHighlights(entity)
   }
 
   function refreshWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void {
@@ -347,13 +340,13 @@ export function WorldUpdates(project: ProjectBase, highlights: EntityHighlights)
     if (entity.isSettingsRemnant) {
       wp.destroyWorldOrPreviewEntity(entity, stage)
       makePreviewEntity(stage, entity, entity.getPreviewDirection(), entity.getPropAtStage(stage, "name")[0])
-      makeSettingsRemnantHighlights(entity)
+      highlights.makeSettingsRemnantHighlights(entity)
       return
     }
 
     updateWorldEntitiesInRange(entity, stage, stage)
     updateWireConnectionsAtStage(content, entity, stage, wp)
-    updateAllHighlights(entity)
+    highlights.updateAllHighlights(entity)
   }
   /**
    * Forces change even if that would make the pair incorrect
@@ -364,7 +357,7 @@ export function WorldUpdates(project: ProjectBase, highlights: EntityHighlights)
       forceFlipUnderground(worldEntity)
     }
     updateWorldEntitiesInRange(entity, stage, stage)
-    updateAllHighlights(entity)
+    highlights.updateAllHighlights(entity)
   }
 
   function rebuildWorldEntityAtStage(entity: ProjectEntity, stage: StageNumber): void {
@@ -382,7 +375,7 @@ export function WorldUpdates(project: ProjectBase, highlights: EntityHighlights)
     } else if (oldLastStage) {
       updateWorldEntities(entity, oldLastStage + 1)
     }
-    updateAllHighlights(entity)
+    highlights.updateAllHighlights(entity)
   }
 
   function updateWireConnections(entity: ProjectEntity): void {
@@ -401,7 +394,7 @@ export function WorldUpdates(project: ProjectBase, highlights: EntityHighlights)
     for (const stage of $range(1, project.lastStageFor(entity))) {
       makePreviewEntity(stage, entity, direction, previewName)
     }
-    makeSettingsRemnantHighlights(entity)
+    highlights.makeSettingsRemnantHighlights(entity)
   }
 
   function reviveSettingsRemnant(entity: ProjectEntity): void {
@@ -410,7 +403,7 @@ export function WorldUpdates(project: ProjectBase, highlights: EntityHighlights)
     updateWorldEntitiesInRange(entity, 1, lastStage)
     updateWires(entity, 1)
 
-    updateHighlightsOnReviveSettingsRemnant(entity)
+    highlights.updateHighlightsOnReviveSettingsRemnant(entity)
   }
 
   function deleteUndergroundBelt(entity: ProjectEntity, project: ProjectBase): void {
@@ -425,7 +418,7 @@ export function WorldUpdates(project: ProjectBase, highlights: EntityHighlights)
     }
     wp.destroyAllWorldOrPreviewEntities(entity)
     for (const pair of pairsToUpdate) {
-      updateAllHighlights(pair)
+      highlights.updateAllHighlights(pair)
     }
   }
   function deleteWorldEntities(entity: ProjectEntity): void {
@@ -434,7 +427,7 @@ export function WorldUpdates(project: ProjectBase, highlights: EntityHighlights)
     } else {
       wp.destroyAllWorldOrPreviewEntities(entity)
     }
-    deleteAllHighlights(entity)
+    highlights.deleteAllHighlights(entity)
   }
 
   function disableAllEntitiesInStage(stage: StageNumber): void {

@@ -46,8 +46,8 @@ Delete files:
 - `src/lib/test/LazyLoad.test.ts`
 
 ### Success Criteria
-- [ ] `pnpm run test` passes
-- [ ] No remaining imports of `LazyLoad` in src/
+- [x] `pnpm run test` passes
+- [x] No remaining imports of `LazyLoad` in src/
 
 ## Phase 2: Convert EntityHighlights to a class
 
@@ -127,11 +127,11 @@ entityHighlights = new EntityHighlights(
 ```
 
 ### Success Criteria
-- [ ] `pnpm run test` passes
-- [ ] `EntityHighlights` is a class, not a closure function
-- [ ] `EntityHighlights` does not import or reference `ProjectBase`
+- [x] `pnpm run test` passes
+- [x] `EntityHighlights` is a class, not a closure function
+- [x] `EntityHighlights` does not import or reference `ProjectBase`
 - [ ] `HighlightEntities` interface removed (use `WorldEntityTypes` keys instead)
-- [ ] `StageCount` and `SurfaceProvider` interfaces defined
+- [x] `StageCount` and `SurfaceProvider` interfaces defined
 
 ## Phase 3: Port WorldUpdates into WorldPresentation
 

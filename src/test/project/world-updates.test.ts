@@ -17,7 +17,7 @@ import { WorldUpdates } from "../../project/world-updates"
 import { createProjectTile } from "../../tiles/ProjectTile"
 import { createRollingStock } from "../entity/createRollingStock"
 import { moduleInsertPlan, simpleInsertPlan } from "../entity/entity-util"
-import { fMock } from "../f-mock"
+import { fMockClass } from "../f-mock"
 import { clearModuleMock, doModuleMock, moduleMock } from "../module-mock"
 import { createMockProject, setupTestSurfaces } from "./Project-mock"
 
@@ -33,7 +33,7 @@ let entity: ProjectEntity<TestEntity>
 import _wireHandler = require("../../entity/wires")
 
 const wireUpdater = moduleMock(_wireHandler, true)
-const entityHighlights = fMock<EntityHighlights>()
+const entityHighlights = fMockClass<EntityHighlights>()
 
 const origPos = { x: 0.5, y: 0.5 }
 const origDir = defines.direction.east
@@ -46,7 +46,7 @@ function wp() {
 let worldUpdates: WorldUpdates
 before_each(() => {
   project = createMockProject(surfaces)
-  ;(project as any).worldUpdates = worldUpdates = WorldUpdates(project, entityHighlights)
+  ;(project as any).worldUpdates = worldUpdates = WorldUpdates(project, entityHighlights as unknown as EntityHighlights)
   entity = newProjectEntity(
     {
       name: "inserter",

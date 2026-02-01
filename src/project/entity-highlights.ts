@@ -23,28 +23,24 @@ import { assertNever } from "../lib"
 import { BBox, Position } from "../lib/geometry"
 import { createHighlightBox, createSprite } from "./create-highlight"
 import { EntityStorage } from "./EntityStorage"
-import { ProjectBase } from "./Project"
 import { WorldEntityLookup, WorldEntityTypes } from "./WorldPresentation"
+
+export interface StageCount {
+  stageCount(): StageNumber
+}
+
+export interface SurfaceProvider {
+  getSurface(stage: StageNumber): LuaSurface | nil
+}
 
 export type HighlightEntity = HighlightBoxEntity | LuaRenderObject
 export interface HighlightEntities {
-  /** Error outline when an entity cannot be placed. Should be placed on preview entity. */
   errorOutline?: HighlightBoxEntity
-  /** Indicator sprite when there is an error highlight in another stage. */
   errorElsewhereIndicator?: LuaRenderObject
-
-  /** White outline when a settings remnant entity is left behind. */
   settingsRemnantHighlight?: HighlightBoxEntity
-
-  /** Blue/green outline when an entity's settings have changed; green if is upgrade */
   configChangedHighlight?: HighlightBoxEntity
-  /** Blueprint sprite when an entity's settings have changed in a future stage. */
   configChangedLaterHighlight?: LuaRenderObject
-
-  /** Deconstruction planner sprite when an entity is deleted in the next stage (lastStage is set). Ignored if entity is movable. */
   stageDeleteHighlight?: LuaRenderObject
-
-  /** Item is requested. */
   itemRequestHighlight?: LuaRenderObject
   itemRequestHighlightOverlay?: LuaRenderObject
 }
@@ -141,59 +137,61 @@ const prototypesToSkipRequestHighlight = newLuaSet(
   "railgun-turret",
 )
 
-/** @noSelf */
-export interface EntityHighlights {
-  updateAllHighlights(entity: ProjectEntity): void
-  deleteAllHighlights(entity: ProjectEntity): void
-  makeSettingsRemnantHighlights(entity: ProjectEntity): void
-  updateHighlightsOnReviveSettingsRemnant(entity: ProjectEntity): void
-}
-export function EntityHighlights(
-  project: ProjectBase,
-  worldEntities: WorldEntityLookup,
-  entityStorage: EntityStorage<WorldEntityTypes>,
-): EntityHighlights {
-  function getExtraEntity<T extends keyof HighlightEntities>(
+export class EntityHighlights {
+  constructor(
+    private surfaces: SurfaceProvider,
+    private stageCount: StageCount,
+    private worldEntities: WorldEntityLookup,
+    private entityStorage: EntityStorage<WorldEntityTypes>,
+  ) {}
+
+  private lastStageFor(entity: ProjectEntity): StageNumber {
+    const numStages = this.stageCount.stageCount()
+    if (entity.lastStage != nil) return math.min(entity.lastStage, numStages)
+    return numStages
+  }
+
+  private getExtraEntity<T extends keyof HighlightEntities>(
     entity: ProjectEntity,
     type: T,
     stage: StageNumber,
   ): HighlightEntities[T] | nil {
-    const value = entityStorage.get(entity, type, stage) as HighlightEntities[T] | nil
+    const value = this.entityStorage.get(entity, type, stage) as HighlightEntities[T] | nil
     if (value && value.valid) return value
-    if (value) entityStorage.delete(entity, type, stage)
+    if (value) this.entityStorage.delete(entity, type, stage)
     return nil
   }
 
-  function replaceExtraEntity<T extends keyof HighlightEntities>(
+  private replaceExtraEntity<T extends keyof HighlightEntities>(
     entity: ProjectEntity,
     type: T,
     stage: StageNumber,
     value: HighlightEntities[T] | nil,
   ): void {
     if (value == nil) {
-      destroyExtraEntity(entity, type, stage)
+      this.destroyExtraEntity(entity, type, stage)
       return
     }
-    const existing = entityStorage.get(entity, type, stage) as HighlightEntities[T] | nil
+    const existing = this.entityStorage.get(entity, type, stage) as HighlightEntities[T] | nil
     if (existing && existing.valid && existing != value) existing.destroy()
-    entityStorage.set(entity, type, stage, value as WorldEntityTypes[T & keyof WorldEntityTypes])
+    this.entityStorage.set(entity, type, stage, value as WorldEntityTypes[T & keyof WorldEntityTypes])
   }
 
-  function destroyExtraEntity(entity: ProjectEntity, type: keyof HighlightEntities, stage: StageNumber): void {
-    const existing = entityStorage.get(entity, type, stage) as HighlightEntity | nil
+  private destroyExtraEntity(entity: ProjectEntity, type: keyof HighlightEntities, stage: StageNumber): void {
+    const existing = this.entityStorage.get(entity, type, stage) as HighlightEntity | nil
     if (existing && existing.valid) existing.destroy()
-    entityStorage.delete(entity, type, stage)
+    this.entityStorage.delete(entity, type, stage)
   }
 
-  function destroyAllExtraEntities(entity: ProjectEntity, type: keyof HighlightEntities): void {
-    for (const [, value] of entityStorage.iterateType(entity, type)) {
+  private destroyAllExtraEntities(entity: ProjectEntity, type: keyof HighlightEntities): void {
+    for (const [, value] of this.entityStorage.iterateType(entity, type)) {
       const highlight = value as unknown as HighlightEntity
       if (highlight && highlight.valid) highlight.destroy()
     }
-    entityStorage.deleteAllOfType(entity, type)
+    this.entityStorage.deleteAllOfType(entity, type)
   }
 
-  function createHighlight<T extends keyof HighlightEntities>(
+  private createHighlight<T extends keyof HighlightEntities>(
     entity: ProjectEntity,
     stage: StageNumber,
     surface: LuaSurface,
@@ -201,8 +199,8 @@ export function EntityHighlights(
     spriteNameOverride?: string,
   ): HighlightEntities[T] {
     const config = highlightConfigs[type]
-    const existing = getExtraEntity(entity, type, stage)
-    const entityTarget = worldEntities.getWorldOrPreviewEntity(entity, stage)
+    const existing = this.getExtraEntity(entity, type, stage)
+    const entityTarget = this.worldEntities.getWorldOrPreviewEntity(entity, stage)
     if (
       existing &&
       config.type == "sprite" &&
@@ -246,65 +244,59 @@ export function EntityHighlights(
       assertNever(config)
     }
 
-    replaceExtraEntity(entity, type, stage, result as HighlightEntities[T])
+    this.replaceExtraEntity(entity, type, stage, result as HighlightEntities[T])
     return result as HighlightEntities[T]
   }
 
-  function removeHighlight(entity: ProjectEntity, stageNumber: StageNumber, type: keyof HighlightEntities): void {
-    destroyExtraEntity(entity, type, stageNumber)
+  private removeHighlight(entity: ProjectEntity, stageNumber: StageNumber, type: keyof HighlightEntities): void {
+    this.destroyExtraEntity(entity, type, stageNumber)
   }
 
-  function removeHighlightFromAllStages(entity: ProjectEntity, type: keyof HighlightEntities): void {
-    destroyAllExtraEntities(entity, type)
+  private removeHighlightFromAllStages(entity: ProjectEntity, type: keyof HighlightEntities): void {
+    this.destroyAllExtraEntities(entity, type)
   }
 
-  return {
-    updateAllHighlights,
-    deleteAllHighlights,
-    makeSettingsRemnantHighlights,
-    updateHighlightsOnReviveSettingsRemnant,
-  }
-  function updateHighlight(
+  private updateHighlight(
     entity: ProjectEntity,
     stage: StageNumber,
     type: keyof HighlightEntities,
     value: boolean | nil,
   ): HighlightEntity | nil {
-    if (value) return createHighlight(entity, stage, project.surfaces.getSurface(stage)!, type)
-    removeHighlight(entity, stage, type)
+    if (value) return this.createHighlight(entity, stage, this.surfaces.getSurface(stage)!, type)
+    this.removeHighlight(entity, stage, type)
     return nil
   }
 
-  function updateErrorOutlines(entity: ProjectEntity): void {
+  private updateErrorOutlines(entity: ProjectEntity): void {
     let hasErrorAnywhere = false
-    for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
-      const hasError = worldEntities.hasErrorAt(entity, stage)
-      updateHighlight(entity, stage, "errorOutline", hasError)
+    for (const stage of $range(entity.firstStage, this.lastStageFor(entity))) {
+      const hasError = this.worldEntities.hasErrorAt(entity, stage)
+      this.updateHighlight(entity, stage, "errorOutline", hasError)
       hasErrorAnywhere ||= hasError
     }
 
     if (!hasErrorAnywhere) {
-      destroyAllExtraEntities(entity, "errorElsewhereIndicator")
+      this.destroyAllExtraEntities(entity, "errorElsewhereIndicator")
     } else {
-      for (const stage of $range(1, project.lastStageFor(entity))) {
-        const shouldHaveIndicator = !worldEntities.hasErrorAt(entity, stage)
-        updateHighlight(entity, stage, "errorElsewhereIndicator", shouldHaveIndicator)
+      for (const stage of $range(1, this.lastStageFor(entity))) {
+        const shouldHaveIndicator = !this.worldEntities.hasErrorAt(entity, stage)
+        this.updateHighlight(entity, stage, "errorElsewhereIndicator", shouldHaveIndicator)
       }
     }
   }
 
-  function updateStageDiffHighlights(entity: ProjectEntity): void {
+  private updateStageDiffHighlights(entity: ProjectEntity): void {
     if (!entity.hasStageDiff()) {
-      destroyAllExtraEntities(entity, "configChangedHighlight")
-      destroyAllExtraEntities(entity, "configChangedLaterHighlight")
+      this.destroyAllExtraEntities(entity, "configChangedHighlight")
+      this.destroyAllExtraEntities(entity, "configChangedLaterHighlight")
       return
     }
     const firstStage = entity.firstStage
     let lastStageWithHighlights = firstStage
-    for (const stage of $range(1, project.lastStageFor(entity))) {
+    for (const stage of $range(1, this.lastStageFor(entity))) {
       const hasConfigChanged = entity.hasStageDiff(stage)
       const isUpgrade = hasConfigChanged && entity.getStageDiff(stage)!.name != nil
-      const highlight = updateHighlight(entity, stage, "configChangedHighlight", hasConfigChanged)
+      const highlight = this.updateHighlight(entity, stage, "configChangedHighlight", hasConfigChanged)
       if (highlight) {
         ;(highlight as HighlightBoxEntity).highlight_box_type = isUpgrade
           ? HighlightConstants.Upgraded
@@ -312,10 +304,9 @@ export function EntityHighlights(
       }
       if (!hasConfigChanged) continue
 
-      // update configChangedLaterHighlights in previous stages
       const sprite = isUpgrade ? HighlightConstants.UpgradedLater : HighlightConstants.ConfigChangedLater
       for (; lastStageWithHighlights < stage; lastStageWithHighlights++) {
-        const highlight = updateHighlight(
+        const highlight = this.updateHighlight(
           entity,
           lastStageWithHighlights,
           "configChangedLaterHighlight",
@@ -325,39 +316,38 @@ export function EntityHighlights(
       }
     }
     if (lastStageWithHighlights == firstStage) {
-      // remove later highlights for all stages
-      removeHighlightFromAllStages(entity, "configChangedLaterHighlight")
+      this.removeHighlightFromAllStages(entity, "configChangedLaterHighlight")
     } else {
-      for (const i of $range(lastStageWithHighlights, project.lastStageFor(entity))) {
-        removeHighlight(entity, i, "configChangedLaterHighlight")
+      for (const i of $range(lastStageWithHighlights, this.lastStageFor(entity))) {
+        this.removeHighlight(entity, i, "configChangedLaterHighlight")
       }
       for (const i of $range(1, firstStage - 1)) {
-        removeHighlight(entity, i, "configChangedLaterHighlight")
+        this.removeHighlight(entity, i, "configChangedLaterHighlight")
       }
     }
   }
 
-  function updateStageDeleteIndicator(entity: ProjectEntity): void {
-    destroyAllExtraEntities(entity, "stageDeleteHighlight")
+  private updateStageDeleteIndicator(entity: ProjectEntity): void {
+    this.destroyAllExtraEntities(entity, "stageDeleteHighlight")
     if (entity.lastStage != nil && !entity.isMovable()) {
       const stage = entity.lastStage
-      const surface = project.surfaces.getSurface(stage)!
-      createHighlight(entity, stage, surface, "stageDeleteHighlight")
+      const surface = this.surfaces.getSurface(stage)!
+      this.createHighlight(entity, stage, surface, "stageDeleteHighlight")
     }
   }
 
-  function updateStageRequestIndicator(entity: ProjectEntity): void {
-    destroyAllExtraEntities(entity, "itemRequestHighlight")
-    destroyAllExtraEntities(entity, "itemRequestHighlightOverlay")
+  private updateStageRequestIndicator(entity: ProjectEntity): void {
+    this.destroyAllExtraEntities(entity, "itemRequestHighlight")
+    this.destroyAllExtraEntities(entity, "itemRequestHighlightOverlay")
     const unstagedValue = entity.getPropertyAllStages("unstagedValue")
     if (!unstagedValue) return
     if (entity.firstValue.name in prototypesToSkipRequestHighlight) return
     for (const [stage, value] of pairs(unstagedValue)) {
-      createEntityHiglights(entity, stage, value.items)
+      this.createEntityHighlights(entity, stage, value.items)
     }
   }
 
-  function createEntityHiglights(
+  private createEntityHighlights(
     entity: ProjectEntity<Entity>,
     stage: number,
     insertPlans: BlueprintInsertPlan[] | nil,
@@ -366,43 +356,46 @@ export function EntityHighlights(
       entity,
       stage,
       insertPlans,
-      worldEntities.getWorldEntity(entity, stage),
+      this.worldEntities.getWorldEntity(entity, stage),
     )
     if (sampleItemName != nil) {
-      createHighlight(entity, stage, project.surfaces.getSurface(stage)!, "itemRequestHighlight")
-      createHighlight(
+      this.createHighlight(entity, stage, this.surfaces.getSurface(stage)!, "itemRequestHighlight")
+      this.createHighlight(
         entity,
         stage,
-        project.surfaces.getSurface(stage)!,
+        this.surfaces.getSurface(stage)!,
         "itemRequestHighlightOverlay",
         `item/${sampleItemName}`,
       )
     }
   }
 
-  function updateAllHighlights(entity: ProjectEntity): void {
-    updateErrorOutlines(entity)
-    updateStageDiffHighlights(entity)
-    updateStageDeleteIndicator(entity)
-    updateStageRequestIndicator(entity)
+  updateAllHighlights(entity: ProjectEntity): void {
+    this.updateErrorOutlines(entity)
+    this.updateStageDiffHighlights(entity)
+    this.updateStageDeleteIndicator(entity)
+    this.updateStageRequestIndicator(entity)
   }
 
-  function deleteAllHighlights(entity: ProjectEntity): void {
-    for (const type of keys<HighlightEntities>()) destroyAllExtraEntities(entity, type)
+  deleteAllHighlights(entity: ProjectEntity): void {
+    for (const type of keys<HighlightEntities>()) this.destroyAllExtraEntities(entity, type)
   }
-  function makeSettingsRemnantHighlights(entity: ProjectEntity): void {
+
+  makeSettingsRemnantHighlights(entity: ProjectEntity): void {
     if (!entity.isSettingsRemnant) return
-    for (const type of keys<HighlightEntities>()) destroyAllExtraEntities(entity, type)
-    for (const stage of $range(1, project.lastStageFor(entity))) {
-      updateHighlight(entity, stage, "settingsRemnantHighlight", true)
+    for (const type of keys<HighlightEntities>()) this.destroyAllExtraEntities(entity, type)
+    for (const stage of $range(1, this.lastStageFor(entity))) {
+      this.updateHighlight(entity, stage, "settingsRemnantHighlight", true)
     }
   }
-  function updateHighlightsOnReviveSettingsRemnant(entity: ProjectEntity): void {
+
+  updateHighlightsOnReviveSettingsRemnant(entity: ProjectEntity): void {
     if (entity.isSettingsRemnant) return
-    destroyAllExtraEntities(entity, "settingsRemnantHighlight")
-    updateAllHighlights(entity)
+    this.destroyAllExtraEntities(entity, "settingsRemnantHighlight")
+    this.updateAllHighlights(entity)
   }
 }
+
 export function getItemRequestSampleItemName(
   projectEntity: ProjectEntity,
   stage: StageNumber,

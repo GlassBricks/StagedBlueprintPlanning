@@ -44,6 +44,16 @@ const classMockMt: LuaMetatable<any> = {
   },
 }
 
+export function fMockClass<T>(): mock.MockedObject<T> {
+  const result = setmetatable({}, classMockMt)
+  before_each(() => {
+    for (const key in result) {
+      delete result[key]
+    }
+  })
+  return result
+}
+
 export function fStubClass<T>(value: T): mock.MockedObject<T> {
   return setmetatable(value, classMockMt)
 }

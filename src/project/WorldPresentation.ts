@@ -58,7 +58,7 @@ const closureCache = setmetatable(new LuaMap<WorldPresentation, Closures>(), { _
 function getClosures(wp: WorldPresentation): Closures {
   let cached = closureCache.get(wp)
   if (!cached) {
-    const highlights = EntityHighlights(wp.project, wp, wp.entityStorage)
+    const highlights = new EntityHighlights(wp.project.surfaces, wp.project.settings, wp, wp.entityStorage)
     const worldUpdates = WorldUpdates(wp.project, highlights)
     cached = { worldUpdates, highlights }
     closureCache.set(wp, cached)
