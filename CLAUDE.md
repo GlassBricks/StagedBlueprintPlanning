@@ -103,6 +103,10 @@ See [docs/Migrations.md](docs/Migrations.md) for full reference and patterns.
 - Place project-related migrations in: `src/project/index.ts`
 - use `Migrations.to($CURRENT_VERSION, ...)` as a placeholder for current version. Global var will be substituted by a script later.
 
+### Debugging
+
+- `print()`, `localised_print()` (Factorio builtins) or `debugPrint()` (custom lib) can be added to code; output shows up in test failure output
+
 ### Testing
 
 - Place in in `src/test/` or `src/lib/test/`
