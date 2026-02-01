@@ -1,5 +1,8 @@
 {
   "modPath": "./src",
   "mods": ["EditorExtensions", "flib", "quality", "elevated-rails", "space-age", "bplib"],
-  "factorioArgs": ["--graphics-quality", "very-low", "--cache-sprite-atlas", "true", "--disable-audio"]
+  "factorioArgs": ["--graphics-quality", "very-low", "--cache-sprite-atlas", "true", "--disable-audio"],
+  "test": {
+    "reorder_failed_first": false
+  }
 }
