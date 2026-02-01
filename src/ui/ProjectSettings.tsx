@@ -519,11 +519,15 @@ class ProjectSettings extends Component<{
             {MaybeRevertButton(settings.additionalWhitelist)}
           </flow>
         </flow>
-        <checkbox
-          state={settings.excludeFromFutureBlueprints}
-          caption={[L_GuiProjectSettings.ExcludeFromFutureBlueprints]}
-          tooltip={[L_GuiProjectSettings.ExcludeFromFutureBlueprintsTooltip]}
-        />
+        <flow direction="horizontal" styleMod={{ vertical_align: "center" }}>
+          <checkbox
+            state={settings.excludeFromFutureBlueprints}
+            caption={[L_GuiProjectSettings.ExcludeFromFutureBlueprints]}
+            tooltip={[L_GuiProjectSettings.ExcludeFromFutureBlueprintsTooltip]}
+            styleMod={highlightIfOverriden(settings.excludeFromFutureBlueprints)}
+          />
+          {MaybeRevertButton(settings.excludeFromFutureBlueprints)}
+        </flow>
       </flow>
     )
   }
