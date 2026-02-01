@@ -363,43 +363,45 @@ function processPendingBplibPaste(data: BplibPasteData): void {
   const { stage, playerIndex, surface, entities, allowPasteUpgrades, flipVertical, flipHorizontal, direction } = data
   const isFlipped = flipVertical != flipHorizontal
 
-  for (const entityData of entities) {
-    const { blueprintEntity, worldPosition } = entityData
+  stage.project.content.batch(() => {
+    for (const entityData of entities) {
+      const { blueprintEntity, worldPosition } = entityData
 
-    const rawDirection = blueprintEntity.direction ?? 0
-    const rotatedDirection = ((rawDirection + direction) % 16) as defines.direction
-    const cardinalDirection = floorToCardinalDirection(rotatedDirection)
+      const rawDirection = blueprintEntity.direction ?? 0
+      const rotatedDirection = ((rawDirection + direction) % 16) as defines.direction
+      const cardinalDirection = floorToCardinalDirection(rotatedDirection)
 
-    const entityDir = calculateTransformedDirection(blueprintEntity, cardinalDirection, isFlipped)
+      const entityDir = calculateTransformedDirection(blueprintEntity, cardinalDirection, isFlipped)
 
-    const { entity: luaEntity } = findPastedEntity({
-      surface,
-      position: worldPosition,
-      blueprintEntity,
-      expectedDirection: entityDir,
-      allowUpgrades: allowPasteUpgrades,
-    })
+      const { entity: luaEntity } = findPastedEntity({
+        surface,
+        position: worldPosition,
+        blueprintEntity,
+        expectedDirection: entityDir,
+        allowUpgrades: allowPasteUpgrades,
+      })
 
-    if (!luaEntity) continue
+      if (!luaEntity) continue
 
-    const projectEntity = stage.actions.onEntityPossiblyUpdated(
-      luaEntity,
-      stage.stageNumber,
-      nil,
-      playerIndex,
-      blueprintEntity.tags?.bp100 as StageInfoExport | nil,
-      blueprintEntity.items,
-    )
+      const projectEntity = stage.actions.onEntityPossiblyUpdated(
+        luaEntity,
+        stage.stageNumber,
+        nil,
+        playerIndex,
+        blueprintEntity.tags?.bp100 as StageInfoExport | nil,
+        blueprintEntity.items,
+      )
 
-    let worldEntity: LuaEntity | nil = luaEntity
-    if (!luaEntity.valid && projectEntity) {
-      worldEntity = stage.project.worldPresentation.getWorldEntity(projectEntity, stage.stageNumber)
+      let worldEntity: LuaEntity | nil = luaEntity
+      if (!luaEntity.valid && projectEntity) {
+        worldEntity = stage.project.worldPresentation.getWorldEntity(projectEntity, stage.stageNumber)
+      }
+
+      if (worldEntity?.valid) {
+        stage.actions.onWiresPossiblyUpdated(worldEntity, stage.stageNumber, playerIndex)
+      }
     }
-
-    if (worldEntity?.valid) {
-      stage.actions.onWiresPossiblyUpdated(worldEntity, stage.stageNumber, playerIndex)
-    }
-  }
+  })
 }
 
 Events.on_pre_build((e) => {

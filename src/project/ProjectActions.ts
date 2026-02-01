@@ -882,12 +882,14 @@ export class ProjectActions {
   private replaceUnstagedValueViaContent(entity: ProjectEntity<Entity>, info: StageInfoExport<Entity>): void {
     const unstagedValues = info.unstagedValue
     if (unstagedValues != nil) {
-      this.content.clearEntityUnstagedValues(entity)
-      for (const [stage, value] of pairs(unstagedValues)) {
-        const stageNumber = tonumber(stage)
-        if (stageNumber == nil) continue
-        this.content.setEntityUnstagedValue(entity, stageNumber, value)
-      }
+      this.content.batch(() => {
+        this.content.clearEntityUnstagedValues(entity)
+        for (const [stage, value] of pairs(unstagedValues)) {
+          const stageNumber = tonumber(stage)
+          if (stageNumber == nil) continue
+          this.content.setEntityUnstagedValue(entity, stageNumber, value)
+        }
+      })
     }
   }
 

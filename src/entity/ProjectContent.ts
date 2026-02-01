@@ -88,6 +88,8 @@ export interface ProjectContent {
 export interface MutableProjectContent extends ProjectContent {
   setObserver(observer: ContentObserver | nil): void
 
+  beginBatch(): void
+  endBatch(): void
   batch(fn: () => void): void
 
   addEntity(entity: ProjectEntity): void
@@ -169,18 +171,27 @@ class ProjectContentImpl implements MutableProjectContent {
     this.observer = observer
   }
 
-  batch(fn: () => void): void {
+  beginBatch(): void {
     this.batchDepth++
     if (this.batchDepth == 1) this.batchedNotifications = new LuaMap()
+  }
+
+  endBatch(): void {
+    assert(this.batchDepth > 0, "endBatch called without matching beginBatch")
+    this.batchDepth--
+    if (this.batchDepth == 0) {
+      const batched = this.batchedNotifications!
+      this.batchedNotifications = nil
+      this.flushBatch(batched)
+    }
+  }
+
+  batch(fn: () => void): void {
+    this.beginBatch()
     try {
       fn()
     } finally {
-      this.batchDepth--
-      if (this.batchDepth == 0) {
-        const batched = this.batchedNotifications!
-        this.batchedNotifications = nil
-        this.flushBatch(batched)
-      }
+      this.endBatch()
     }
   }
 

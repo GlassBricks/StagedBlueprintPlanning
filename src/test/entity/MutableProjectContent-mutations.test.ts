@@ -492,6 +492,40 @@ describe("MutableProjectContent mutations", () => {
     })
   })
 
+  describe("beginBatch() / endBatch()", () => {
+    test("coalesces notifications same as batch(fn)", () => {
+      const entity = makeEntity()
+      content.addEntity(entity)
+      observer.onEntityChanged.clear()
+      content.beginBatch()
+      content.adjustEntityValue(entity, 3, { name: "transport-belt" })
+      content.adjustEntityValue(entity, 1, { name: "fast-transport-belt" })
+      expect(observer.onEntityChanged).not.toHaveBeenCalled()
+      content.endBatch()
+      expect(observer.onEntityChanged).toHaveBeenCalledTimes(1)
+      expect(observer.onEntityChanged).toHaveBeenCalledWith(entity, 1)
+    })
+
+    test("batch(fn) nests inside beginBatch/endBatch", () => {
+      const entity = makeEntity()
+      content.addEntity(entity)
+      observer.onEntityChanged.clear()
+      content.beginBatch()
+      content.adjustEntityValue(entity, 3, { name: "transport-belt" })
+      content.batch(() => {
+        content.adjustEntityValue(entity, 1, { name: "fast-transport-belt" })
+      })
+      expect(observer.onEntityChanged).not.toHaveBeenCalled()
+      content.endBatch()
+      expect(observer.onEntityChanged).toHaveBeenCalledTimes(1)
+      expect(observer.onEntityChanged).toHaveBeenCalledWith(entity, 1)
+    })
+
+    test("endBatch without beginBatch asserts", () => {
+      expect(() => content.endBatch()).toError()
+    })
+  })
+
   describe("setInserterPositions()", () => {
     test("fires onEntityChanged", () => {
       const entity = newProjectEntity({ name: "inserter" }, { x: 0, y: 0 }, 0, 1)
