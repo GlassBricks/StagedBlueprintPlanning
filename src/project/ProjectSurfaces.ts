@@ -1,6 +1,6 @@
 import { LuaEntity, LuaSurface, nil } from "factorio:runtime"
 import { StageNumber } from "../entity/ProjectEntity"
-import { ibind, RegisterClass, Subscription } from "../lib"
+import { bind, ibind, RegisterClass, Subscription } from "../lib"
 import { BBox } from "../lib/geometry"
 import { ProjectSettings } from "./ProjectSettings"
 import { createStageSurface, destroySurface, updateStageSurfaceName } from "./surfaces"
@@ -43,16 +43,14 @@ export class ProjectSurfaces {
 
   private subscribeToStageName(stageNumber: StageNumber): void {
     const stageSettings = this.settings.getStageSettings(stageNumber)
-    const surfaces = this.surfaces
-    const settings = this.settings
-    stageSettings.name.subscribe(this.subscription!, {
-      invoke(newName: string) {
-        const surface = surfaces[stageNumber]
-        if (surface?.valid) {
-          updateStageSurfaceName(surface, settings.projectName.get(), newName)
-        }
-      },
-    })
+    stageSettings.name.subscribe(this.subscription!, bind(ibind(this.onStageNameChanged), stageNumber))
+  }
+
+  private onStageNameChanged(stageNumber: StageNumber, newName: string): void {
+    const surface = this.surfaces[stageNumber]
+    if (surface?.valid) {
+      updateStageSurfaceName(surface, this.settings.projectName.get(), newName)
+    }
   }
 
   surfaceCount(): number {

@@ -26,9 +26,9 @@ import "./Project"
 import { BlueprintBookTemplate } from "./BlueprintBookTemplate"
 import { getAllProjects } from "./ProjectList"
 import { OverrideableBlueprintSettings } from "../blueprints/blueprint-settings"
-import { Project } from "./Project"
 import { ProjectSettings, StageSettingsData } from "./ProjectSettings"
 import { ProjectSurfaces } from "./ProjectSurfaces"
+import { ProjectActions } from "./ProjectActions"
 import { WorldPresentation } from "./WorldPresentation"
 
 declare const luaLength: LuaLength<Record<number, any>, number>
@@ -85,6 +85,7 @@ Migrations.early($CURRENT_VERSION, () => {
       delete oldStage.blueprintOverrideSettings
       delete oldStage.stageBlueprintSettings
       delete oldStage.name
+      oldStage.subscription?.close()
       delete oldStage.subscription
     }
 
@@ -263,17 +264,39 @@ Migrations.to("2.12.0", () => {
 
 Migrations.to($CURRENT_VERSION, () => {
   for (const project of getAllProjects()) {
-    interface OldUserProject extends Omit<Project, "worldUpdates"> {
+    interface OldUserProject {
       worldUpdates?: unknown
+      updates?: unknown
       subscription?: { close(): void }
     }
     const old = project as unknown as OldUserProject
     delete old.worldUpdates
+    delete old.updates
     old.subscription?.close()
     delete old.subscription
     if (!project.worldPresentation) {
       project.worldPresentation = new WorldPresentation(project.settings, project.surfaces, project.content)
     }
+    interface ContentWithBatchDepth {
+      batchDepth?: number
+    }
+    ;(project.content as unknown as ContentWithBatchDepth).batchDepth ??= 0
+    project.content.setObserver(project.worldPresentation)
+
+    if (!(project.actions instanceof ProjectActions)) {
+      project.actions = new ProjectActions(
+        project.content,
+        project.worldPresentation,
+        project.settings,
+        project.surfaces,
+      )
+      for (const stage of project.getAllStages()) {
+        ;(stage as { actions: ProjectActions }).actions = project.actions
+      }
+    }
+
+    ;(project as unknown as { registerEvents(): void }).registerEvents()
+
     interface OldProjectEntity {
       [stage: StageNumber]: LuaEntity | nil
     }
