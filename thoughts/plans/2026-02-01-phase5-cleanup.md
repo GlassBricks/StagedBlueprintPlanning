@@ -2,7 +2,7 @@
 
 ## Overview
 
-Final cleanup phase of the separation-of-concerns refactoring. Removes closure pattern from WorldPresentation, converts EntityHighlights to a class, eliminates the `ProjectBase` god-interface by passing specific components, deletes LazyLoad, and cleans up test infrastructure.
+Final cleanup phase of the separation-of-concerns refactoring. Removes closure pattern from WorldPresentation, converts EntityHighlights to a class, eliminates the `ProjectBase` god-interface by passing specific components, deletes LazyLoad, removes `TestWorldQueries` indirection, and cleans up test infrastructure.
 
 ## Current State Analysis
 
@@ -397,28 +397,86 @@ Or define a lightweight `TestProject` type.
 - [ ] Undo records store `actions: ProjectActions`, not `project: ProjectBase`
 - [ ] No file imports `ProjectBase`
 
+## Phase 6: Remove TestWorldOps and TestWorldQueries
+
+Both are thin wrappers in test infrastructure that delegate directly to `WorldPresentation` (and after Phase 3, all WorldUpdates methods are on WorldPresentation too). They exist in the same file and are used by the same test files, so remove them together.
+
+**TestWorldOps** delegates all methods to WorldPresentation or WorldUpdates (which is merged into WorldPresentation in Phase 3):
+- `rebuildStage`, `rebuildAllStages`, `refreshEntity`, `refreshAllEntities`, `rebuildEntity` → already on `WorldPresentation`
+- `updateWorldEntities`, `updateAllHighlights` → on `WorldPresentation` after Phase 3
+- `resyncWithWorld` → on `Project` after Phase 3
+
+**TestWorldQueries** delegates all methods to WorldPresentation + entityStorage:
+- `getWorldEntity`, `getWorldOrPreviewEntity`, `hasErrorAt` → already on `WorldPresentation`
+- `getExtraEntity` → `entityStorage.get(entity, type, stage)`
+- `hasAnyExtraEntities` → `entityStorage.hasAnyOfType(entity, type)`
+
+### Changes Required
+
+#### Delete `src/test/integration/test-world-queries.ts`
+
+#### `src/test/integration/integration-test-util.ts`
+
+- Remove `TestWorldOps` interface and `worldOps` from `EntityTestContext`
+- Remove `worldQueries` from `EntityTestContext`
+- Remove `createWorldPresentationQueries` import
+- Helper functions (`assertEntityCorrect`, `assertEntityNotPresent`, `assertIsSettingsRemnant`) take `wp: WorldPresentation` instead of `wq: TestWorldQueries`
+- Expose `wp` (WorldPresentation) directly on `EntityTestContext` instead of the two wrappers
+
+#### `src/test/project/entity-highlight-test-util.ts`
+
+Replace `wq: TestWorldQueries` parameter with `wp: WorldPresentation` in all exported functions. Update calls:
+- `wq.getWorldEntity(entity, stage)` → `wp.getWorldEntity(entity, stage)`
+- `wq.hasErrorAt(entity, stage)` → `wp.hasErrorAt(entity, stage)`
+- `wq.getExtraEntity(entity, type, stage)` → `wp.entityStorage.get(entity, type, stage)`
+- `wq.hasAnyExtraEntities(entity, type)` → `wp.entityStorage.hasAnyOfType(entity, type)`
+
+#### Integration test files (~10 files)
+
+All files that access `ctx.worldOps` switch to `ctx.project.worldPresentation` (or `ctx.wp`). All files that access `ctx.worldQueries` do the same. `ctx.worldOps.resyncWithWorld()` becomes `ctx.project.resyncWithWorld()`.
+
+Affected files:
+- `entity-lifecycle.test.ts`
+- `wire-connections.test.ts`
+- `entity-highlights.test.ts`
+- `underground-belt.test.ts`
+- `item-requests.test.ts`
+- `undo-redo.test.ts`
+- `stage-operations.test.ts`
+- `selection-tools.test.ts`
+- `blueprint-paste.test.ts`
+- `trains-and-vehicles.test.ts`
+
+### Success Criteria
+- [ ] `pnpm run test` passes
+- [ ] `pnpm run lint` passes
+- [ ] `test-world-queries.ts` deleted
+- [ ] No `TestWorldQueries` or `TestWorldOps` types referenced anywhere
+- [ ] No `createWorldPresentationQueries` function exists
+
 ## Verification Checklist (Target State)
 
 After all phases:
 
-- [x] No minimal `Project` interface from ProjectDef.d.ts
-- [x] No `ProjectUpdates` module
-- [x] `LazyLoadClass` deleted (Phase 1)
-- [x] No delegate methods on Project (Phase 4 removes `lastStageFor`)
-- [x] `project-event-listener.ts` deleted
-- [x] No `GlobalProjectEvents` singleton
-- [x] No `localEvents` field on Project
-- [x] `ProjectList.ts` exports module-level `GlobalEvent` instances
-- [x] Import/export uses `ProjectSettings` and `content` directly
-- [x] All entity mutations go through `MutableProjectContent`
-- [x] `MutableProjectContent` has no LuaEntity references or business logic
-- [x] All validation and coordination logic is in `ProjectActions`
-- [x] `ProjectActions` depends on `WorldPresenter` interface, not `WorldPresentation` class
-- [x] `ProjectActions` has zero imports of `WorldUpdates`, `EntityHighlights`, or `EntityStorage`
-- [x] No direct mutation of `ProjectEntity` from outside content module
-- [x] External code cannot call `InternalProjectEntity` methods without `_asMut()`
-- [x] Stage operations in `Project` call components directly in order
-- [x] Per-project stage events (`SimpleEvent`) only used by UI/external
-- [x] Import flows construct content before project
-- [x] `WorldUpdates` and `EntityHighlights` are internal to WorldPresentation (Phase 3)
-- [x] No `ProjectBase` god-interface; components take specific dependencies (Phase 5)
+- [ ] No minimal `Project` interface from ProjectDef.d.ts
+- [ ] No `ProjectUpdates` module
+- [ ] `LazyLoadClass` deleted (Phase 1)
+- [ ] No delegate methods on Project (Phase 4 removes `lastStageFor`)
+- [ ] `project-event-listener.ts` deleted
+- [ ] No `GlobalProjectEvents` singleton
+- [ ] No `localEvents` field on Project
+- [ ] `ProjectList.ts` exports module-level `GlobalEvent` instances
+- [ ] Import/export uses `ProjectSettings` and `content` directly
+- [ ] All entity mutations go through `MutableProjectContent`
+- [ ] `MutableProjectContent` has no LuaEntity references or business logic
+- [ ] All validation and coordination logic is in `ProjectActions`
+- [ ] `ProjectActions` depends on `WorldPresenter` interface, not `WorldPresentation` class
+- [ ] `ProjectActions` has zero imports of `WorldUpdates`, `EntityHighlights`, or `EntityStorage`
+- [ ] No direct mutation of `ProjectEntity` from outside content module
+- [ ] External code cannot call `InternalProjectEntity` methods without `_asMut()`
+- [ ] Stage operations in `Project` call components directly in order
+- [ ] Per-project stage events (`SimpleEvent`) only used by UI/external
+- [ ] Import flows construct content before project
+- [ ] `WorldUpdates` and `EntityHighlights` are internal to WorldPresentation (Phase 3)
+- [ ] No `ProjectBase` god-interface; components take specific dependencies (Phase 5)
+- [ ] No `TestWorldQueries` or `TestWorldOps` wrappers; tests use `WorldPresentation` directly (Phase 6)
