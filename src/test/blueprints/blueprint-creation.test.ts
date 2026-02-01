@@ -178,14 +178,15 @@ test("includes entity with only unstaged value when stageLimit is active", () =>
 
   const e1 = createEntity(stage1, [0.5, 0.5], "fast-inserter")
   const projectEntity = project.content.findCompatibleWithLuaEntity(e1, nil, 1)!
-  projectEntity.setUnstagedValue(3, {
+  project.content.setEntityUnstagedValue(projectEntity, 3, {
     items: [simpleInsertPlan(defines.inventory.crafter_input, "iron-ore", 0, 10)],
   })
 
   const stack = player.cursor_stack!
-  stage3.blueprintOverrideSettings.stageLimit.set(1)
-  stage3.blueprintOverrideSettings.snapToGrid.set(Pos(2, 2))
-  stage3.blueprintOverrideSettings.positionOffset.set(Pos(0, 0))
+  const overrides = stage3.getSettings().blueprintOverrideSettings
+  overrides.stageLimit.set(1)
+  overrides.snapToGrid.set(Pos(2, 2))
+  overrides.positionOffset.set(Pos(0, 0))
 
   const ret = takeStageBlueprint(stage3, stack)
   expect(ret).toBe(true)
