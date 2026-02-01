@@ -390,8 +390,89 @@ describe("MutableProjectContent mutations", () => {
     })
   })
 
-  describe("setUndergroundBeltDirectionAndType()", () => {
-    test("sets both direction and type atomically, fires onEntityChanged once", () => {
+  describe("batch()", () => {
+    test("coalesces multiple onEntityChanged to single call with min fromStage", () => {
+      const entity = makeEntity()
+      content.addEntity(entity)
+      observer.onEntityChanged.clear()
+      content.batch(() => {
+        content.adjustEntityValue(entity, 3, { name: "transport-belt" })
+        content.adjustEntityValue(entity, 1, { name: "fast-transport-belt" })
+      })
+      expect(observer.onEntityChanged).toHaveBeenCalledTimes(1)
+      expect(observer.onEntityChanged).toHaveBeenCalledWith(entity, 1)
+    })
+
+    test("defers and coalesces onEntityLastStageChanged", () => {
+      const entity = makeEntity()
+      content.addEntity(entity)
+      observer.onEntityLastStageChanged.clear()
+      content.batch(() => {
+        content.setEntityLastStage(entity, 5)
+        content.setEntityLastStage(entity, 3)
+      })
+      expect(observer.onEntityLastStageChanged).toHaveBeenCalledTimes(1)
+      expect(observer.onEntityLastStageChanged).toHaveBeenCalledWith(entity, nil)
+    })
+
+    test("defers and coalesces onWiresChanged", () => {
+      const entity1 = makeEntity(0)
+      const entity2 = makeEntity(1)
+      content.addEntity(entity1)
+      content.addEntity(entity2)
+      const connection = makeWireConnection(entity1, entity2)
+      observer.onWiresChanged.clear()
+      content.batch(() => {
+        content.addWireConnection(connection)
+      })
+      expect(observer.onWiresChanged).toHaveBeenCalledTimes(2)
+      expect(observer.onWiresChanged).toHaveBeenCalledWith(entity1)
+      expect(observer.onWiresChanged).toHaveBeenCalledWith(entity2)
+    })
+
+    test("nested batch does not flush until outer completes", () => {
+      const entity = makeEntity()
+      content.addEntity(entity)
+      observer.onEntityChanged.clear()
+      content.batch(() => {
+        content.adjustEntityValue(entity, 2, { name: "transport-belt" })
+        content.batch(() => {
+          content.adjustEntityValue(entity, 1, { name: "fast-transport-belt" })
+        })
+        expect(observer.onEntityChanged).not.toHaveBeenCalled()
+      })
+      expect(observer.onEntityChanged).toHaveBeenCalledTimes(1)
+      expect(observer.onEntityChanged).toHaveBeenCalledWith(entity, 1)
+    })
+
+    test("batch with no mutations fires no observer calls", () => {
+      const entity = makeEntity()
+      content.addEntity(entity)
+      observer.onEntityChanged.clear()
+      observer.onEntityLastStageChanged.clear()
+      observer.onWiresChanged.clear()
+      content.batch(() => {})
+      expect(observer.onEntityChanged).not.toHaveBeenCalled()
+      expect(observer.onEntityLastStageChanged).not.toHaveBeenCalled()
+      expect(observer.onWiresChanged).not.toHaveBeenCalled()
+    })
+
+    test("batch with multiple entities fires one notification per entity", () => {
+      const entity1 = makeEntity(0)
+      const entity2 = makeEntity(1)
+      content.addEntity(entity1)
+      content.addEntity(entity2)
+      observer.onEntityChanged.clear()
+      content.batch(() => {
+        content.adjustEntityValue(entity1, 1, { name: "transport-belt" })
+        content.adjustEntityValue(entity2, 1, { name: "transport-belt" })
+      })
+      expect(observer.onEntityChanged).toHaveBeenCalledTimes(2)
+      expect(observer.onEntityChanged).toHaveBeenCalledWith(entity1, 1)
+      expect(observer.onEntityChanged).toHaveBeenCalledWith(entity2, 1)
+    })
+
+    test("direction and type change via batch fires single notification", () => {
       const entity: UndergroundBeltProjectEntity = newProjectEntity(
         { name: "underground-belt", type: "input" } as UndergroundBeltEntity,
         { x: 0, y: 0 },
@@ -400,7 +481,10 @@ describe("MutableProjectContent mutations", () => {
       )
       content.addEntity(entity)
       observer.onEntityChanged.clear()
-      content.setUndergroundBeltDirectionAndType(entity, defines.direction.west, "output")
+      content.batch(() => {
+        content.setEntityDirection(entity, defines.direction.west)
+        content.setTypeProperty(entity, "output")
+      })
       expect(entity.direction).toBe(defines.direction.west)
       expect(entity.firstValue.type).toBe("output")
       expect(observer.onEntityChanged).toHaveBeenCalledTimes(1)

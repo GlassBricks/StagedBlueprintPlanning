@@ -1,4 +1,4 @@
-import { BlueprintEntity, BlueprintInsertPlan, LuaEntity, LuaTrain, nil, PlayerIndex } from "factorio:runtime"
+import { BlueprintInsertPlan, LuaEntity, LuaTrain, nil, PlayerIndex } from "factorio:runtime"
 import { Colors, L_Game, Settings } from "../constants"
 import { Entity, LuaEntityInfo, TrainEntity } from "../entity/Entity"
 import { MutableProjectContent } from "../entity/ProjectContent"
@@ -19,7 +19,7 @@ import { canBeAnyDirection, forceFlipUnderground, saveEntity } from "../entity/s
 import { findUndergroundPair, undergroundCanReach } from "../entity/underground-belt"
 import { saveWireConnections } from "../entity/wires"
 import { fromExportStageDiffs, StageInfoExport } from "../import-export/entity"
-import { assertNever, deepCompare, Mutable, RegisterClass } from "../lib"
+import { assertNever, deepCompare, RegisterClass } from "../lib"
 import { Pos, Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { createProjectTile, ProjectTile } from "../tiles/ProjectTile"
@@ -329,7 +329,6 @@ export class ProjectActions {
     byPlayer: PlayerIndex | nil,
     stagedInfo?: StageInfoExport,
     items?: BlueprintInsertPlan[],
-    knownMirror?: boolean,
   ): ProjectEntity | nil {
     if (stagedInfo) {
       return this.handlePasteValue(entity, stage, previousDirection, byPlayer, stagedInfo, items)
@@ -345,7 +344,7 @@ export class ProjectActions {
     )
     if (!projectEntity) return
 
-    const result = this.tryUpdateEntityFromWorld(projectEntity, stage, items, knownMirror)
+    const result = this.tryUpdateEntityFromWorld(projectEntity, stage, items)
     this.notifyIfUpdateError(result, projectEntity, byPlayer)
     return projectEntity
   }
@@ -402,11 +401,10 @@ export class ProjectActions {
     entity: ProjectEntity,
     stage: StageNumber,
     items: BlueprintInsertPlan[] | nil,
-    knownMirror?: boolean,
   ): EntityUpdateResult {
     const entitySource = this.worldPresenter.getWorldEntity(entity, stage)
     if (!entitySource) return EntityUpdateResult.NoChange
-    return this.handleUpdate(entity, entitySource, stage, entitySource.direction, nil, true, items, knownMirror)
+    return this.handleUpdate(entity, entitySource, stage, entitySource.direction, nil, true, items)
   }
 
   tryRotateEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult {
@@ -432,7 +430,6 @@ export class ProjectActions {
     targetUpgrade: NameAndQuality | nil,
     getBpValue: boolean,
     items: BlueprintInsertPlan[] | nil,
-    knownMirror?: boolean,
   ): EntityUpdateResult {
     if (entity.isUndergroundBelt()) {
       return this.handleUndergroundBeltUpdate(
@@ -444,47 +441,52 @@ export class ProjectActions {
       )
     }
 
-    const rotated = targetDirection && targetDirection != entity.direction && !canBeAnyDirection(entitySource)
-    if (rotated) {
-      const rotateAllowed = stage == entity.firstStage
-      if (rotateAllowed) {
-        this.content.setEntityDirection(entity, targetDirection)
-        const entityType = entitySource.type
-        if (entityType == "loader" || entityType == "loader-1x1") {
-          assume<LoaderProjectEntity>(entity)
-          this.content.setTypeProperty(entity, entitySource.loader_type)
-        } else if (entityType == "inserter") {
-          assume<InserterProjectEntity>(entity)
-          const pickup = entity.firstValue.pickup_position
-            ? Pos.minus(entitySource.pickup_position, entitySource.position)
-            : nil
-          const drop = entity.firstValue.drop_position
-            ? Pos.minus(entitySource.drop_position, entitySource.position)
-            : nil
-          this.content.setInserterPositions(entity, pickup, drop)
+    let result: EntityUpdateResult = EntityUpdateResult.NoChange
+    this.content.batch(() => {
+      const rotated = targetDirection && targetDirection != entity.direction && !canBeAnyDirection(entitySource)
+      if (rotated) {
+        const rotateAllowed = stage == entity.firstStage
+        if (rotateAllowed) {
+          this.content.setEntityDirection(entity, targetDirection)
+          const entityType = entitySource.type
+          if (entityType == "loader" || entityType == "loader-1x1") {
+            assume<LoaderProjectEntity>(entity)
+            this.content.setTypeProperty(entity, entitySource.loader_type)
+          } else if (entityType == "inserter") {
+            assume<InserterProjectEntity>(entity)
+            const pickup = entity.firstValue.pickup_position
+              ? Pos.minus(entitySource.pickup_position, entitySource.position)
+              : nil
+            const drop = entity.firstValue.drop_position
+              ? Pos.minus(entitySource.drop_position, entitySource.position)
+              : nil
+            this.content.setInserterPositions(entity, pickup, drop)
+          }
+        } else {
+          this.worldPresenter.refreshEntity(entity, stage)
+          result = EntityUpdateResult.CannotRotate
+          return
         }
-      } else {
-        this.worldPresenter.refreshEntity(entity, stage)
-        return EntityUpdateResult.CannotRotate
       }
-    }
-    let hasDiff = false
-    if (getBpValue && this.applyValueFromWorld(stage, entity, entitySource, items, knownMirror)) {
-      hasDiff = true
-    } else if (targetUpgrade) {
-      this.checkUpgradeType(entity, targetUpgrade.name)
-      if (this.content.applyEntityUpgrade(entity, stage, targetUpgrade)) {
+      let hasDiff = false
+      if (getBpValue && this.applyValueFromWorld(stage, entity, entitySource, items)) {
         hasDiff = true
+      } else if (targetUpgrade) {
+        this.checkUpgradeType(entity, targetUpgrade.name)
+        if (this.content.applyEntityUpgrade(entity, stage, targetUpgrade)) {
+          hasDiff = true
+        }
       }
-    }
-    if (rotated || hasDiff) {
-      return EntityUpdateResult.Updated
-    }
+      if (rotated || hasDiff) {
+        result = EntityUpdateResult.Updated
+        return
+      }
 
-    if (entity.getUnstagedValue(stage)?.items) {
-      this.worldPresenter.refreshEntity(entity, stage)
-    }
-    return EntityUpdateResult.NoChange
+      if (entity.getUnstagedValue(stage)?.items) {
+        this.worldPresenter.refreshEntity(entity, stage)
+      }
+    })
+    return result
   }
 
   private applyValueFromWorld(
@@ -492,18 +494,9 @@ export class ProjectActions {
     entity: ProjectEntity,
     entitySource: LuaEntity,
     items: BlueprintInsertPlan[] | nil,
-    knownMirror?: boolean,
   ): boolean {
     const [value, unstagedValue] = saveEntity(entitySource, items)
     if (value == nil) return false
-    if (knownMirror != nil) {
-      assume<Mutable<BlueprintEntity>>(value)
-      if (knownMirror) {
-        value.mirror = true
-      } else {
-        delete value.mirror
-      }
-    }
 
     const hasDiff = this.content.adjustEntityValue(entity, stage, value)
     const hasUnstagedDiff = this.content.setEntityUnstagedValue(entity, stage, unstagedValue)
@@ -548,7 +541,10 @@ export class ProjectActions {
       return EntityUpdateResult.CannotRotate
     }
     const oppositeType = worldEntity.belt_to_ground_type == "input" ? "output" : "input"
-    this.content.setUndergroundBeltDirectionAndType(pair, worldEntity.direction, oppositeType)
+    this.content.batch(() => {
+      this.content.setEntityDirection(pair, worldEntity.direction)
+      this.content.setTypeProperty(pair, oppositeType)
+    })
     this.updatePair(entity, entity.firstStage, pair, pair.firstStage)
     return EntityUpdateResult.Updated
   }
@@ -582,10 +578,14 @@ export class ProjectActions {
 
       const oldType = thisUg.firstValue.type
       const newType = oldType == "input" ? "output" : "input"
-      this.content.setUndergroundBeltDirectionAndType(thisUg, targetDirection, newType)
-      if (pair) {
-        this.content.setUndergroundBeltDirectionAndType(pair, targetDirection, oldType)
-      }
+      this.content.batch(() => {
+        this.content.setEntityDirection(thisUg, targetDirection)
+        this.content.setTypeProperty(thisUg, newType)
+        if (pair) {
+          this.content.setEntityDirection(pair, targetDirection)
+          this.content.setTypeProperty(pair, oldType)
+        }
+      })
     }
 
     const applyStage = isSelfOrPairFirstStage ? thisUg.firstStage : stage
@@ -831,30 +831,39 @@ export class ProjectActions {
   ): StageMoveResult {
     const firstValue = info.firstValue ?? saveEntity(luaEntity, items ?? [])[0]
     if (!firstValue) return StageMoveResult.NoChange
-    const targetStage = info.firstStage
-    if (targetStage != entity.firstStage) {
-      const result = this.checkCanSetFirstStage(entity, targetStage)
-      if (result != StageMoveResult.Updated) return result
-      this.content.setEntityFirstStage(entity, targetStage)
-    }
-    const lastStage = info.lastStage
-    const oldLastStage = entity.lastStage
-    if (lastStage != oldLastStage) {
-      const result = this.checkCanSetLastStage(entity, lastStage)
-      if (result != StageMoveResult.Updated) return result
-      this.content.setEntityLastStage(entity, lastStage)
-    }
+    let moveResult: StageMoveResult = StageMoveResult.Updated
+    this.content.batch(() => {
+      const targetStage = info.firstStage
+      if (targetStage != entity.firstStage) {
+        const result = this.checkCanSetFirstStage(entity, targetStage)
+        if (result != StageMoveResult.Updated) {
+          moveResult = result
+          return
+        }
+        this.content.setEntityFirstStage(entity, targetStage)
+      }
+      const lastStage = info.lastStage
+      const oldLastStage = entity.lastStage
+      if (lastStage != oldLastStage) {
+        const result = this.checkCanSetLastStage(entity, lastStage)
+        if (result != StageMoveResult.Updated) {
+          moveResult = result
+          return
+        }
+        this.content.setEntityLastStage(entity, lastStage)
+      }
 
-    const oldStageDiffs = entity.stageDiffs
+      const oldStageDiffs = entity.stageDiffs
 
-    const stageDiffs = info.stageDiffs ? fromExportStageDiffs(info.stageDiffs) : nil
-    this.content.setEntityValue(entity, firstValue, stageDiffs)
-    this.replaceUnstagedValueViaContent(entity, info)
+      const stageDiffs = info.stageDiffs ? fromExportStageDiffs(info.stageDiffs) : nil
+      this.content.setEntityValue(entity, firstValue, stageDiffs)
+      this.replaceUnstagedValueViaContent(entity, info)
 
-    if (entity.isUndergroundBelt()) {
-      this.handleUndergroundBeltValueSet(entity, oldStageDiffs, stageDiffs)
-    }
-    return StageMoveResult.Updated
+      if (entity.isUndergroundBelt()) {
+        this.handleUndergroundBeltValueSet(entity, oldStageDiffs, stageDiffs)
+      }
+    })
+    return moveResult
   }
 
   private replaceUnstagedValueDirect(entity: ProjectEntity<Entity>, info: StageInfoExport<Entity>): void {
@@ -962,9 +971,11 @@ export class ProjectActions {
     for (const luaEntity of entities) {
       const projectEntity = this.content.findCompatibleWithLuaEntity(luaEntity, nil, stage)
       if (projectEntity) {
-        this.content.changeEntityPosition(projectEntity, luaEntity.position)
-        assume<ProjectEntity<TrainEntity>>(projectEntity)
-        this.content.setEntityProp(projectEntity, projectEntity.firstStage, "orientation", luaEntity.orientation)
+        this.content.batch(() => {
+          this.content.changeEntityPosition(projectEntity, luaEntity.position)
+          assume<ProjectEntity<TrainEntity>>(projectEntity)
+          this.content.setEntityProp(projectEntity, projectEntity.firstStage, "orientation", luaEntity.orientation)
+        })
         this.worldPresenter.rebuildEntity(projectEntity, stage)
       } else {
         this.addNewEntity(luaEntity, stage)

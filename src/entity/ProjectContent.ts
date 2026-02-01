@@ -88,6 +88,8 @@ export interface ProjectContent {
 export interface MutableProjectContent extends ProjectContent {
   setObserver(observer: ContentObserver | nil): void
 
+  batch(fn: () => void): void
+
   addEntity(entity: ProjectEntity): void
   /** Deleted entities should be able to be re-added, preserving connections. */
   deleteEntity(entity: ProjectEntity): void
@@ -135,11 +137,6 @@ export interface MutableProjectContent extends ProjectContent {
   removeWireConnection(connection: ProjectWireConnection): void
 
   setTypeProperty(entity: UndergroundBeltProjectEntity, type: "input" | "output"): void
-  setUndergroundBeltDirectionAndType(
-    entity: UndergroundBeltProjectEntity,
-    direction: defines.direction,
-    type: "input" | "output",
-  ): void
   setInserterPositions(entity: InserterProjectEntity, pickup: Position | nil, drop: Position | nil): void
 }
 
@@ -150,16 +147,114 @@ OnPrototypeInfoLoaded.addListener((i) => {
   ;({ nameToType, nameToCategory, rotationTypes: pasteCompatibleRotations } = i)
 })
 
+interface BatchedNotification {
+  minChangedStage: StageNumber | nil
+  lastStageChanged: boolean
+  firstOldLastStage: StageNumber | nil
+  wiresChanged: boolean
+}
+
 @RegisterClass("EntityMap")
 class ProjectContentImpl implements MutableProjectContent {
   readonly byPosition: LinkedMap2D<ProjectEntity> = newLinkedMap2d()
   entities = new LuaSet<ProjectEntity>()
   private observer: ContentObserver | nil
 
+  private batchDepth = 0
+  private batchedNotifications: LuaMap<ProjectEntity, BatchedNotification> | nil
+
   tiles = newMap2d<ProjectTile>()
 
   setObserver(observer: ContentObserver | nil): void {
     this.observer = observer
+  }
+
+  batch(fn: () => void): void {
+    this.batchDepth++
+    if (this.batchDepth == 1) this.batchedNotifications = new LuaMap()
+    try {
+      fn()
+    } finally {
+      this.batchDepth--
+      if (this.batchDepth == 0) {
+        const batched = this.batchedNotifications!
+        this.batchedNotifications = nil
+        this.flushBatch(batched)
+      }
+    }
+  }
+
+  private notifyEntityChanged(entity: ProjectEntity, fromStage: StageNumber): void {
+    if (this.batchedNotifications) {
+      const existing = this.batchedNotifications.get(entity)
+      if (existing) {
+        existing.minChangedStage = math.min(existing.minChangedStage ?? fromStage, fromStage)
+      } else {
+        this.batchedNotifications.set(entity, {
+          minChangedStage: fromStage,
+          lastStageChanged: false,
+          firstOldLastStage: nil,
+          wiresChanged: false,
+        })
+      }
+      return
+    }
+    this.observer?.onEntityChanged(entity, fromStage)
+  }
+
+  private notifyLastStageChanged(entity: ProjectEntity, oldLastStage: StageNumber | nil): void {
+    if (this.batchedNotifications) {
+      const existing = this.batchedNotifications.get(entity)
+      if (existing) {
+        if (!existing.lastStageChanged) {
+          existing.lastStageChanged = true
+          existing.firstOldLastStage = oldLastStage
+        }
+      } else {
+        this.batchedNotifications.set(entity, {
+          minChangedStage: nil,
+          lastStageChanged: true,
+          firstOldLastStage: oldLastStage,
+          wiresChanged: false,
+        })
+      }
+      return
+    }
+    this.observer?.onEntityLastStageChanged(entity, oldLastStage)
+  }
+
+  private notifyWiresChanged(entity: ProjectEntity): void {
+    if (this.batchedNotifications) {
+      const existing = this.batchedNotifications.get(entity)
+      if (existing) {
+        existing.wiresChanged = true
+      } else {
+        this.batchedNotifications.set(entity, {
+          minChangedStage: nil,
+          lastStageChanged: false,
+          firstOldLastStage: nil,
+          wiresChanged: true,
+        })
+      }
+      return
+    }
+    this.observer?.onWiresChanged(entity)
+  }
+
+  private flushBatch(batched: LuaMap<ProjectEntity, BatchedNotification>): void {
+    const observer = this.observer
+    if (!observer) return
+    for (const [entity, notification] of batched) {
+      if (notification.minChangedStage != nil) {
+        observer.onEntityChanged(entity, notification.minChangedStage)
+      }
+      if (notification.lastStageChanged) {
+        observer.onEntityLastStageChanged(entity, notification.firstOldLastStage)
+      }
+      if (notification.wiresChanged) {
+        observer.onWiresChanged(entity)
+      }
+    }
   }
 
   hasEntity(entity: ProjectEntity): boolean {
@@ -357,7 +452,7 @@ class ProjectContentImpl implements MutableProjectContent {
     byPosition.delete(x, y, entity)
     entity._asMut().setPositionUnchecked(position)
     byPosition.add(newX, newY, entity)
-    this.observer?.onEntityChanged(entity, entity.firstStage)
+    this.notifyEntityChanged(entity, entity.firstStage)
     return true
   }
 
@@ -419,28 +514,28 @@ class ProjectContentImpl implements MutableProjectContent {
 
   setEntityDirection(entity: ProjectEntity, direction: defines.direction): void {
     entity._asMut().direction = direction
-    this.observer?.onEntityChanged(entity, entity.firstStage)
+    this.notifyEntityChanged(entity, entity.firstStage)
   }
 
   setEntityFirstStage(entity: ProjectEntity, stage: StageNumber): void {
     const oldFirstStage = entity.firstStage
     const oldLastStage = entity.lastStage
     entity._asMut().setFirstStageUnchecked(stage)
-    this.observer?.onEntityChanged(entity, math.min(stage, oldFirstStage))
+    this.notifyEntityChanged(entity, math.min(stage, oldFirstStage))
     if (entity.lastStage != oldLastStage) {
-      this.observer?.onEntityLastStageChanged(entity, oldLastStage)
+      this.notifyLastStageChanged(entity, oldLastStage)
     }
   }
 
   setEntityLastStage(entity: ProjectEntity, stage: StageNumber | nil): void {
     const oldLastStage = entity.lastStage
     entity._asMut().setLastStageUnchecked(stage)
-    this.observer?.onEntityLastStageChanged(entity, oldLastStage)
+    this.notifyLastStageChanged(entity, oldLastStage)
   }
 
   adjustEntityValue(entity: ProjectEntity, stage: StageNumber, value: Entity): boolean {
     const changed = entity._asMut().adjustValueAtStage(stage, value)
-    if (changed) this.observer?.onEntityChanged(entity, stage)
+    if (changed) this.notifyEntityChanged(entity, stage)
     return changed
   }
 
@@ -451,31 +546,31 @@ class ProjectContentImpl implements MutableProjectContent {
     value: T[K],
   ): boolean {
     const changed = entity._asMut().setPropAtStage(stage, prop, value)
-    if (changed) this.observer?.onEntityChanged(entity, stage)
+    if (changed) this.notifyEntityChanged(entity, stage)
     return changed
   }
 
   applyEntityUpgrade(entity: ProjectEntity, stage: StageNumber, upgrade: NameAndQuality): boolean {
     const changed = entity._asMut().applyUpgradeAtStage(stage, upgrade)
-    if (changed) this.observer?.onEntityChanged(entity, stage)
+    if (changed) this.notifyEntityChanged(entity, stage)
     return changed
   }
 
   resetEntityValue(entity: ProjectEntity, stage: StageNumber): boolean {
     const changed = entity._asMut().resetValue(stage)
-    if (changed) this.observer?.onEntityChanged(entity, stage)
+    if (changed) this.notifyEntityChanged(entity, stage)
     return changed
   }
 
   resetEntityProp<T extends Entity, K extends keyof T>(entity: ProjectEntity<T>, stage: StageNumber, prop: K): boolean {
     const changed = entity._asMut().resetProp(stage, prop)
-    if (changed) this.observer?.onEntityChanged(entity, stage)
+    if (changed) this.notifyEntityChanged(entity, stage)
     return changed
   }
 
   moveEntityValueDown(entity: ProjectEntity, stage: StageNumber): StageNumber | nil {
     const result = entity._asMut().moveValueDown(stage)
-    if (result != nil) this.observer?.onEntityChanged(entity, result)
+    if (result != nil) this.notifyEntityChanged(entity, result)
     return result
   }
 
@@ -485,7 +580,7 @@ class ProjectContentImpl implements MutableProjectContent {
     prop: K,
   ): StageNumber | nil {
     const result = entity._asMut().movePropDown(stage, prop)
-    if (result != nil) this.observer?.onEntityChanged(entity, result)
+    if (result != nil) this.notifyEntityChanged(entity, result)
     return result
   }
 
@@ -493,18 +588,18 @@ class ProjectContentImpl implements MutableProjectContent {
     const internal = entity._asMut()
     internal.setFirstValueDirectly(firstValue)
     internal.setStageDiffsDirectly(stageDiffs)
-    this.observer?.onEntityChanged(entity, entity.firstStage)
+    this.notifyEntityChanged(entity, entity.firstStage)
   }
 
   setEntityUnstagedValue(entity: ProjectEntity, stage: StageNumber, value: UnstagedEntityProps | nil): boolean {
     const changed = entity._asMut().setUnstagedValue(stage, value)
-    if (changed) this.observer?.onEntityChanged(entity, stage)
+    if (changed) this.notifyEntityChanged(entity, stage)
     return changed
   }
 
   clearEntityUnstagedValues(entity: ProjectEntity): void {
     entity._asMut().clearPropertyInAllStages("unstagedValue")
-    this.observer?.onEntityChanged(entity, entity.firstStage)
+    this.notifyEntityChanged(entity, entity.firstStage)
   }
 
   makeEntitySettingsRemnant(entity: ProjectEntity): void {
@@ -522,37 +617,27 @@ class ProjectContentImpl implements MutableProjectContent {
   addWireConnection(connection: ProjectWireConnection): void {
     connection.fromEntity._asMut().addOneWayWireConnection(connection)
     connection.toEntity._asMut().addOneWayWireConnection(connection)
-    this.observer?.onWiresChanged(connection.fromEntity)
-    this.observer?.onWiresChanged(connection.toEntity)
+    this.notifyWiresChanged(connection.fromEntity)
+    this.notifyWiresChanged(connection.toEntity)
   }
 
   removeWireConnection(connection: ProjectWireConnection): void {
     connection.fromEntity._asMut().removeOneWayWireConnection(connection)
     connection.toEntity._asMut().removeOneWayWireConnection(connection)
-    this.observer?.onWiresChanged(connection.fromEntity)
-    this.observer?.onWiresChanged(connection.toEntity)
+    this.notifyWiresChanged(connection.fromEntity)
+    this.notifyWiresChanged(connection.toEntity)
   }
 
   setTypeProperty(entity: UndergroundBeltProjectEntity, type: "input" | "output"): void {
     entity._asMut().setTypeProperty(type)
-    this.observer?.onEntityChanged(entity, entity.firstStage)
-  }
-
-  setUndergroundBeltDirectionAndType(
-    entity: UndergroundBeltProjectEntity,
-    direction: defines.direction,
-    type: "input" | "output",
-  ): void {
-    entity._asMut().direction = direction
-    entity._asMut().setTypeProperty(type)
-    this.observer?.onEntityChanged(entity, entity.firstStage)
+    this.notifyEntityChanged(entity, entity.firstStage)
   }
 
   setInserterPositions(entity: InserterProjectEntity, pickup: Position | nil, drop: Position | nil): void {
     const internal = entity._asMut()
     internal.setPickupPosition(pickup)
     internal.setDropPosition(drop)
-    this.observer?.onEntityChanged(entity, entity.firstStage)
+    this.notifyEntityChanged(entity, entity.firstStage)
   }
 
   __tostring(): string {

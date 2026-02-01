@@ -270,7 +270,6 @@ interface BplibPasteData {
   readonly allowPasteUpgrades: boolean
   readonly flipVertical: boolean
   readonly flipHorizontal: boolean
-  readonly mirror: boolean
   readonly direction: defines.direction
 }
 
@@ -294,7 +293,6 @@ let state: {
     allowUpgrades: boolean
     flipVertical: boolean
     flipHorizontal: boolean
-    mirror: boolean
     direction: defines.direction
   }
 
@@ -362,8 +360,7 @@ function flushPendingBplibPaste(): void {
 }
 
 function processPendingBplibPaste(data: BplibPasteData): void {
-  const { stage, playerIndex, surface, entities, allowPasteUpgrades, flipVertical, flipHorizontal, mirror, direction } =
-    data
+  const { stage, playerIndex, surface, entities, allowPasteUpgrades, flipVertical, flipHorizontal, direction } = data
   const isFlipped = flipVertical != flipHorizontal
 
   for (const entityData of entities) {
@@ -385,8 +382,6 @@ function processPendingBplibPaste(data: BplibPasteData): void {
 
     if (!luaEntity) continue
 
-    const knownMirror = computeExpectedMirror(blueprintEntity, isFlipped != mirror)
-
     const projectEntity = stage.actions.onEntityPossiblyUpdated(
       luaEntity,
       stage.stageNumber,
@@ -394,7 +389,6 @@ function processPendingBplibPaste(data: BplibPasteData): void {
       playerIndex,
       blueprintEntity.tags?.bp100 as StageInfoExport | nil,
       blueprintEntity.items,
-      knownMirror,
     )
 
     let worldEntity: LuaEntity | nil = luaEntity
@@ -735,7 +729,6 @@ function onPreBlueprintPastedBplib(player: LuaPlayer, stage: Stage, event: OnPre
     allowPasteUpgrades: event.build_mode == defines.build_mode.superforced,
     flipVertical: event.flip_vertical ?? false,
     flipHorizontal: event.flip_horizontal ?? false,
-    mirror: event.mirror,
     direction: event.direction,
   }
 
@@ -775,7 +768,6 @@ function onPreBlueprintPasted(player: LuaPlayer, stage: Stage | nil, event: OnPr
       allowUpgrades: event.build_mode == defines.build_mode.superforced,
       flipVertical: event.flip_vertical ?? false,
       flipHorizontal: event.flip_horizontal ?? false,
-      mirror: event.mirror,
       direction: event.direction,
     }
   }
@@ -824,10 +816,6 @@ OnPrototypeInfoLoaded.addListener((e) => {
   twoDirectionTanks = e.twoDirectionTanks
   mayHaveModdedGui = e.mayHaveModdedGui
 })
-
-function computeExpectedMirror(blueprintEntity: BlueprintEntity, isFlipped: boolean): boolean {
-  return (blueprintEntity.mirror ?? false) != isFlipped
-}
 
 function calculateTransformedDirection(
   blueprintEntity: BlueprintEntity,
@@ -933,8 +921,6 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
 
   if (!luaEntity) return
 
-  const knownMirror = computeExpectedMirror(value, isFlipped != bpState.mirror)
-
   const stage = bpState.stage
   const projectEntity = stage.actions.onEntityPossiblyUpdated(
     luaEntity,
@@ -943,7 +929,6 @@ function handleEntityMarkerBuilt(e: OnBuiltEntityEvent, entity: LuaEntity, tags:
     e.player_index,
     value.tags?.bp100 as StageInfoExport | nil,
     value.items,
-    knownMirror,
   )
 
   if (value.wires) {
