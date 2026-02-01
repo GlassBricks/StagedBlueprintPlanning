@@ -42,7 +42,7 @@ function transformAccessSplitCall(context: TransformationContext, node: ts.CallE
   return luaCall
 }
 // noinspection JSUnusedGlobalSymbols
-export default function plugin(options: { hasTests: boolean }): Plugin {
+export default function plugin(): Plugin {
   const visitors: Visitors = {
     [ts.SyntaxKind.CallExpression](node: ts.CallExpression, context: TransformationContext) {
       const type = context.checker.getTypeAtLocation(node.expression)
@@ -86,9 +86,6 @@ export default function plugin(options: { hasTests: boolean }): Plugin {
       const newFileName = fileName.replace(/\./g, "-")
       if (fileName === newFileName) continue
       file.outputPath = path.join(path.dirname(outPath), newFileName + ".lua")
-      if (!options.hasTests) {
-        console.warn(`Replaced ${fileName} with ${newFileName}, but tests are disabled.`)
-      }
     }
   }
 
