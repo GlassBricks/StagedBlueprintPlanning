@@ -61,6 +61,10 @@ export function getNameAndQuality(name: string, quality?: string): NameAndQualit
   return { name, quality }
 }
 
+export interface StageCount {
+  stageCount(): StageNumber
+}
+
 /**
  * All the data about one entity in a project, across all stages.
  * Read-only public interface.
@@ -83,6 +87,8 @@ export interface ProjectEntity<out T extends Entity = Entity> extends ReadonlySt
 
   getPropAtStage<K extends keyof T>(stage: StageNumber, prop: K): LuaMultiReturn<[T[K], StageNumber]>
   getUpgradeAtStage(stage: StageNumber): NameAndQuality
+
+  lastStageWith(stageCount: StageCount): StageNumber
 
   getProperty<T extends keyof StageProperties>(key: T, stage: StageNumber): StageProperties[T] | nil
   getPropertyAllStages<T extends keyof StageProperties>(key: T): Record<StageNumber, StageProperties[T]> | nil
@@ -188,6 +194,11 @@ class ProjectEntityImpl<T extends Entity = Entity>
 
   _asMut(): InternalProjectEntity<T> {
     return this
+  }
+
+  lastStageWith(stageCount: StageCount): StageNumber {
+    const numStages = stageCount.stageCount()
+    return this.lastStage != nil ? math.min(this.lastStage, numStages) : numStages
   }
 
   getPreviewDirection(): defines.direction {

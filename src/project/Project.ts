@@ -2,21 +2,21 @@
 // SPDX-FileCopyrightText: 2025 GlassBricks
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
-import { LuaSurface, nil, SurfaceIndex } from "factorio:runtime"
+import { LocalisedString, LuaSurface, nil, SurfaceIndex } from "factorio:runtime"
 import { BlueprintSettingsTable } from "../blueprints/blueprint-settings"
 import { MutableProjectContent, newProjectContent } from "../entity/ProjectContent"
-import { StageNumber } from "../entity/ProjectEntity"
-import { ReadonlyStagedValue } from "../entity/StagedValue"
+import { isWorldEntityProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import { Events, Mutable, RegisterClass, SimpleEvent, SimpleSubscribable } from "../lib"
 import { BBox } from "../lib/geometry"
+import { LoopTask, submitTask } from "../lib/task"
+import { L_GuiTasks } from "../locale"
 import { getStageAtSurface } from "./project-refs"
 import { ProjectActions } from "./ProjectActions"
 import { addProject, stageDeleted as globalStageDeleted, removeProject } from "./ProjectList"
 import { ProjectSettings, StageSettingsData } from "./ProjectSettings"
 import { ProjectSurfaces } from "./ProjectSurfaces"
 import { getDefaultSurfaceSettings, SurfaceSettings } from "./surfaces"
-import { WorldPresentation } from "./WorldPresentation"
-import min = math.min
+import { _setWorldUpdatesBlocked, WorldPresentation } from "./WorldPresentation"
 
 export type ProjectId = number & {
   _projectIdBrand: never
@@ -25,24 +25,17 @@ export type StageId = number & {
   _stageIdBrand: never
 }
 
-export interface ProjectBase {
+export interface Project {
+  readonly id: ProjectId
+
   readonly settings: ProjectSettings
   readonly surfaces: ProjectSurfaces
-
-  lastStageFor(entity: ReadonlyStagedValue<AnyNotNil, AnyNotNil>): StageNumber
-
   readonly content: MutableProjectContent
 
   readonly valid: boolean
 
   actions: ProjectActions
   worldPresentation: WorldPresentation
-}
-
-export interface Project extends ProjectBase {
-  readonly id: ProjectId
-
-  readonly content: MutableProjectContent
 
   readonly stageAdded: SimpleSubscribable<Stage>
   readonly preStageDeleted: SimpleSubscribable<Stage>
@@ -56,7 +49,8 @@ export interface Project extends ProjectBase {
   mergeStage(index: StageNumber): void
   discardStage(index: StageNumber): void
 
-  readonly valid: boolean
+  resyncWithWorld(): void
+
   delete(): void
 }
 
@@ -97,6 +91,51 @@ Events.on_init(() => {
 
 export { getAllProjects, moveProjectDown, moveProjectUp } from "./ProjectList"
 
+@RegisterClass("ResyncWithWorldTask")
+class ResyncWithWorldTask extends LoopTask {
+  constructor(private project: Project) {
+    super(project.settings.stageCount() * 2)
+  }
+
+  override getTitle(): LocalisedString {
+    return [L_GuiTasks.ResyncWithWorld]
+  }
+
+  protected override doStep(i: number): void {
+    const numStages = this.project.settings.stageCount()
+    if (i < numStages) {
+      this.doReadStep(i + 1)
+    } else {
+      const rebuildStage = i - numStages + 1
+      if (rebuildStage == 1) _setWorldUpdatesBlocked(false)
+      this.project.worldPresentation.rebuildStage(rebuildStage)
+    }
+  }
+
+  private doReadStep(stage: StageNumber): void {
+    if (stage == 1) _setWorldUpdatesBlocked(true)
+    const surface = this.project.surfaces.getSurface(stage)
+    if (!surface) return
+    for (const entity of surface.find_entities()) {
+      if (isWorldEntityProjectEntity(entity)) {
+        this.project.actions.onEntityPossiblyUpdated(entity, stage, nil, nil)
+      }
+    }
+  }
+
+  protected getTitleForStep(step: number): LocalisedString {
+    const numStages = this.project.settings.stageCount()
+    if (step < numStages) {
+      return [L_GuiTasks.ReadingStage, this.project.settings.getStageName(step + 1)]
+    }
+    return [L_GuiTasks.RebuildingStage, this.project.settings.getStageName(step - numStages + 1)]
+  }
+
+  override cancel(): void {
+    _setWorldUpdatesBlocked(false)
+  }
+}
+
 declare const luaLength: LuaLength<Record<number, any>, number>
 
 @RegisterClass("Assembly") // named differently for legacy reasons
@@ -113,8 +152,8 @@ class ProjectImpl implements Project {
   valid = true
   private readonly stages: Record<number, StageImpl> = {}
 
-  worldPresentation: WorldPresentation = new WorldPresentation(this)
-  actions!: ProjectActions
+  worldPresentation: WorldPresentation
+  actions: ProjectActions
 
   constructor(
     readonly id: ProjectId,
@@ -126,7 +165,8 @@ class ProjectImpl implements Project {
     this.content = content
     this.settings = new ProjectSettings(name, surfaceSettings)
     this.surfaces = new ProjectSurfaces(this.settings)
-    this.actions = new ProjectActions(this, this.content, this.worldPresentation, this.settings)
+    this.worldPresentation = new WorldPresentation(this.settings, this.surfaces, this.content)
+    this.actions = new ProjectActions(this.content, this.worldPresentation, this.settings, this.surfaces)
     this.content.setObserver(this.worldPresentation)
     for (const i of $range(1, initialNumStages)) {
       this.settings.insertStageSettings(i, `Stage ${i}`)
@@ -165,10 +205,8 @@ class ProjectImpl implements Project {
   getStage(stageNumber: StageNumber): Stage | nil {
     return this.stages[stageNumber]
   }
-  lastStageFor(value: ReadonlyStagedValue<any, any>): StageNumber {
-    const numStages = this.settings.stageCount()
-    if (value.lastStage != nil) return min(value.lastStage, numStages)
-    return numStages
+  resyncWithWorld(): void {
+    submitTask(new ResyncWithWorldTask(this))
   }
 
   getAllStages(): readonly StageImpl[] {
@@ -259,6 +297,7 @@ class ProjectImpl implements Project {
     if (!this.valid) return
     this.settings.blueprintBookTemplate.destroy()
     this.valid = false
+    this.actions.valid = false
     for (const [, stage] of pairs(this.stages)) {
       this.unregisterStageFromSurfaceMap(stage)
       ;(stage as Mutable<Stage>).valid = false

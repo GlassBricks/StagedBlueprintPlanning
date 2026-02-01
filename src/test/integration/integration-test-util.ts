@@ -15,6 +15,7 @@ import { Pos } from "../../lib/geometry"
 import { checkForEntityUpdates } from "../../project/event-handlers"
 import { Project } from "../../project/Project"
 import { _deleteAllProjects, createProject } from "../../project/Project"
+import { WorldPresentation } from "../../project/WorldPresentation"
 import {
   assertConfigChangedHighlightsCorrect,
   assertErrorHighlightsCorrect,
@@ -22,28 +23,14 @@ import {
   assertLastStageHighlightCorrect,
   assertNoHighlightsAfterLastStage,
 } from "../project/entity-highlight-test-util"
-import { createWorldPresentationQueries, TestWorldQueries } from "./test-world-queries"
-
-export { TestWorldQueries } from "./test-world-queries"
-
-export interface TestWorldOps {
-  rebuildStage(stage: StageNumber): void
-  rebuildAllStages(): void
-  refreshEntity(entity: ProjectEntity, stage: StageNumber): void
-  refreshAllEntities(entity: ProjectEntity): void
-  rebuildEntity(entity: ProjectEntity, stage: StageNumber): void
-  updateWorldEntities(entity: ProjectEntity, stage: StageNumber): void
-  updateAllHighlights(entity: ProjectEntity): void
-  resyncWithWorld(): void
-}
 
 export function applyDiffViaWorld(
-  worldQueries: TestWorldQueries,
+  wp: WorldPresentation,
   entity: ProjectEntity,
   stage: StageNumber,
   applyFn: (worldEntity: LuaEntity) => void,
 ): void {
-  const worldEntity = worldQueries.getWorldEntity(entity, stage)
+  const worldEntity = wp.getWorldEntity(entity, stage)
   assert(worldEntity, "world entity must exist at stage")
   applyFn(worldEntity)
   checkForEntityUpdates(worldEntity, nil)
@@ -53,24 +40,24 @@ export function assertEntityCorrect(
   project: Project,
   entity: ProjectEntity,
   expectError: number | false,
-  wq: TestWorldQueries,
+  wp: WorldPresentation,
 ): void {
   expect(entity.isSettingsRemnant).toBeFalsy()
   const found = project.content.findCompatibleEntity(entity.firstValue.name, entity.position, entity.direction, 1)
   expect(found).toBe(entity)
 
   let hasError: number | false = false
-  for (const stage of $range(1, project.lastStageFor(entity))) {
-    const worldEntity = wq.getWorldOrPreviewEntity(entity, stage)!
+  for (const stage of $range(1, entity.lastStageWith(project.settings))) {
+    const worldEntity = wp.getWorldOrPreviewEntity(entity, stage)!
     assert(worldEntity, `entity does not exist at stage ${stage}`)
     const isPreview = isPreviewEntity(worldEntity)
     const value = entity.getValueAtStage(stage)
     if (value == nil) {
       assert(isPreview, `entity must be preview at stage ${stage}`)
     } else if (isPreview) {
-      assert(wq.hasErrorAt(entity, stage), `entity must have error at stage ${stage} to be preview`)
+      assert(wp.hasErrorAt(entity, stage), `entity must have error at stage ${stage} to be preview`)
       hasError ||= stage
-    } else if (wq.hasErrorAt(entity, stage)) {
+    } else if (wp.hasErrorAt(entity, stage)) {
       assert(
         worldEntity.type == "underground-belt",
         "Only underground belt currently can have error with existing entity",
@@ -95,43 +82,43 @@ export function assertEntityCorrect(
     expect(worldEntity.position).comment(`preview at stage ${stage}`).toEqual(entity.position)
     if (isPreview) {
       expect(worldEntity.direction).toEqual(entity.getPreviewDirection())
-    } else if (entity.isUndergroundBelt() && wq.hasErrorAt(entity, stage)) {
+    } else if (entity.isUndergroundBelt() && wp.hasErrorAt(entity, stage)) {
       expect(worldEntity.direction).toEqual(oppositedirection(entity.direction))
     } else if (!canBeAnyDirection(worldEntity)) {
       expect(worldEntity.direction).toEqual(entity.direction)
     }
 
-    expect(wq.getExtraEntity(entity, "settingsRemnantHighlight", stage)).toBeNil()
+    expect(wp.entityStorage.get(entity, "settingsRemnantHighlight", stage)).toBeNil()
   }
 
   expect(hasError).toBe(expectError)
 
-  for (const stage of $range(project.lastStageFor(entity) + 1, project.settings.stageCount())) {
-    expect(wq.getWorldOrPreviewEntity(entity, stage)).toBeNil()
+  for (const stage of $range(entity.lastStageWith(project.settings) + 1, project.settings.stageCount())) {
+    expect(wp.getWorldOrPreviewEntity(entity, stage)).toBeNil()
   }
 
-  assertErrorHighlightsCorrect(entity, project.lastStageFor(entity), wq)
-  assertConfigChangedHighlightsCorrect(entity, project.lastStageFor(entity), wq)
-  assertLastStageHighlightCorrect(entity, wq)
-  assertNoHighlightsAfterLastStage(entity, project.settings.stageCount(), wq)
-  assertItemRequestHighlightsCorrect(entity, project.lastStageFor(entity), wq)
+  assertErrorHighlightsCorrect(entity, entity.lastStageWith(project.settings), wp)
+  assertConfigChangedHighlightsCorrect(entity, entity.lastStageWith(project.settings), wp)
+  assertLastStageHighlightCorrect(entity, wp)
+  assertNoHighlightsAfterLastStage(entity, project.settings.stageCount(), wp)
+  assertItemRequestHighlightsCorrect(entity, entity.lastStageWith(project.settings), wp)
 
   const wireConnections = entity.wireConnections
   if (!wireConnections) {
-    for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
-      const worldEntity = wq.getWorldEntity(entity, stage)
+    for (const stage of $range(entity.firstStage, entity.lastStageWith(project.settings))) {
+      const worldEntity = wp.getWorldEntity(entity, stage)
       if (!worldEntity) continue
       for (const [, connectionPoint] of pairs(worldEntity.get_wire_connectors(false))) {
         expect(connectionPoint.connection_count).toBe(0)
       }
     }
   } else {
-    for (const stage of $range(entity.firstStage, project.lastStageFor(entity))) {
-      const thisWorldEntity = wq.getWorldEntity(entity, stage)
+    for (const stage of $range(entity.firstStage, entity.lastStageWith(project.settings))) {
+      const thisWorldEntity = wp.getWorldEntity(entity, stage)
       if (!thisWorldEntity) continue
 
       const expectedConnections = Object.entries(wireConnections).flatMap(([otherEntity, connections]) => {
-        const otherWorldEntity = wq.getWorldEntity(otherEntity, stage)
+        const otherWorldEntity = wp.getWorldEntity(otherEntity, stage)
         if (!otherWorldEntity) return []
         return Object.keys(connections).map((connection) => ({
           toId: connection.toId,
@@ -159,35 +146,34 @@ export function assertEntityCorrect(
   }
 }
 
-export function assertEntityNotPresent(project: Project, entity: ProjectEntity, wq: TestWorldQueries): void {
+export function assertEntityNotPresent(project: Project, entity: ProjectEntity, wp: WorldPresentation): void {
   const found = project.content.findCompatibleEntity(entity.firstValue.name, entity.position, entity.direction, 1)
   expect(found).toBeNil()
 
-  for (const stage of $range(1, project.lastStageFor(entity))) {
-    expect(wq.getWorldOrPreviewEntity(entity, stage)).toBeNil()
+  for (const stage of $range(1, entity.lastStageWith(project.settings))) {
+    expect(wp.getWorldOrPreviewEntity(entity, stage)).toBeNil()
   }
-  expect(wq.hasAnyExtraEntities(entity, "errorOutline")).toBe(false)
-  expect(wq.hasAnyExtraEntities(entity, "errorElsewhereIndicator")).toBe(false)
+  expect(wp.entityStorage.hasAnyOfType(entity, "errorOutline")).toBe(false)
+  expect(wp.entityStorage.hasAnyOfType(entity, "errorElsewhereIndicator")).toBe(false)
 }
 
-export function assertIsSettingsRemnant(project: Project, entity: ProjectEntity, wq: TestWorldQueries): void {
+export function assertIsSettingsRemnant(project: Project, entity: ProjectEntity, wp: WorldPresentation): void {
   expect(entity.isSettingsRemnant).toBe(true)
-  for (const stage of $range(1, project.lastStageFor(entity))) {
-    const preview = wq.getWorldOrPreviewEntity(entity, stage)!
+  for (const stage of $range(1, entity.lastStageWith(project.settings))) {
+    const preview = wp.getWorldOrPreviewEntity(entity, stage)!
     expect(preview).toBeAny()
     expect(isPreviewEntity(preview)).toBe(true)
-    expect(wq.getExtraEntity(entity, "settingsRemnantHighlight", stage)).toBeAny()
+    expect(wp.entityStorage.get(entity, "settingsRemnantHighlight", stage)).toBeAny()
   }
-  expect(wq.hasAnyExtraEntities(entity, "errorOutline")).toBe(false)
-  expect(wq.hasAnyExtraEntities(entity, "errorElsewhereIndicator")).toBe(false)
+  expect(wp.entityStorage.hasAnyOfType(entity, "errorOutline")).toBe(false)
+  expect(wp.entityStorage.hasAnyOfType(entity, "errorElsewhereIndicator")).toBe(false)
 }
 
 export interface EntityTestContext {
   project: Project
   surfaces: LuaSurface[]
   player: LuaPlayer
-  worldOps: TestWorldOps
-  worldQueries: TestWorldQueries
+  wp: WorldPresentation
   assertEntityCorrect(entity: ProjectEntity, expectError: number | false): void
   assertEntityNotPresent(entity: ProjectEntity): void
   assertIsSettingsRemnant(entity: ProjectEntity): void
@@ -206,16 +192,15 @@ export function setupEntityIntegrationTest(numStages = 6): EntityTestContext {
     project: nil!,
     surfaces: nil!,
     player: nil!,
-    worldOps: nil!,
-    worldQueries: nil!,
+    wp: nil!,
     assertEntityCorrect(entity: ProjectEntity, expectError: number | false) {
-      assertEntityCorrect(ctx.project, entity, expectError, ctx.worldQueries)
+      assertEntityCorrect(ctx.project, entity, expectError, ctx.wp)
     },
     assertEntityNotPresent(entity: ProjectEntity) {
-      assertEntityNotPresent(ctx.project, entity, ctx.worldQueries)
+      assertEntityNotPresent(ctx.project, entity, ctx.wp)
     },
     assertIsSettingsRemnant(entity: ProjectEntity) {
-      assertIsSettingsRemnant(ctx.project, entity, ctx.worldQueries)
+      assertIsSettingsRemnant(ctx.project, entity, ctx.wp)
     },
     createEntity(stage: StageNumber, args?: Partial<SurfaceCreateEntity>): LuaEntity {
       const params = {
@@ -268,19 +253,7 @@ export function setupEntityIntegrationTest(numStages = 6): EntityTestContext {
     ctx.project = createProject("test", numStages)
     ctx.surfaces = ctx.project.getAllStages().map((stage) => stage.getSurface())
     ctx.player = game.players[1]
-    const wp = ctx.project.worldPresentation
-    const wu = wp.getWorldUpdates()
-    ctx.worldOps = {
-      rebuildStage: (stage) => wp.rebuildStage(stage),
-      rebuildAllStages: () => wp.rebuildAllStages(),
-      refreshEntity: (entity, stage) => wp.refreshEntity(entity, stage),
-      refreshAllEntities: (entity) => wp.refreshAllEntities(entity),
-      rebuildEntity: (entity, stage) => wp.rebuildEntity(entity, stage),
-      updateWorldEntities: (entity, stage) => wu.updateWorldEntities(entity, stage),
-      updateAllHighlights: (entity) => wu.updateAllHighlights(entity),
-      resyncWithWorld: () => wu.resyncWithWorld(),
-    }
-    ctx.worldQueries = createWorldPresentationQueries(ctx.project.worldPresentation)
+    ctx.wp = ctx.project.worldPresentation
   })
 
   before_each(() => {

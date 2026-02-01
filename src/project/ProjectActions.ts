@@ -23,8 +23,8 @@ import { assertNever, deepCompare, RegisterClass } from "../lib"
 import { Pos, Position } from "../lib/geometry"
 import { L_Interaction } from "../locale"
 import { createProjectTile, ProjectTile } from "../tiles/ProjectTile"
+import { SurfaceProvider } from "./entity-highlights"
 import { createIndicator, createNotification } from "./notifications"
-import { Project, ProjectBase } from "./Project"
 import { ProjectSettings } from "./ProjectSettings"
 import { prepareArea } from "./surfaces"
 import { registerUndoAction, UndoAction, UndoHandler } from "./undo"
@@ -52,7 +52,7 @@ export declare const enum StageMoveResult {
 }
 
 interface ProjectEntityRecord {
-  project: ProjectBase
+  actions: ProjectActions
   entity: ProjectEntity
 }
 
@@ -64,19 +64,13 @@ interface LastStageChangeRecord extends ProjectEntityRecord {
   oldLastStage: StageNumber | nil
 }
 
-interface InternalProject extends Project {
-  actions: ProjectActions
-}
-
-export const undoDeleteEntity = UndoHandler<ProjectEntityRecord>("delete entity", (_, { project, entity }) => {
-  const actions = (project as InternalProject).actions
+export const undoDeleteEntity = UndoHandler<ProjectEntityRecord>("delete entity", (_, { actions, entity }) => {
   actions.readdDeletedEntity(entity)
 })
 
 export const undoManualStageMove = UndoHandler<StageChangeRecord>(
   "stage move",
-  (player, { project, entity, oldStage }) => {
-    const actions = (project as InternalProject).actions
+  (player, { actions, entity, oldStage }) => {
     const actualEntity = actions.findCompatibleEntityForUndo(entity)
     if (actualEntity) {
       actions.userTryMoveEntityToStage(actualEntity, oldStage, player.index, true)
@@ -86,8 +80,7 @@ export const undoManualStageMove = UndoHandler<StageChangeRecord>(
 
 export const undoSendToStage = UndoHandler<StageChangeRecord>(
   "send to stage",
-  (player, { project, entity, oldStage }) => {
-    const actions = (project as InternalProject).actions
+  (player, { actions, entity, oldStage }) => {
     const actualEntity = actions.findCompatibleEntityForUndo(entity)
     if (actualEntity) {
       actions.userBringEntityToStage(actualEntity, oldStage, player.index)
@@ -97,8 +90,7 @@ export const undoSendToStage = UndoHandler<StageChangeRecord>(
 
 export const undoBringToStage = UndoHandler<StageChangeRecord>(
   "bring to stage",
-  (player, { project, entity, oldStage }) => {
-    const actions = (project as InternalProject).actions
+  (player, { actions, entity, oldStage }) => {
     const actualEntity = actions.findCompatibleEntityForUndo(entity)
     if (actualEntity) {
       actions.userSendEntityToStage(actualEntity, actualEntity.firstStage, oldStage, player.index)
@@ -108,8 +100,7 @@ export const undoBringToStage = UndoHandler<StageChangeRecord>(
 
 export const lastStageChangeUndo = UndoHandler(
   "last stage change",
-  (player, { project, entity, oldLastStage }: LastStageChangeRecord) => {
-    const actions = (project as InternalProject).actions
+  (player, { actions, entity, oldLastStage }: LastStageChangeRecord) => {
     const actualEntity = actions.findCompatibleEntityForUndo(entity)
     if (actualEntity) {
       actions.userTrySetLastStage(actualEntity, oldLastStage, player.index)
@@ -121,11 +112,13 @@ export const lastStageChangeUndo = UndoHandler(
 export class ProjectActions {
   private readonly blueprintableTiles: ReadonlyLuaSet<string>
 
+  valid = true
+
   constructor(
-    private readonly project: ProjectBase,
-    readonly content: MutableProjectContent,
-    readonly worldPresenter: WorldPresenter,
-    readonly settings: ProjectSettings,
+    private readonly content: MutableProjectContent,
+    private readonly worldPresenter: WorldPresenter,
+    private readonly settings: ProjectSettings,
+    private readonly surfaces: SurfaceProvider,
   ) {
     this.blueprintableTiles = getPrototypeInfo().blueprintableTiles
   }
@@ -168,10 +161,10 @@ export class ProjectActions {
     createNotification(
       entity,
       byPlayer,
-      [L_Interaction.EntityMovedFromStage, this.project.settings.getStageName(oldStage)],
+      [L_Interaction.EntityMovedFromStage, this.settings.getStageName(oldStage)],
       false,
     )
-    return byPlayer && undoManualStageMove.createAction(byPlayer, { project: this.project, entity, oldStage })
+    return byPlayer && undoManualStageMove.createAction(byPlayer, { actions: this, entity, oldStage })
   }
 
   private tryAddNewEntity(
@@ -214,7 +207,7 @@ export class ProjectActions {
       this.content,
       projectEntity,
       stage,
-      this.project.lastStageFor(projectEntity),
+      projectEntity.lastStageWith(this.settings),
       this.worldPresenter,
     )
 
@@ -742,7 +735,7 @@ export class ProjectActions {
     const projectEntity = this.content.findCompatibleFromPreviewOrLuaEntity(entity, stage)
     if (projectEntity) {
       this.forceDeleteEntity(projectEntity)
-      return undoDeleteEntity.createAction(byPlayer, { project: this.project, entity: projectEntity })
+      return undoDeleteEntity.createAction(byPlayer, { actions: this, entity: projectEntity })
     }
     return nil
   }
@@ -1028,8 +1021,8 @@ export class ProjectActions {
     const tilesToUpdateArray: Array<[Position, ProjectTile]> = []
     const tilesToUpdateSet = new LuaSet<ProjectTile>()
 
-    for (const stage of $range(1, this.project.settings.stageCount())) {
-      const surface = this.project.surfaces.getSurface(stage)!
+    for (const stage of $range(1, this.settings.stageCount())) {
+      const surface = this.surfaces.getSurface(stage)!
       const tiles = surface.find_tiles_filtered({
         area: bbox,
         name: Object.keys(getPrototypeInfo().blueprintableTiles),
@@ -1094,7 +1087,7 @@ export class ProjectActions {
     const newLastStage = useNextStage ? stage : stage - 1
     const oldLastStage = projectEntity.lastStage
     if (this.userTrySetLastStage(projectEntity, newLastStage, byPlayer)) {
-      return lastStageChangeUndo.createAction(byPlayer, { project: this.project, entity: projectEntity, oldLastStage })
+      return lastStageChangeUndo.createAction(byPlayer, { actions: this, entity: projectEntity, oldLastStage })
     }
   }
 
@@ -1109,7 +1102,7 @@ export class ProjectActions {
     if (!projectEntity || projectEntity.isSettingsRemnant) return
     const oldStage = projectEntity.firstStage
     if (this.userBringEntityToStage(projectEntity, stage, byPlayer)) {
-      return undoBringToStage.createAction(byPlayer, { project: this.project, entity: projectEntity, oldStage })
+      return undoBringToStage.createAction(byPlayer, { actions: this, entity: projectEntity, oldStage })
     }
   }
 
@@ -1119,7 +1112,7 @@ export class ProjectActions {
     if (projectEntity.firstStage <= stage) return
     const oldStage = projectEntity.firstStage
     if (this.userBringEntityToStage(projectEntity, stage, byPlayer)) {
-      return undoBringToStage.createAction(byPlayer, { project: this.project, entity: projectEntity, oldStage })
+      return undoBringToStage.createAction(byPlayer, { actions: this, entity: projectEntity, oldStage })
     }
   }
 
@@ -1141,7 +1134,7 @@ export class ProjectActions {
 
     if (this.userSendEntityToStage(projectEntity, fromStage, toStage, byPlayer)) {
       return undoSendToStage.createAction(byPlayer, {
-        project: this.project,
+        actions: this,
         entity: projectEntity,
         oldStage: fromStage,
       })
@@ -1169,7 +1162,7 @@ export class ProjectActions {
     for (const entity of this.content.allEntities()) {
       this.worldPresenter.deleteEntityAtStage(entity, stage)
     }
-    if (area) prepareArea(this.project.surfaces.getSurface(stage)!, area)
+    if (area) prepareArea(this.surfaces.getSurface(stage)!, area)
   }
 
   // === User actions with undo ===
@@ -1225,7 +1218,7 @@ export class ProjectActions {
   // Internal undo helpers
 
   findCompatibleEntityForUndo(entity: ProjectEntity): ProjectEntity | nil {
-    if (!this.project.valid) return nil
+    if (!this.valid) return nil
 
     if (!this.content.hasEntity(entity)) {
       const matching = this.content.findCompatibleWithExistingEntity(entity, entity.firstStage)
@@ -1249,14 +1242,14 @@ export class ProjectActions {
         createNotification(
           entity,
           byPlayer,
-          [L_Interaction.EntityMovedBackToStage, this.project.settings.getStageName(stage)],
+          [L_Interaction.EntityMovedBackToStage, this.settings.getStageName(stage)],
           false,
         )
       } else {
         createNotification(
           entity,
           byPlayer,
-          [L_Interaction.EntityMovedFromStage, this.project.settings.getStageName(oldStage)],
+          [L_Interaction.EntityMovedFromStage, this.settings.getStageName(oldStage)],
           false,
         )
       }
@@ -1288,7 +1281,7 @@ export class ProjectActions {
   ): UndoAction | nil {
     const oldStage = entity.firstStage
     if (this.userTryMoveEntityToStage(entity, stage, byPlayer)) {
-      return undoManualStageMove.createAction(byPlayer, { project: this.project, entity, oldStage })
+      return undoManualStageMove.createAction(byPlayer, { actions: this, entity, oldStage })
     }
   }
 
@@ -1300,7 +1293,7 @@ export class ProjectActions {
     const oldStage = projectEntity.lastStage
     if (this.userTrySetLastStage(projectEntity, stage, byPlayer)) {
       return lastStageChangeUndo.createAction(byPlayer, {
-        project: this.project,
+        actions: this,
         entity: projectEntity,
         oldLastStage: oldStage,
       })

@@ -143,7 +143,7 @@ export class EditorTab extends Component<{ project: Project }> {
   }
 
   private resyncWithWorld() {
-    this.project.worldPresentation.getWorldUpdates().resyncWithWorld()
+    this.project.resyncWithWorld()
   }
 
   private disableAllEntities() {

@@ -35,7 +35,7 @@ describe("item-requests", () => {
     })
     assert(projectEntity)
 
-    const worldEntity = ctx.worldQueries.getWorldEntity(projectEntity, 1)!
+    const worldEntity = ctx.wp.getWorldEntity(projectEntity, 1)!
     const insertPlan: BlueprintInsertPlan = {
       id: { name: "coal" },
       items: {
@@ -61,7 +61,7 @@ describe("item-requests", () => {
 
   test("can save an entity with item requests", () => {
     const projectChest = buildChest()
-    const chest = ctx.worldQueries.getWorldEntity(projectChest, 2)!
+    const chest = ctx.wp.getWorldEntity(projectChest, 2)!
     updateEntity(
       chest,
       { name: "iron-chest" },
@@ -154,7 +154,7 @@ describe("item-requests", () => {
     test("pasting identical item requests onto a furnace", () => {
       const [projectEntity, insertPlan] = buildFurnaceWithBlueprintEntity()
 
-      const worldEntity = ctx.worldQueries.getWorldEntity(projectEntity, 1)!
+      const worldEntity = ctx.wp.getWorldEntity(projectEntity, 1)!
       worldEntity.item_request_proxy?.destroy()
 
       const stack = ctx.player.cursor_stack!
@@ -187,14 +187,14 @@ describe("item-requests", () => {
   test("rebuilding an entity with item requests", () => {
     const projectChest = buildChest()
     projectChest._asMut().setUnstagedValue(2, { items: [chestPlateInsertPlan] })
-    ctx.worldOps.updateWorldEntities(projectChest, 2)
+    ctx.wp.updateWorldEntities(projectChest, 2)
 
-    const chest = ctx.worldQueries.getWorldEntity(projectChest, 2)!
+    const chest = ctx.wp.getWorldEntity(projectChest, 2)!
     expect(chest.item_request_proxy?.insert_plan).toEqual([chestPlateInsertPlan])
 
-    ctx.worldOps.rebuildStage(2)
+    ctx.wp.rebuildStage(2)
 
-    const newChest = ctx.worldQueries.getWorldEntity(projectChest, 2)!
+    const newChest = ctx.wp.getWorldEntity(projectChest, 2)!
     expect(newChest.item_request_proxy?.insert_plan).toEqual([chestPlateInsertPlan])
     expect(projectChest.getUnstagedValue(2)).toEqual({ items: [chestPlateInsertPlan] })
 
@@ -203,7 +203,7 @@ describe("item-requests", () => {
 
   test("save a furnace with fuel requests", () => {
     const [projectEntity, insertPlan] = buildFurnaceWithBlueprintEntity()
-    const worldEntity = ctx.worldQueries.getWorldEntity(projectEntity, 1)!
+    const worldEntity = ctx.wp.getWorldEntity(projectEntity, 1)!
 
     checkForEntityUpdates(worldEntity, nil)
     expect(projectEntity.getUnstagedValue(1)).toEqual({

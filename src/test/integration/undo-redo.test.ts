@@ -20,14 +20,14 @@ describe("undo-redo", () => {
   describe("force delete undo", () => {
     test("restores entity after force delete", () => {
       const entity = ctx.buildEntity(3)
-      applyDiffViaWorld(ctx.worldQueries, entity, 4, (e) => {
+      applyDiffViaWorld(ctx.wp, entity, 4, (e) => {
         e.inserter_stack_size_override = 2
       })
 
       Events.raiseFakeEventNamed("on_player_selected_area", {
         player_index: ctx.player.index,
         item: Prototypes.ForceDeleteTool,
-        entities: [ctx.worldQueries.getWorldEntity(entity, 4)!],
+        entities: [ctx.wp.getWorldEntity(entity, 4)!],
         tiles: [],
         surface: ctx.surfaces[3],
         area: { left_top: pos, right_bottom: pos },
@@ -46,7 +46,7 @@ describe("undo-redo", () => {
       Events.raiseFakeEventNamed("on_player_reverse_selected_area", {
         player_index: ctx.player.index,
         item: Prototypes.StageMoveTool,
-        entities: [ctx.worldQueries.getWorldOrPreviewEntity(entity, 2)!],
+        entities: [ctx.wp.getWorldOrPreviewEntity(entity, 2)!],
         tiles: [],
         surface: ctx.surfaces[1],
         area: { left_top: pos, right_bottom: pos },
@@ -67,7 +67,7 @@ describe("undo-redo", () => {
       Events.raiseFakeEventNamed("on_player_selected_area", {
         player_index: ctx.player.index,
         item: Prototypes.StageMoveTool,
-        entities: [ctx.worldQueries.getWorldEntity(entity, 2)!],
+        entities: [ctx.wp.getWorldEntity(entity, 2)!],
         tiles: [],
         surface: ctx.surfaces[1],
         area: { left_top: pos, right_bottom: pos },
@@ -87,7 +87,7 @@ describe("undo-redo", () => {
       Events.raiseFakeEventNamed("on_player_reverse_selected_area", {
         player_index: ctx.player.index,
         item: Prototypes.StageMoveTool,
-        entities: [ctx.worldQueries.getWorldOrPreviewEntity(entity, 2)!],
+        entities: [ctx.wp.getWorldOrPreviewEntity(entity, 2)!],
         tiles: [],
         surface: ctx.surfaces[1],
         area: { left_top: pos, right_bottom: pos },
@@ -107,7 +107,7 @@ describe("undo-redo", () => {
       Events.raiseFakeEventNamed("on_player_alt_reverse_selected_area", {
         player_index: ctx.player.index,
         item: Prototypes.StageMoveTool,
-        entities: [ctx.worldQueries.getWorldOrPreviewEntity(entity, 2)!],
+        entities: [ctx.wp.getWorldOrPreviewEntity(entity, 2)!],
         tiles: [],
         surface: ctx.surfaces[1],
         area: { left_top: pos, right_bottom: pos },
@@ -127,7 +127,7 @@ describe("undo-redo", () => {
       Events.raiseFakeEventNamed("on_player_selected_area", {
         player_index: ctx.player.index,
         item: Prototypes.StageDeconstructTool,
-        entities: [ctx.worldQueries.getWorldEntity(entity, 3)!],
+        entities: [ctx.wp.getWorldEntity(entity, 3)!],
         tiles: [],
         surface: ctx.surfaces[2],
         area: { left_top: pos, right_bottom: pos },
@@ -147,7 +147,7 @@ describe("undo-redo", () => {
       Events.raiseFakeEventNamed("on_player_selected_area", {
         player_index: ctx.player.index,
         item: Prototypes.StageDeconstructTool,
-        entities: [ctx.worldQueries.getWorldEntity(entity, 4)!],
+        entities: [ctx.wp.getWorldEntity(entity, 4)!],
         tiles: [],
         surface: ctx.surfaces[3],
         area: { left_top: pos, right_bottom: pos },
@@ -157,7 +157,7 @@ describe("undo-redo", () => {
       Events.raiseFakeEventNamed("on_player_alt_selected_area", {
         player_index: ctx.player.index,
         item: Prototypes.StageDeconstructTool,
-        entities: [ctx.worldQueries.getWorldEntity(entity, 3)!],
+        entities: [ctx.wp.getWorldEntity(entity, 3)!],
         tiles: [],
         surface: ctx.surfaces[2],
         area: { left_top: pos, right_bottom: pos },
@@ -180,9 +180,9 @@ describe("undo-redo", () => {
         player_index: ctx.player.index,
         item: Prototypes.ForceDeleteTool,
         entities: [
-          ctx.worldQueries.getWorldEntity(entity1, 3)!,
-          ctx.worldQueries.getWorldEntity(entity2, 3)!,
-          ctx.worldQueries.getWorldEntity(entity3, 3)!,
+          ctx.wp.getWorldEntity(entity1, 3)!,
+          ctx.wp.getWorldEntity(entity2, 3)!,
+          ctx.wp.getWorldEntity(entity3, 3)!,
         ],
         tiles: [],
         surface: ctx.surfaces[2],

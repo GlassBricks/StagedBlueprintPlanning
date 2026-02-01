@@ -122,7 +122,7 @@ Migrations.to("2.2.0", () => {
         const oldLastStage = entity.lastStage
         if (oldLastStage != entity.firstStage) {
           entity._asMut().setLastStageUnchecked(entity.firstStage)
-          project.worldPresentation.getWorldUpdates().updateWorldEntitiesOnLastStageChanged(entity, oldLastStage)
+          project.worldPresentation.updateWorldEntitiesOnLastStageChanged(entity, oldLastStage)
           project.actions.resetVehicleLocation(entity)
         }
       }
@@ -272,7 +272,7 @@ Migrations.to($CURRENT_VERSION, () => {
     old.subscription?.close()
     delete old.subscription
     if (!project.worldPresentation) {
-      project.worldPresentation = new WorldPresentation(project)
+      project.worldPresentation = new WorldPresentation(project.settings, project.surfaces, project.content)
     }
     interface OldProjectEntity {
       [stage: StageNumber]: LuaEntity | nil
@@ -284,6 +284,33 @@ Migrations.to($CURRENT_VERSION, () => {
         if (typeof k == "number") {
           es.set(entity, "worldOrPreviewEntity", k, v)
           delete old[k]
+        }
+      }
+    }
+  }
+
+  interface OldUndoData {
+    project?: { actions: unknown }
+    actions?: unknown
+  }
+  interface OldUndoEntry {
+    data: OldUndoData
+  }
+  interface UndoPlayerData {
+    undoEntries?: Record<number, OldUndoEntry>
+  }
+  interface UndoStorage {
+    players?: Record<number, UndoPlayerData>
+  }
+  const players = (globalThis as unknown as { storage: UndoStorage }).storage.players
+  if (players) {
+    for (const [, playerData] of pairs(players)) {
+      if (!playerData.undoEntries) continue
+      for (const [, entry] of pairs(playerData.undoEntries)) {
+        const data = entry.data
+        if (data.project && !data.actions) {
+          data.actions = data.project.actions
+          delete data.project
         }
       }
     }

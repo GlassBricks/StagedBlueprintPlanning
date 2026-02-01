@@ -13,7 +13,6 @@ import { EntityHighlights, HighlightEntities } from "../../project/entity-highli
 import { simpleInsertPlan } from "../entity/entity-util"
 import { moduleMock } from "../module-mock"
 import { simpleMock } from "../simple-mock"
-import { createWorldPresentationQueries, TestWorldQueries } from "../integration/test-world-queries"
 import {
   assertConfigChangedHighlightsCorrect,
   assertErrorHighlightsCorrect,
@@ -34,7 +33,6 @@ const highlightCreator = moduleMock(_highlightCreator, false)
 
 const surfaces = setupTestSurfaces(5)
 let entityHighlights: EntityHighlights
-let wq: TestWorldQueries
 
 function wp() {
   return project.worldPresentation
@@ -51,7 +49,6 @@ before_each(() => {
     project.worldPresentation,
     project.worldPresentation.entityStorage,
   )
-  wq = createWorldPresentationQueries(project.worldPresentation)
   highlightCreator.createSprite.invokes((params) => simpleMock(params as any))
   entity = newProjectEntity({ name: "stone-furnace" }, Pos(1, 1), 0, 2)
 })
@@ -86,7 +83,7 @@ describe("error highlights", () => {
     for (const i of $range(1, 5)) addInStage(i)
   })
   after_each(() => {
-    assertErrorHighlightsCorrect(entity, 5, wq)
+    assertErrorHighlightsCorrect(entity, 5, wp())
   })
   test("creates highlight when world entity missing", () => {
     removeInStage(2)
@@ -154,7 +151,6 @@ describe("undergrounds", () => {
       defines.direction.east,
       2,
     )
-    project.content.addEntity(undergroundEntity)
     wp().replaceWorldOrPreviewEntity(
       undergroundEntity,
       1,
@@ -177,7 +173,7 @@ describe("undergrounds", () => {
     }
     entityHighlights.updateAllHighlights(undergroundEntity)
     expect(es().get(undergroundEntity, "errorOutline", 2)).toBeAny()
-    assertErrorHighlightsCorrect(undergroundEntity, 5, wq)
+    assertErrorHighlightsCorrect(undergroundEntity, 5, wp())
   })
 })
 
@@ -201,7 +197,7 @@ describe("config changed highlight", () => {
   }
   function assertCorrect() {
     entityHighlights.updateAllHighlights(entity)
-    assertConfigChangedHighlightsCorrect(entity, 5, wq)
+    assertConfigChangedHighlightsCorrect(entity, 5, wp())
   }
   test("single", () => {
     setAt(3)
@@ -248,7 +244,7 @@ describe("stage delete highlights", () => {
   test("sets highlight if lastStage is set", () => {
     entity._asMut().setLastStageUnchecked(3)
     entityHighlights.updateAllHighlights(entity)
-    assertLastStageHighlightCorrect(entity, wq)
+    assertLastStageHighlightCorrect(entity, wp())
   })
 
   test("removes highlight if lastStage is cleared", () => {
@@ -256,14 +252,14 @@ describe("stage delete highlights", () => {
     entityHighlights.updateAllHighlights(entity)
     entity._asMut().setLastStageUnchecked(nil)
     entityHighlights.updateAllHighlights(entity)
-    assertLastStageHighlightCorrect(entity, wq)
+    assertLastStageHighlightCorrect(entity, wp())
   })
 
   test("does not create highlight if entity is movable", () => {
     const movableEntity = newProjectEntity({ name: "locomotive" }, Pos(1, 1), 0, 2)
     movableEntity._asMut().setLastStageUnchecked(3)
     entityHighlights.updateAllHighlights(movableEntity)
-    assertLastStageHighlightCorrect(movableEntity, wq)
+    assertLastStageHighlightCorrect(movableEntity, wp())
   })
 })
 
@@ -299,7 +295,7 @@ describe("stage request highlights", () => {
       items: [simpleInsertPlan(defines.inventory.item_main, "iron-plate", 0)],
     })
     entityHighlights.updateAllHighlights(entity)
-    assertItemRequestHighlightsCorrect(entity, 5, wq)
+    assertItemRequestHighlightsCorrect(entity, 5, wp())
   })
 })
 

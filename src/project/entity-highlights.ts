@@ -17,17 +17,13 @@ import {
   SpritePath,
 } from "factorio:runtime"
 import { Entity } from "../entity/Entity"
-import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
+import { ProjectEntity, StageCount, StageNumber } from "../entity/ProjectEntity"
 import { OnPrototypeInfoLoaded, PrototypeInfo } from "../entity/prototype-info"
-import { assertNever } from "../lib"
+import { assertNever, RegisterClass } from "../lib"
 import { BBox, Position } from "../lib/geometry"
 import { createHighlightBox, createSprite } from "./create-highlight"
 import { EntityStorage } from "./EntityStorage"
 import { WorldEntityLookup, WorldEntityTypes } from "./WorldPresentation"
-
-export interface StageCount {
-  stageCount(): StageNumber
-}
 
 export interface SurfaceProvider {
   getSurface(stage: StageNumber): LuaSurface | nil
@@ -137,6 +133,7 @@ const prototypesToSkipRequestHighlight = newLuaSet(
   "railgun-turret",
 )
 
+@RegisterClass("EntityHighlights")
 export class EntityHighlights {
   constructor(
     private surfaces: SurfaceProvider,
@@ -146,9 +143,7 @@ export class EntityHighlights {
   ) {}
 
   private lastStageFor(entity: ProjectEntity): StageNumber {
-    const numStages = this.stageCount.stageCount()
-    if (entity.lastStage != nil) return math.min(entity.lastStage, numStages)
-    return numStages
+    return entity.lastStageWith(this.stageCount)
   }
 
   private getExtraEntity<T extends keyof HighlightEntities>(

@@ -54,7 +54,7 @@ describe.each([false, true])("blueprinting (using bplib %s)", (useBplib) => {
     waitForPaste(useBplib, () => {
       const expected = superForce ? "fast-inserter" : "inserter"
       expect(entity.firstValue).toMatchTable({ name: expected })
-      expect(ctx.worldQueries.getWorldEntity(entity, 1)).toMatchTable({ name: expected })
+      expect(ctx.wp.getWorldEntity(entity, 1)).toMatchTable({ name: expected })
     })
   })
 
@@ -86,7 +86,7 @@ describe.each([false, true])("blueprinting (using bplib %s)", (useBplib) => {
 
     waitForPaste(useBplib, () => {
       expect(entity.firstValue).toMatchTable({ name: "iron-chest", quality: "legendary" })
-      expect(ctx.worldQueries.getWorldEntity(entity, 1)).toMatchTable({
+      expect(ctx.wp.getWorldEntity(entity, 1)).toMatchTable({
         name: "iron-chest",
         quality: { name: "legendary" },
       })
@@ -125,7 +125,7 @@ describe.each([false, true])("blueprinting (using bplib %s)", (useBplib) => {
         2: { quality: "legendary" },
       })
       expect(entity.getValueAtStage(2)).toEqual({ name: "iron-chest", quality: "legendary" })
-      expect(ctx.worldQueries.getWorldEntity(entity, 2)).toMatchTable({
+      expect(ctx.wp.getWorldEntity(entity, 2)).toMatchTable({
         name: "iron-chest",
         quality: { name: "legendary" },
       })
@@ -160,7 +160,7 @@ describe.each([false, true])("blueprinting (using bplib %s)", (useBplib) => {
     waitForPaste(useBplib, () => {
       const expected = "fast-inserter"
       expect(entity.firstValue).toMatchTable({ name: expected })
-      expect(ctx.worldQueries.getWorldEntity(entity, 1)).toMatchTable({ name: expected })
+      expect(ctx.wp.getWorldEntity(entity, 1)).toMatchTable({ name: expected })
       expect(entity.wireConnections).not.toBeNil()
     })
   })
@@ -198,7 +198,7 @@ describe.each([false, true])("blueprinting (using bplib %s)", (useBplib) => {
           const projectEntity = ctx.project.content.findCompatibleWithLuaEntity(rail, nil, 1)
 
           expect(projectEntity).not.toBeNil()
-          expect(ctx.worldQueries.getWorldEntity(projectEntity!, 1)).toEqual(rail)
+          expect(ctx.wp.getWorldEntity(projectEntity!, 1)).toEqual(rail)
 
           expect(projectEntity!.direction).toEqual(expected)
         })
@@ -256,8 +256,8 @@ describe.each([false, true])("blueprinting (using bplib %s)", (useBplib) => {
         expect(entity1!.direction).toEqual(defines.direction.northeast)
         expect(entity2!.direction).toEqual(defines.direction.southeast)
 
-        expect(ctx.worldQueries.getWorldEntity(entity1!, 1)).toEqual(rail)
-        expect(ctx.worldQueries.getWorldEntity(entity2!, 1)).toEqual(rail2)
+        expect(ctx.wp.getWorldEntity(entity1!, 1)).toEqual(rail)
+        expect(ctx.wp.getWorldEntity(entity2!, 1)).toEqual(rail2)
       })
     })
   })
@@ -309,7 +309,7 @@ describe.each([false, true])("blueprinting (using bplib %s)", (useBplib) => {
         expect(projEntity).not.toBeNil()
         expect(projEntity.position).toEqual(luaEntity.position)
         expect(projEntity.direction).toEqual(luaEntity.direction)
-        expect(ctx.worldQueries.getWorldEntity(projEntity, 1)).toEqual(luaEntity)
+        expect(ctx.wp.getWorldEntity(projEntity, 1)).toEqual(luaEntity)
 
         ctx.assertEntityCorrect(projEntity, false)
       })
@@ -340,7 +340,7 @@ describe.each([false, true])("blueprinting (using bplib %s)", (useBplib) => {
       const entity1 = ctx.project.content.findCompatibleWithLuaEntity(tank, nil, 1)!
       expect(entity1).not.toBeNil()
       expect(entity1.direction).toEqual(0)
-      expect(ctx.worldQueries.getWorldEntity(entity1, 1)).toEqual(tank)
+      expect(ctx.wp.getWorldEntity(entity1, 1)).toEqual(tank)
 
       ctx.assertEntityCorrect(entity1, false)
     })
@@ -367,7 +367,7 @@ describe.each([false, true])("blueprinting (using bplib %s)", (useBplib) => {
       expect(pole2).not.toBeNil()
 
       expect(pole.firstStage).toBe(2)
-      expect(ctx.worldQueries.getWorldEntity(pole, 2)).toEqual(pole2)
+      expect(ctx.wp.getWorldEntity(pole, 2)).toEqual(pole2)
 
       ctx.assertEntityCorrect(pole, false)
     })
@@ -379,7 +379,7 @@ test("mirroring an entity", () => {
     name: "chemical-plant",
     recipe: "light-oil-cracking",
   })
-  const luaEntity = ctx.worldQueries.getWorldEntity(chemPlant, 1)
+  const luaEntity = ctx.wp.getWorldEntity(chemPlant, 1)
   assert(luaEntity)
   luaEntity.mirroring = true
   Events.raiseFakeEventNamed("on_player_flipped_entity", {
@@ -388,7 +388,7 @@ test("mirroring an entity", () => {
     horizontal: true,
   })
 
-  const luaEntity2 = ctx.worldQueries.getWorldEntity(chemPlant, 2)
+  const luaEntity2 = ctx.wp.getWorldEntity(chemPlant, 2)
   expect(luaEntity2?.mirroring).toBe(true)
 })
 
@@ -406,7 +406,7 @@ describe.each([false, true])("mirroring an entity, via blueprint paste (using bp
       name: "chemical-plant",
       recipe: "light-oil-cracking",
     })
-    const worldEntity = ctx.worldQueries.getWorldEntity(chemPlant, 1)!
+    const worldEntity = ctx.wp.getWorldEntity(chemPlant, 1)!
     worldEntity.mirroring = true
     Events.raiseFakeEventNamed("on_player_flipped_entity", {
       entity: worldEntity,
@@ -431,8 +431,8 @@ describe.each([false, true])("mirroring an entity, via blueprint paste (using bp
 
     ctx.player.build_from_cursor({ position: chemPlant.position, mirror: false })
     waitForPaste(useBplib, () => {
-      expect(ctx.worldQueries.getWorldEntity(chemPlant, 1)?.mirroring).toBe(false)
-      expect(ctx.worldQueries.getWorldEntity(chemPlant, 2)?.mirroring).toBe(false)
+      expect(ctx.wp.getWorldEntity(chemPlant, 1)?.mirroring).toBe(false)
+      expect(ctx.wp.getWorldEntity(chemPlant, 2)?.mirroring).toBe(false)
     })
   })
 })

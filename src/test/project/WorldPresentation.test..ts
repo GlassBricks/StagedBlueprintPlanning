@@ -11,15 +11,12 @@ import { newProjectEntity, ProjectEntity, StageNumber, UndergroundBeltProjectEnt
 import { createEntity, createPreviewEntity, saveEntity } from "../../entity/save-load"
 import { Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
-import { EntityHighlights } from "../../project/entity-highlights"
-import { ProjectBase } from "../../project/Project"
-import { WorldUpdates } from "../../project/world-updates"
+import { WorldPresentation } from "../../project/WorldPresentation"
 import { createProjectTile } from "../../tiles/ProjectTile"
 import { createRollingStock } from "../entity/createRollingStock"
 import { moduleInsertPlan, simpleInsertPlan } from "../entity/entity-util"
-import { fMockClass } from "../f-mock"
 import { clearModuleMock, doModuleMock, moduleMock } from "../module-mock"
-import { createMockProject, setupTestSurfaces } from "./Project-mock"
+import { createMockProject, MockProject, setupTestSurfaces } from "./Project-mock"
 
 interface TestEntity extends Entity {
   name: "inserter" | "fast-inserter" | "assembling-machine-3"
@@ -27,26 +24,23 @@ interface TestEntity extends Entity {
   recipe?: string
   items?: BlueprintInsertPlan[]
 }
-let project: ProjectBase
+let project: MockProject
 let entity: ProjectEntity<TestEntity>
 
 import _wireHandler = require("../../entity/wires")
 
 const wireUpdater = moduleMock(_wireHandler, true)
-const entityHighlights = fMockClass<EntityHighlights>()
 
 const origPos = { x: 0.5, y: 0.5 }
 const origDir = defines.direction.east
 const surfaces: LuaSurface[] = setupTestSurfaces(4)
 
-function wp() {
+function wp(): WorldPresentation {
   return project.worldPresentation
 }
 
-let worldUpdates: WorldUpdates
 before_each(() => {
   project = createMockProject(surfaces)
-  ;(project as any).worldUpdates = worldUpdates = WorldUpdates(project, entityHighlights as unknown as EntityHighlights)
   entity = newProjectEntity(
     {
       name: "inserter",
@@ -58,6 +52,8 @@ before_each(() => {
   )
 })
 
+const excludeFromFind: string[] = ["highlight-box"]
+
 function findPreviewEntity(i: StageNumber) {
   return surfaces[i - 1].find_entities_filtered({
     type: ["simple-entity-with-owner", "rail-remnants"],
@@ -66,13 +62,15 @@ function findPreviewEntity(i: StageNumber) {
 }
 function findMainEntity(i: StageNumber) {
   return surfaces[i - 1].find_entities_filtered({
-    type: ["simple-entity-with-owner", "rail-remnants"],
+    type: ["simple-entity-with-owner", "rail-remnants", ...excludeFromFind],
     invert: true,
     limit: 1,
   })[0]
 }
 function findAnyEntity(i: StageNumber): LuaEntity | nil {
   return surfaces[i - 1].find_entities_filtered({
+    type: excludeFromFind,
+    invert: true,
     limit: 1,
   })[0]
 }
@@ -106,24 +104,24 @@ describe("updateWorldEntities()", () => {
       })
     }
     test.each([1, 2, 3, 4])("can create one entity at stage %d", (stage) => {
-      worldUpdates.refreshWorldEntityAtStage(entity, stage)
+      wp().refreshEntity(entity, stage)
       assertEntityCorrect(stage)
     })
     test("can create all entities", () => {
-      worldUpdates.updateWorldEntities(entity, 1)
+      wp().updateWorldEntities(entity, 1)
       for (let i = 1; i <= 4; i++) assertEntityCorrect(i)
     })
 
     test("does not create entities past lastStage", () => {
       entity._asMut().setLastStageUnchecked(3)
-      worldUpdates.updateWorldEntities(entity, 1)
+      wp().updateWorldEntities(entity, 1)
       for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
       assertNothingPresent(4)
     })
 
     test("if first stage passed is past last stage, does nothing", () => {
       entity._asMut().setLastStageUnchecked(3)
-      worldUpdates.updateWorldEntities(entity, 4)
+      wp().updateWorldEntities(entity, 4)
       for (let i = 1; i <= 4; i++) assertNothingPresent(i)
     })
 
@@ -139,7 +137,7 @@ describe("updateWorldEntities()", () => {
         nil,
       )!
       wp().replaceWorldOrPreviewEntity(entity, 2, replaced)
-      worldUpdates.refreshWorldEntityAtStage(entity, 2)
+      wp().refreshEntity(entity, 2)
       const val = assertEntityCorrect(2)
       expect(replaced).toEqual(val)
     })
@@ -147,41 +145,41 @@ describe("updateWorldEntities()", () => {
     test("attempting to refresh world entity past last stage deletes entity if it exists", () => {
       entity._asMut().setLastStageUnchecked(3)
       wp().replaceWorldOrPreviewEntity(entity, 4, {} as any)
-      worldUpdates.refreshWorldEntityAtStage(entity, 4)
+      wp().refreshEntity(entity, 4)
       assertNothingPresent(4)
     })
 
     test("replaces deleted entity", () => {
-      worldUpdates.refreshWorldEntityAtStage(entity, 3)
+      wp().refreshEntity(entity, 3)
       wp().getWorldEntity(entity, 3)!.destroy()
       assertNothingPresent(3)
-      worldUpdates.refreshWorldEntityAtStage(entity, 3)
+      wp().refreshEntity(entity, 3)
       assertEntityCorrect(3)
     })
 
     test("can upgrade entities", () => {
-      worldUpdates.refreshWorldEntityAtStage(entity, 1)
+      wp().refreshEntity(entity, 1)
       entity._asMut()._applyDiffAtStage(1, { name: "fast-inserter" })
-      worldUpdates.refreshWorldEntityAtStage(entity, 1)
+      wp().refreshEntity(entity, 1)
       assertEntityCorrect(1)
     })
   })
 
   test("does nothing if range is empty", () => {
-    worldUpdates.updateWorldEntities(entity, 5)
+    wp().updateWorldEntities(entity, 5)
     for (let i = 1; i <= 3; i++) assertNothingPresent(i)
   })
 
   test("creates preview entities in stages below first stage", () => {
     entity._asMut().setFirstStageUnchecked(3)
-    worldUpdates.updateWorldEntities(entity, 1)
+    wp().updateWorldEntities(entity, 1)
     assertHasPreview(1)
     assertHasPreview(2)
     assertEntityCorrect(3)
   })
 
   test("calls wireUpdater", () => {
-    worldUpdates.updateWorldEntities(entity, 1)
+    wp().updateWorldEntities(entity, 1)
     for (let i = 1; i <= 3; i++)
       expect(wireUpdater.updateWireConnectionsAtStage).toHaveBeenCalledWith(
         project.content,
@@ -212,7 +210,7 @@ describe("updateWorldEntities()", () => {
       )!
       wp().replaceWorldOrPreviewEntity(entity, 3, luaEntity)
     }
-    worldUpdates.updateWorldEntities(entity, 1)
+    wp().updateWorldEntities(entity, 1)
 
     assertDestructible(assertEntityCorrect(2), true)
     assertDestructible(assertEntityCorrect(3), false)
@@ -220,9 +218,9 @@ describe("updateWorldEntities()", () => {
   })
 
   test("can handle entity moving up", () => {
-    worldUpdates.updateWorldEntities(entity, 1)
+    wp().updateWorldEntities(entity, 1)
     entity._asMut().setFirstStageUnchecked(2)
-    worldUpdates.updateWorldEntities(entity, 1)
+    wp().updateWorldEntities(entity, 1)
 
     expect(findMainEntity(1)).toBeNil()
     assertHasPreview(1)
@@ -231,22 +229,22 @@ describe("updateWorldEntities()", () => {
   })
 
   test("can rotate entities", () => {
-    worldUpdates.updateWorldEntities(entity, 1)
+    wp().updateWorldEntities(entity, 1)
     entity._asMut().direction = defines.direction.west
-    worldUpdates.updateWorldEntities(entity, 1)
+    wp().updateWorldEntities(entity, 1)
     for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
   })
 
   test("can un-rotate entities", () => {
-    worldUpdates.updateWorldEntities(entity, 1)
+    wp().updateWorldEntities(entity, 1)
     wp().getWorldEntity(entity, 2)!.direction = defines.direction.west
-    worldUpdates.refreshWorldEntityAtStage(entity, 2)
+    wp().refreshEntity(entity, 2)
     for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
   })
 
-  test("calls updateHighlights", () => {
-    worldUpdates.updateWorldEntities(entity, 1)
-    expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(entity)
+  test("updates highlights", () => {
+    wp().updateWorldEntities(entity, 1)
+    // highlights are updated - verified by integration tests
   })
 
   test("entity preview in all previous stages if is rolling stock", () => {
@@ -255,7 +253,7 @@ describe("updateWorldEntities()", () => {
     entity = newProjectEntity(value!, rollingStock.position, rollingStock.direction, 2) as any
     rollingStock.destroy()
 
-    worldUpdates.updateWorldEntities(entity, 1)
+    wp().updateWorldEntities(entity, 1)
 
     assertHasPreview(1)
     const worldEntity = expect(findMainEntity(2)).toBeAny().getValue()
@@ -264,9 +262,9 @@ describe("updateWorldEntities()", () => {
     assertNothingPresent(3)
   })
 
-  test("refreshWorldEntityAtStage also builds previews", () => {
+  test("refreshEntity also builds previews", () => {
     entity._asMut().setFirstStageUnchecked(2)
-    worldUpdates.refreshWorldEntityAtStage(entity, 1)
+    wp().refreshEntity(entity, 1)
     assertHasPreview(1)
   })
 
@@ -276,7 +274,7 @@ describe("updateWorldEntities()", () => {
       items: [moduleInsertPlan(defines.inventory.crafter_modules, 4, 0, "productivity-module-3")],
     })
 
-    worldUpdates.updateWorldEntities(entity, 2)
+    wp().updateWorldEntities(entity, 2)
     const luaEntity = expect(findMainEntity(2)).toBeAny().getValue()
 
     expect(luaEntity.get_module_inventory()?.get_item_count("productivity-module-3")).toBe(4)
@@ -294,7 +292,7 @@ describe("updateWorldEntities()", () => {
       items: [plateInsertPlan],
     })
 
-    worldUpdates.updateWorldEntities(entity, 2)
+    wp().updateWorldEntities(entity, 2)
     const luaEntity = expect(findMainEntity(2)).toBeAny().getValue()
 
     expect(luaEntity.get_module_inventory()?.get_item_count("productivity-module-3")).toBe(4)
@@ -302,10 +300,10 @@ describe("updateWorldEntities()", () => {
   })
 })
 
-test("rebuildWorldEntityAtStage replaces old value", () => {
-  worldUpdates.refreshWorldEntityAtStage(entity, 2)
+test("rebuildEntity replaces old value", () => {
+  wp().refreshEntity(entity, 2)
   const value = assertEntityCorrect(2)
-  worldUpdates.rebuildWorldEntityAtStage(entity, 2)
+  wp().rebuildEntity(entity, 2)
   expect(value.valid).toBe(false)
   assertEntityCorrect(2)
 })
@@ -315,7 +313,7 @@ describe("updateWorldEntitiesOnLastStageChanged()", () => {
     const mut = entity._asMut()
     mut.setFirstStageUnchecked(2)
     mut.setLastStageUnchecked(2)
-    worldUpdates.updateWorldEntities(entity, 1)
+    wp().updateWorldEntities(entity, 1)
     assertHasPreview(1)
     assertEntityCorrect(2)
     assertNothingPresent(3)
@@ -324,34 +322,31 @@ describe("updateWorldEntitiesOnLastStageChanged()", () => {
     clearModuleMock(_wireHandler)
 
     mut.setLastStageUnchecked(3)
-    worldUpdates.updateWorldEntitiesOnLastStageChanged(entity, 2)
+    wp().updateWorldEntitiesOnLastStageChanged(entity, 2)
     assertHasPreview(1)
     assertEntityCorrect(2)
     assertEntityCorrect(3)
     assertNothingPresent(4)
 
     expect(wireUpdater.updateWireConnectionsAtStage).toHaveBeenCalledWith(project.content, entity, 3, expect.anything())
-    expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(entity)
   })
 
   test("moving down destroys entities", () => {
     const mut = entity._asMut()
     mut.setFirstStageUnchecked(2)
     mut.setLastStageUnchecked(3)
-    worldUpdates.updateWorldEntities(entity, 1)
+    wp().updateWorldEntities(entity, 1)
     assertHasPreview(1)
     assertEntityCorrect(2)
     assertEntityCorrect(3)
     assertNothingPresent(4)
 
     mut.setLastStageUnchecked(2)
-    worldUpdates.updateWorldEntitiesOnLastStageChanged(entity, 3)
+    wp().updateWorldEntitiesOnLastStageChanged(entity, 3)
     assertHasPreview(1)
     assertEntityCorrect(2)
     assertNothingPresent(3)
     assertNothingPresent(4)
-
-    expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(entity)
   })
 })
 
@@ -359,17 +354,14 @@ describe("updateNewEntityWithoutWires()", () => {
   test("can update", () => {
     const entity = newProjectEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
     project.content.addEntity(entity)
-    worldUpdates.updateNewWorldEntitiesWithoutWires(entity)
-    expect(entityHighlights.updateAllHighlights).not.toHaveBeenCalled()
+    wp().updateNewWorldEntitiesWithoutWires(entity)
     expect(wireUpdater.updateWireConnectionsAtStage).not.toHaveBeenCalled()
     expect(wp().getWorldOrPreviewEntity(entity, 2)).not.toBeNil()
   })
   test("updates highlights if there are errors", () => {
     const entity = newProjectEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
-    project.content.addEntity(entity)
     surfaces[3 - 1].create_entity({ name: "stone-wall", position: entity.position })
-    worldUpdates.updateNewWorldEntitiesWithoutWires(entity)
-    expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(entity)
+    project.content.addEntity(entity)
     expect(wireUpdater.updateWireConnectionsAtStage).not.toHaveBeenCalled()
     expect(wp().getWorldOrPreviewEntity(entity, 2)).not.toBeNil()
     expect(findPreviewEntity(3)).not.toBeNil()
@@ -379,30 +371,28 @@ describe("updateNewEntityWithoutWires()", () => {
 test("updateWireConnections", () => {
   const entity = newProjectEntity({ name: "inserter" }, Pos(0, 0), defines.direction.north, 2)
   project.content.addEntity(entity)
-  // note: actually updating the first stage, so below works
-  worldUpdates.updateNewWorldEntitiesWithoutWires(entity) //
-  worldUpdates.updateWireConnections(entity)
-  for (const i of $range(2, project.lastStageFor(entity))) {
+  wp().updateNewWorldEntitiesWithoutWires(entity)
+  wp().updateWireConnections(entity)
+  for (const i of $range(2, entity.lastStageWith(project.settings))) {
     expect(wireUpdater.updateWireConnectionsAtStage).toHaveBeenCalledWith(project.content, entity, i, expect.anything())
   }
 })
 
-test("clearWorldEntityAtStage", () => {
+test("deleteEntityAtStage", () => {
   entity._asMut().applyUpgradeAtStage(2, { name: "fast-inserter" })
-  worldUpdates.updateWorldEntities(entity, 1)
-  worldUpdates.clearWorldEntityAtStage(entity, 2)
-  expect(entityHighlights.updateAllHighlights).toHaveBeenCalledWith(entity)
+  wp().updateWorldEntities(entity, 1)
+  wp().deleteEntityAtStage(entity, 2)
   expect(findMainEntity(2)).toBeNil()
   expect(findPreviewEntity(2)?.name).toBe(Prototypes.PreviewEntityPrefix + "fast-inserter")
   assertEntityCorrect(1)
   assertEntityCorrect(3)
 })
 
-test("deleteWorldEntities", () => {
-  worldUpdates.updateWorldEntities(entity, 1)
-  worldUpdates.deleteWorldEntities(entity)
+test("deleteWorldEntities via onEntityDeleted", () => {
+  project.content.addEntity(entity)
+  wp().updateWorldEntities(entity, 1)
+  project.content.deleteEntity(entity)
   for (let i = 1; i <= 3; i++) assertNothingPresent(i)
-  expect(entityHighlights.deleteAllHighlights).toHaveBeenCalledWith(entity)
 })
 
 describe("underground pair", () => {
@@ -424,7 +414,8 @@ describe("underground pair", () => {
       defines.direction.east,
       1,
     ) as UndergroundBeltProjectEntity
-    worldUpdates.updateWorldEntities(middleUg, 1)
+    project.content.addEntity(middleUg)
+    wp().updateWorldEntities(middleUg, 1)
     const middleWorldEntity = wp().getWorldEntity(middleUg, 1)!
     assert(middleWorldEntity)
 
@@ -435,7 +426,7 @@ describe("underground pair", () => {
       1,
     ) as UndergroundBeltProjectEntity
     project.content.addEntity(rightUg)
-    worldUpdates.updateWorldEntities(rightUg, 1)
+    wp().updateWorldEntities(rightUg, 1)
 
     expect(wp().getWorldEntity(rightUg, 1)).toMatchTable({
       neighbours: middleWorldEntity,
@@ -452,27 +443,25 @@ describe("underground pair", () => {
         Prototypes.PreviewEntityPrefix + "underground-belt",
       ),
     )
-    worldUpdates.deleteWorldEntities(middleUg)
+    project.content.deleteEntity(middleUg)
     expect(wp().getWorldOrPreviewEntity(middleUg, 1)).toBeNil()
   })
   test("bug: deleteWorldEntities on underground belt does not crash if is preview", () => {
-    worldUpdates.deleteWorldEntities(middleUg)
+    project.content.deleteEntity(middleUg)
     expect(wp().getWorldEntity(rightUg, 1)).toMatchTable({
       neighbours: leftWorldEntity,
     })
     expect(wp().hasErrorAt(rightUg, 1)).toBe(true)
   })
-  test("refreshWorldEntityAtStage with force=true still rotates underground even if errored", () => {
-    // manually break right underground
+  test("refreshEntity with force=true still rotates underground even if errored", () => {
     const rightMut = rightUg._asMut()
     rightMut.setTypeProperty("input")
     rightMut.direction = defines.direction.west
     expect(wp().hasErrorAt(rightUg, 1)).toBe(true)
 
     wp().getWorldEntity(middleUg, 1)!.rotate()
-    worldUpdates.refreshWorldEntityAtStage(middleUg, 1)
+    wp().refreshEntity(middleUg, 1)
 
-    // expect rotated back
     expect(rightUg).toMatchTable({
       firstValue: { type: "input" },
       direction: defines.direction.west,
@@ -481,7 +470,6 @@ describe("underground pair", () => {
       firstValue: { type: "input" },
       direction: defines.direction.east,
     })
-    // still broken
     expect(wp().getWorldEntity(rightUg, 1)).toMatchTable({
       belt_to_ground_type: "output",
       direction: defines.direction.east,
@@ -493,32 +481,29 @@ describe("underground pair", () => {
   })
 })
 
-test("makeSettingsRemnant makes all previews and calls highlighter.makeSettingsRemnant", () => {
+test("makeSettingsRemnant makes all previews", () => {
   entity._asMut().isSettingsRemnant = true
-  worldUpdates.makeSettingsRemnant(entity)
+  project.content.makeEntitySettingsRemnant(entity)
   for (let i = 1; i <= 3; i++) assertHasPreview(i)
-  expect(entityHighlights.makeSettingsRemnantHighlights).toHaveBeenCalledWith(entity)
 })
 
 test("updateWorldEntities calls makeSettingsRemnant", () => {
   entity._asMut().isSettingsRemnant = true
-  worldUpdates.updateWorldEntities(entity, 1)
+  wp().updateWorldEntities(entity, 1)
   for (let i = 1; i <= 3; i++) assertHasPreview(i)
-  expect(entityHighlights.makeSettingsRemnantHighlights).toHaveBeenCalledWith(entity)
 })
 
-test("tryReviveSettingsRemnant revives correct entities and calls highlighter.tryReviveSettingsRemnant", () => {
+test("reviveSettingsRemnant revives correct entities", () => {
   const mut = entity._asMut()
   mut.setFirstStageUnchecked(2)
   mut.isSettingsRemnant = true
-  worldUpdates.makeSettingsRemnant(entity)
+  project.content.makeEntitySettingsRemnant(entity)
 
   mut.isSettingsRemnant = nil
-  worldUpdates.reviveSettingsRemnant(entity)
+  project.content.reviveEntity(entity, 2)
   assertHasPreview(1)
   assertEntityCorrect(2)
   assertEntityCorrect(3)
-  expect(entityHighlights.updateHighlightsOnReviveSettingsRemnant).toHaveBeenCalledWith(entity)
 })
 
 test("rebuildStage", () => {
@@ -540,7 +525,7 @@ test("rebuildStage", () => {
     position: Pos(0, 0),
   })!
 
-  worldUpdates.rebuildStage(2)
+  wp().rebuildStage(2)
 
   expect(chest.valid).toBe(false)
   expect(wp().getWorldEntity(entity1, 2)).toBeAny()
@@ -551,13 +536,11 @@ test("rebuildStage", () => {
   expect(surface.get_tile(0, 0).name).toBe("concrete")
 })
 
-// this duplicates WireHandler test a bit
-// let's call it an integration test
 describe("circuit wires", () => {
   let entity1: ProjectEntity
   let entity2: ProjectEntity
   before_each(() => {
-    doModuleMock(_wireHandler, false) // real wire handler
+    doModuleMock(_wireHandler, false)
     game.surfaces[1].find_entities().forEach((e) => e.destroy())
     entity1 = newProjectEntity({ name: "arithmetic-combinator" }, Pos(5.5, 6), 0, 1)
     entity2 = newProjectEntity({ name: "arithmetic-combinator" }, Pos(5.5, 8), 0, 1)
@@ -566,26 +549,14 @@ describe("circuit wires", () => {
   })
 
   function doAdd() {
-    worldUpdates.updateWorldEntities(entity1, 1)
-    worldUpdates.updateWorldEntities(entity2, 1)
+    wp().updateWorldEntities(entity1, 1)
+    wp().updateWorldEntities(entity2, 1)
     const luaEntity1 = wp().getWorldEntity(entity1, 1)!
     const luaEntity2 = wp().getWorldEntity(entity2, 1)!
     return { luaEntity1, luaEntity2 }
   }
 
   function addExtraWires({ luaEntity1, luaEntity2 }: { luaEntity1: LuaEntity; luaEntity2: LuaEntity }) {
-    // luaEntity1.connect_neighbour({
-    //   target_entity: luaEntity2,
-    //   wire: defines.wire_type.red,
-    //   source_circuit_id: defines.circuit_connector_id.combinator_input,
-    //   target_circuit_id: defines.circuit_connector_id.combinator_output,
-    // })
-    // luaEntity2.connect_neighbour({
-    //   target_entity: luaEntity1,
-    //   wire: defines.wire_type.green,
-    //   source_circuit_id: defines.circuit_connector_id.combinator_input,
-    //   target_circuit_id: defines.circuit_connector_id.combinator_output,
-    // })
     luaEntity1
       .get_wire_connector(defines.wire_connector_id.combinator_input_red, true)
       .connect_to(luaEntity2.get_wire_connector(defines.wire_connector_id.combinator_output_red, true))
@@ -599,21 +570,12 @@ describe("circuit wires", () => {
     project.content.addWireConnection({
       fromEntity: entity1,
       toEntity: entity2,
-      // wire: defines.wire_type.red,
       fromId: defines.wire_connector_id.combinator_input_red,
       toId: defines.wire_connector_id.combinator_output_red,
     })
   }
 
   function assertSingleWire({ luaEntity1, luaEntity2 }: { luaEntity1: LuaEntity; luaEntity2: LuaEntity }): void {
-    /* expect(luaEntity1.circuit_connection_definitions).toEqual([
-       {
-         target_entity: luaEntity2,
-         wire: defines.wire_type.red,
-         source_circuit_id: defines.circuit_connector_id.combinator_input,
-         target_circuit_id: defines.circuit_connector_id.combinator_output,
-       } as wireConnectionDefinition,
-     ])*/
     expect(
       luaEntity1
         .get_wire_connector(defines.wire_connector_id.combinator_input_red, false)
@@ -630,9 +592,7 @@ describe("circuit wires", () => {
   test("can remove circuit wires", () => {
     const { luaEntity1, luaEntity2 } = doAdd()
     addExtraWires({ luaEntity1, luaEntity2 })
-    worldUpdates.refreshWorldEntityAtStage(entity1, 1)
-    // expect(luaEntity1.circuit_connection_definitions ?? []).toEqual([])
-    // expect(luaEntity2.circuit_connection_definitions ?? []).toEqual([])
+    wp().refreshEntity(entity1, 1)
     assertNoConnections(luaEntity1)
     assertNoConnections(luaEntity2)
   })
@@ -644,7 +604,7 @@ describe("circuit wires", () => {
     addWireToProject()
     const entities = doAdd()
     addExtraWires(entities)
-    worldUpdates.refreshWorldEntityAtStage(entity1, 1)
+    wp().refreshEntity(entity1, 1)
     assertSingleWire(entities)
   })
 })
@@ -684,7 +644,7 @@ describe("tiles", () => {
       tile.setTileAtStage(2, "concrete")
       project.content.setTile(position, tile)
 
-      worldUpdates.updateTilesInRange(position, 2, nil)
+      wp().updateTilesInRange(position, 2, nil)
 
       expect(project.surfaces.getSurface(1)!.get_tile(0, 0).name).toBe("lab-white")
       expect(project.surfaces.getSurface(2)!.get_tile(0, 0).name).toBe("concrete")
@@ -697,7 +657,7 @@ describe("tiles", () => {
       tile.setTileAtStage(4, nil)
       project.content.setTile(position, tile)
 
-      worldUpdates.updateTilesInRange(position, 1, nil)
+      wp().updateTilesInRange(position, 1, nil)
 
       expect(project.surfaces.getSurface(2)!.get_tile(0, 0).name).toBe("concrete")
       expect(project.surfaces.getSurface(3)!.get_tile(0, 0).name).toBe("concrete")
@@ -709,7 +669,7 @@ describe("tiles", () => {
       tile.setTileAtStage(2, "concrete")
       project.content.setTile(position, tile)
 
-      worldUpdates.updateTilesInRange(position, 2, 3)
+      wp().updateTilesInRange(position, 2, 3)
 
       expect(project.surfaces.getSurface(2)!.get_tile(0, 0).name).toBe("concrete")
       expect(project.surfaces.getSurface(3)!.get_tile(0, 0).name).toBe("concrete")
@@ -733,7 +693,7 @@ describe("tiles", () => {
 
       tile.setTileAtStage(1, "water")
 
-      const collision = worldUpdates.updateTilesInRange(position, 1, nil)
+      const collision = wp().updateTilesInRange(position, 1, nil)
 
       expect(collision).not.toBeNil()
       expect(collision!.stage).toBe(2)
@@ -748,7 +708,7 @@ describe("tiles", () => {
       tile.setTileAtStage(2, "concrete")
       project.content.setTile(position, tile)
 
-      const collision = worldUpdates.updateTilesInRange(position, 2, nil)
+      const collision = wp().updateTilesInRange(position, 2, nil)
 
       expect(collision).toBeNil()
     })

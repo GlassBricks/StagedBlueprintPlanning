@@ -29,7 +29,7 @@ test.each([
 ])("can create %s with correct previews", (name) => {
   const pos = Pos(10.5, 10.5)
   const entity = ctx.buildEntity(3, { name, position: pos })
-  const worldEntity = ctx.worldQueries.getWorldEntity(entity, 3)!
+  const worldEntity = ctx.wp.getWorldEntity(entity, 3)!
   expect(entity.position).toEqual(worldEntity.position)
   ctx.assertEntityCorrect(entity, false)
 })
@@ -44,11 +44,11 @@ test("rebuildStage", () => {
   })
   expect(ctx.project.actions.trySetLastStage(entityPastLastStage, 1)).toEqual(StageMoveResult.Updated)
   entityPresent._asMut()._applyDiffAtStage(4, { name: "bulk-inserter" })
-  ctx.worldOps.refreshAllEntities(entityPresent)
+  ctx.wp.refreshAllEntities(entityPresent)
   ctx.assertEntityCorrect(entityPresent, false)
 
   for (const stage of $range(1, 6)) {
-    ctx.worldOps.rebuildStage(stage)
+    ctx.wp.rebuildStage(stage)
 
     ctx.assertEntityCorrect(entityPresent, false)
     ctx.assertEntityCorrect(entityPreview, false)
@@ -59,9 +59,9 @@ test("rebuildStage", () => {
 test("can update an infinity accumulator", () => {
   assert("EditorExtensions" in script.active_mods)
   const entity = ctx.buildEntity(1, { name: "ee-infinity-accumulator-primary-input", position: pos })
-  expect(ctx.worldQueries.getWorldOrPreviewEntity(entity, 2)?.name).toEqual("ee-infinity-accumulator-primary-input")
+  expect(ctx.wp.getWorldOrPreviewEntity(entity, 2)?.name).toEqual("ee-infinity-accumulator-primary-input")
 
-  const oldLuaEntity = ctx.worldQueries.getWorldEntity(entity, 1)!
+  const oldLuaEntity = ctx.wp.getWorldEntity(entity, 1)!
   const newLuaEntity = ctx.createEntity(1, {
     name: "ee-infinity-accumulator-primary-output",
     position: pos,
@@ -72,8 +72,8 @@ test("can update an infinity accumulator", () => {
   expect(entity).toMatchTable({
     firstValue: { name: "ee-infinity-accumulator-primary-output" },
   })
-  expect(ctx.worldQueries.getWorldOrPreviewEntity(entity, 1)?.name).toEqual("ee-infinity-accumulator-primary-output")
-  expect(ctx.worldQueries.getWorldOrPreviewEntity(entity, 2)?.name).toEqual("ee-infinity-accumulator-primary-output")
+  expect(ctx.wp.getWorldOrPreviewEntity(entity, 1)?.name).toEqual("ee-infinity-accumulator-primary-output")
+  expect(ctx.wp.getWorldOrPreviewEntity(entity, 2)?.name).toEqual("ee-infinity-accumulator-primary-output")
 })
 
 describe.skip("map gen settings", () => {
@@ -139,7 +139,7 @@ describe("stage deletion", () => {
       position: pos.add(0, 0),
     })
     entityBeforeWithDiff._asMut()._applyDiffAtStage(3, { override_stack_size: 3 })
-    ctx.worldOps.updateWorldEntities(entityBeforeWithDiff, 3)
+    ctx.wp.updateWorldEntities(entityBeforeWithDiff, 3)
 
     return { entityBeforeWithDiff, ...createBaseEntities() }
   }
@@ -151,8 +151,8 @@ describe("stage deletion", () => {
     })
     entityBeforeWithDiff._asMut()._applyDiffAtStage(3, { override_stack_size: 3 })
     entityBeforeWithDiff._asMut()._applyDiffAtStage(4, { override_stack_size: 4 })
-    ctx.worldOps.updateWorldEntities(entityBeforeWithDiff, 3)
-    ctx.worldOps.updateWorldEntities(entityBeforeWithDiff, 4)
+    ctx.wp.updateWorldEntities(entityBeforeWithDiff, 3)
+    ctx.wp.updateWorldEntities(entityBeforeWithDiff, 4)
 
     return { entityBeforeWithDiff, ...createBaseEntities() }
   }
@@ -218,8 +218,8 @@ describe("stage deletion", () => {
     })
 
     expect(ctx.project.content.hasEntity(entityAtStage)).toBe(false)
-    expect(ctx.worldQueries.getWorldEntity(entityAtStage, 1)).toBeNil()
-    expect(ctx.worldQueries.getWorldEntity(entityAtStage, 2)).toBeNil()
+    expect(ctx.wp.getWorldEntity(entityAtStage, 1)).toBeNil()
+    expect(ctx.wp.getWorldEntity(entityAtStage, 2)).toBeNil()
 
     expect(entityAfterStage.firstStage).toBe(3)
     expect(ctx.project.content.hasEntity(entityAfterStage)).toBe(true)
@@ -257,7 +257,7 @@ describe("stage insertion", () => {
     Events.raiseFakeEventNamed("on_player_selected_area", {
       player_index: ctx.player.index,
       item: Prototypes.StageDeconstructTool,
-      entities: [ctx.worldQueries.getWorldEntity(entity, atStage)!],
+      entities: [ctx.wp.getWorldEntity(entity, atStage)!],
       tiles: [],
       surface: ctx.surfaces[atStage - 1],
       area: { left_top: pos, right_bottom: pos },
@@ -266,7 +266,7 @@ describe("stage insertion", () => {
 
   test("insert stage in the middle", () => {
     const entityWithDiff = ctx.buildEntity(2, { position: pos })
-    applyDiffViaWorld(ctx.worldQueries, entityWithDiff, 4, (e) => {
+    applyDiffViaWorld(ctx.wp, entityWithDiff, 4, (e) => {
       e.inserter_stack_size_override = 2
     })
 
@@ -300,7 +300,7 @@ describe("stage insertion", () => {
     ctx.surfaces = ctx.project.getAllStages().map((stage) => stage.getSurface())
 
     expect(entity.firstStage).toBe(2)
-    const preview = ctx.worldQueries.getWorldOrPreviewEntity(entity, 1)
+    const preview = ctx.wp.getWorldOrPreviewEntity(entity, 1)
     expect(preview).toBeAny()
     expect(isPreviewEntity(preview!)).toBe(true)
     ctx.assertEntityCorrect(entity, false)
@@ -333,10 +333,10 @@ describe("resyncWithWorld", () => {
     })!
     unregisteredEntity.inserter_stack_size_override = 1
 
-    ctx.worldQueries.getWorldEntity(entity1, 3)!.inserter_stack_size_override = 3
+    ctx.wp.getWorldEntity(entity1, 3)!.inserter_stack_size_override = 3
     unregisteredEntity.clone({ position: entity2Pos, surface: ctx.surfaces[2] })!.inserter_stack_size_override = 5
 
-    ctx.worldOps.resyncWithWorld()
+    ctx.project.resyncWithWorld()
     runEntireCurrentTask()
 
     expect(entity1.stageDiffs).toMatchTable({ 3: { override_stack_size: 3 } })

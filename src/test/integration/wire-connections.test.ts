@@ -60,16 +60,16 @@ describe("poles and wire connections", () => {
   test("disconnect and connect cables", () => {
     const pole1 = setupPole(3)
     const pole2 = setupPole2(3)
-    disconnectPole(ctx.worldQueries.getWorldEntity(pole1, 3)!, ctx.worldQueries.getWorldEntity(pole2, 3)!)
-    checkForCircuitWireUpdates(ctx.worldQueries.getWorldEntity(pole1, 3)!, nil)
+    disconnectPole(ctx.wp.getWorldEntity(pole1, 3)!, ctx.wp.getWorldEntity(pole2, 3)!)
+    checkForCircuitWireUpdates(ctx.wp.getWorldEntity(pole1, 3)!, nil)
 
     expect(pole1.wireConnections?.get(pole2)).toBeNil()
     expect(pole2.wireConnections?.get(pole1)).toBeNil()
     ctx.assertEntityCorrect(pole1, false)
     ctx.assertEntityCorrect(pole2, false)
 
-    connectPole(ctx.worldQueries.getWorldEntity(pole1, 3)!, ctx.worldQueries.getWorldEntity(pole2, 3)!)
-    checkForCircuitWireUpdates(ctx.worldQueries.getWorldEntity(pole1, 3)!, nil)
+    connectPole(ctx.wp.getWorldEntity(pole1, 3)!, ctx.wp.getWorldEntity(pole2, 3)!)
+    checkForCircuitWireUpdates(ctx.wp.getWorldEntity(pole1, 3)!, nil)
 
     expect(pole1.wireConnections?.get(pole2)).toBeAny()
     expect(pole2.wireConnections?.get(pole1)).toBeAny()
@@ -80,14 +80,14 @@ describe("poles and wire connections", () => {
   test("connect and disconnect circuit wires", () => {
     const inserter = ctx.buildEntity(3)
     const pole = setupPole(3)
-    const poleConnector = ctx.worldQueries
+    const poleConnector = ctx.wp
       .getWorldEntity(pole, 3)!
       .get_wire_connector(defines.wire_connector_id.circuit_red, true)
-    const inserterConnector = ctx.worldQueries
+    const inserterConnector = ctx.wp
       .getWorldEntity(inserter, 3)!
       .get_wire_connector(defines.wire_connector_id.circuit_red, true)
     poleConnector.connect_to(inserterConnector)
-    checkForCircuitWireUpdates(ctx.worldQueries.getWorldEntity(pole, 3)!, nil)
+    checkForCircuitWireUpdates(ctx.wp.getWorldEntity(pole, 3)!, nil)
 
     const expectedConnection = next(inserter.wireConnections!.get(pole)!)[0] as ProjectWireConnection
     expect(expectedConnection).toBeAny()
@@ -103,7 +103,7 @@ describe("poles and wire connections", () => {
       ),
     ).toBe(true)
 
-    const worldEntity = ctx.worldQueries.getWorldEntity(inserter, 3)!
+    const worldEntity = ctx.wp.getWorldEntity(inserter, 3)!
     const inserterValue = saveEntity(worldEntity)[0]! as Mutable<InserterBlueprintEntity>
     if (inserterValue.control_behavior) {
       inserter._asMut()._applyDiffAtStage(3, {

@@ -33,7 +33,7 @@ describe("train entities", () => {
     train.destroy()
     ctx.surfaces[3 - 1].find_entities().forEach((e) => e.destroy())
 
-    ctx.worldOps.refreshAllEntities(entity)
+    ctx.wp.refreshAllEntities(entity)
     assertTrainEntityCorrect(entity, 3)
   })
   test("inserting a stage keeps train in same stage", () => {
@@ -66,7 +66,7 @@ describe("vehicles", () => {
 
   test("can save a vehicle with grid", () => {
     const projectEntity = ctx.buildEntity<CarBlueprintEntity>(1, { name: "tank", orientation: 0.25 })
-    const worldEntity = ctx.worldQueries.getWorldEntity(projectEntity, 1)!
+    const worldEntity = ctx.wp.getWorldEntity(projectEntity, 1)!
     expect(worldEntity.name).toBe("tank")
 
     worldEntity.grid!.put({ name: "solar-panel-equipment" })
@@ -74,11 +74,11 @@ describe("vehicles", () => {
     checkForEntityUpdates(worldEntity, nil)
     checkProjectEntityCorrect(projectEntity)
 
-    ctx.worldOps.rebuildStage(1)
+    ctx.wp.rebuildStage(1)
 
     checkProjectEntityCorrect(projectEntity)
 
-    const newWorldEntity = ctx.worldQueries.getWorldEntity(projectEntity, 1)!
+    const newWorldEntity = ctx.wp.getWorldEntity(projectEntity, 1)!
     checkForEntityUpdates(newWorldEntity, nil)
     checkProjectEntityCorrect(projectEntity)
 
@@ -123,7 +123,7 @@ test("rebuilding stage does not delete train", () => {
     }
   }
   assert(train)
-  ctx.worldOps.rebuildStage(1)
+  ctx.wp.rebuildStage(1)
   expect(trainEntity.valid).toBe(false)
   expect(ctx.project.content.hasEntity(train)).toBe(true)
   const newTrain = ctx.surfaces[0].find_entities_filtered({ name: "locomotive" })[0]
@@ -143,7 +143,7 @@ test("rebuilding stage places wagon and elevated rails correctly", () => {
   ctx.player.teleport([0, 0], ctx.surfaces[0])
   ctx.player.build_from_cursor({ position: pos, direction: 0, build_mode: defines.build_mode.forced })
 
-  ctx.worldOps.rebuildAllStages()
+  ctx.wp.rebuildAllStages()
 
   const rail = ctx.surfaces[0].find_entities_filtered({ name: "elevated-curved-rail-a" })[0]
   expect(rail).not.toBeNil()

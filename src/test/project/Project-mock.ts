@@ -4,49 +4,44 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import { LuaSurface } from "factorio:runtime"
-import { newProjectContent } from "../../entity/ProjectContent"
+import { MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
 import { StageNumber } from "../../entity/ProjectEntity"
 import { getPlayer } from "../../lib/test/misc"
-import { ProjectBase } from "../../project/Project"
-import { ProjectSurfaces } from "../../project/ProjectSurfaces"
+import { SurfaceProvider } from "../../project/entity-highlights"
+import { ProjectSettings } from "../../project/ProjectSettings"
 import { createStageSurface, destroySurface, getDefaultSurfaceSettings } from "../../project/surfaces"
 import { WorldPresentation } from "../../project/WorldPresentation"
 
-export function createMockProject(stages: number | LuaSurface[]): ProjectBase {
+export interface MockProject {
+  surfaces: SurfaceProvider
+  settings: ProjectSettings
+  content: MutableProjectContent
+  worldPresentation: WorldPresentation
+}
+
+export function createMockProject(stages: number | LuaSurface[]): MockProject {
   const surfaces: LuaSurface[] =
     typeof stages == "number" ? Array.from({ length: stages }, () => game.surfaces[1]) : stages
-  const mockSurfaces = {
+  const mockSurfaces: SurfaceProvider = {
     getSurface(stage: StageNumber) {
       return surfaces[stage - 1] ?? nil
     },
-    getAllSurfaces() {
-      return surfaces
-    },
-    surfaceCount() {
+  }
+  const settings = {
+    stageCount() {
       return surfaces.length
     },
-  } as unknown as ProjectSurfaces
-  const project: ProjectBase = {
-    surfaces: mockSurfaces,
-    settings: {
-      stageCount() {
-        return surfaces.length
-      },
-      getStageName(n: number) {
-        return "mock stage " + n
-      },
-      isSpacePlatform() {
-        return false
-      },
-    } as any,
-    lastStageFor: (entity) => (entity.lastStage ? math.min(entity.lastStage, surfaces.length) : surfaces.length),
-    content: newProjectContent(),
-    valid: true,
-    actions: "actions not mocked" as any,
-    worldPresentation: nil!,
-  }
-  project.worldPresentation = new WorldPresentation(project)
-  return project
+    getStageName(n: number) {
+      return "mock stage " + n
+    },
+    isSpacePlatform() {
+      return false
+    },
+  } as unknown as ProjectSettings
+  const content = newProjectContent()
+  const worldPresentation = new WorldPresentation(settings, mockSurfaces, content)
+  content.setObserver(worldPresentation)
+  return { surfaces: mockSurfaces, settings, content, worldPresentation }
 }
 
 export function setupTestSurfaces(numSurfaces: number): LuaSurface[] {
