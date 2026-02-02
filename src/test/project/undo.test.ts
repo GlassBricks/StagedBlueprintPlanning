@@ -5,7 +5,7 @@
 
 import { PlayerIndex } from "factorio:runtime"
 import expect, { mock, MockNoSelf } from "tstl-expect"
-import { registerGroupUndoAction, UndoHandler, _simulateUndo } from "../../project/undo"
+import { registerGroupUndoAction, UndoHandler, _simulateUndo } from "../../project/actions"
 
 let fn: MockNoSelf<(playerIndex: PlayerIndex, data: string) => void>
 const TestUndo = UndoHandler("<undo test>", (player, data: string) => {

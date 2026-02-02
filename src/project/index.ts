@@ -28,7 +28,7 @@ import { getAllProjects } from "./ProjectList"
 import { OverrideableBlueprintSettings } from "../blueprints/blueprint-settings"
 import { ProjectSettings, StageSettingsData } from "./ProjectSettings"
 import { ProjectSurfaces } from "./ProjectSurfaces"
-import { ProjectActions } from "./ProjectActions"
+import { ProjectActions } from "./actions"
 import { WorldPresentation } from "./WorldPresentation"
 
 declare const luaLength: LuaLength<Record<number, any>, number>

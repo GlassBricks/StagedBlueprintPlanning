@@ -63,7 +63,7 @@ import {
   registerUndoAction,
   registerUndoActionLater,
   UndoAction,
-} from "./undo"
+} from "./actions"
 
 import "../tiles/tile-events"
 

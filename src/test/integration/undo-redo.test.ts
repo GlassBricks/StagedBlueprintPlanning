@@ -7,7 +7,7 @@ import { Prototypes } from "../../constants"
 import { Events } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { getProjectPlayerData } from "../../project/player-project-data"
-import { _simulateUndo } from "../../project/undo"
+import { _simulateUndo } from "../../project/actions"
 import { applyDiffViaWorld, setupEntityIntegrationTest } from "./integration-test-util"
 
 const pos = Pos(10.5, 10.5)

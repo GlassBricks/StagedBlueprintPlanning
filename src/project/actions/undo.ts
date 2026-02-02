@@ -4,10 +4,10 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import { LuaEntity, LuaPlayer, PlayerIndex } from "factorio:runtime"
-import { Constants, Prototypes } from "../constants"
-import { onPlayerInitSince } from "../lib"
-import { DelayedEvent } from "../lib/delayed-event"
-import { Migrations } from "../lib/migration"
+import { Constants, Prototypes } from "../../constants"
+import { onPlayerInitSince } from "../../lib"
+import { DelayedEvent } from "../../lib/delayed-event"
+import { Migrations } from "../../lib/migration"
 import floor = math.floor
 
 interface UndoEntry {

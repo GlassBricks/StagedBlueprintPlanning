@@ -23,7 +23,7 @@ import { DraggableSpace, HorizontalPusher, RefreshButton, TitleBar } from "../li
 import { Migrations } from "../lib/migration"
 import { L_GuiEntityInfo } from "../locale"
 import { checkForEntityUpdates, getCurrentlyOpenedModdedGui } from "../project/event-handlers"
-import { ProjectActions } from "../project/ProjectActions"
+import { ProjectActions } from "../project/actions"
 import { Stage } from "../project/Project"
 
 import { getProjectEntityOfEntity } from "./entity-util"

@@ -13,7 +13,7 @@ import { Events } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { runEntireCurrentTask } from "../../lib/task"
 import { checkForEntityUpdates } from "../../project/event-handlers"
-import { _simulateUndo } from "../../project/undo"
+import { _simulateUndo } from "../../project/actions"
 import { setupEntityIntegrationTest } from "./integration-test-util"
 import direction = defines.direction
 

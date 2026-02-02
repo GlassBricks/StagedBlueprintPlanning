@@ -86,7 +86,7 @@ src/
 - `src/entity/ProjectEntity.ts` - Individual entity data structure
 - `src/entity/ProjectContent.ts` - Project entities collection (observable via ContentObserver)
 - `src/project/Project.ts` - Main project interface and implementation
-- `src/project/ProjectActions.ts` - All player action handling
+- `src/project/actions/ProjectActions.ts` - All player action handling
 - `src/project/WorldPresentation.ts` - World state sync (implements ContentObserver)
 - `src/project/entity-highlights.ts` - Entity highlight visualization
 - `src/lib/references.ts` - Global function storage system

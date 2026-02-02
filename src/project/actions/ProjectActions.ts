@@ -1,124 +1,65 @@
 import { BlueprintInsertPlan, LuaEntity, LuaTrain, nil, PlayerIndex } from "factorio:runtime"
-import { Colors, L_Game, Settings } from "../constants"
-import { Entity, LuaEntityInfo, TrainEntity } from "../entity/Entity"
-import { MutableProjectContent } from "../entity/ProjectContent"
+import { Entity, LuaEntityInfo, TrainEntity } from "../../entity/Entity"
+import { MutableProjectContent } from "../../entity/ProjectContent"
 import {
   getNameAndQuality,
   InserterProjectEntity,
   InternalProjectEntity,
-  InternalUndergroundBeltProjectEntity,
   LoaderProjectEntity,
   MovableProjectEntity,
   NameAndQuality,
   newProjectEntity,
   ProjectEntity,
-  StageDiffs,
   StageNumber,
-  UndergroundBeltProjectEntity,
-} from "../entity/ProjectEntity"
-import { allowOverlapDifferentDirection, areUpgradeableTypes, getPrototypeInfo } from "../entity/prototype-info"
-import { canBeAnyDirection, forceFlipUnderground, saveEntity } from "../entity/save-load"
-import { findUndergroundPair, undergroundCanReach } from "../entity/underground-belt"
-import { saveWireConnections } from "../entity/wires"
-import { fromExportStageDiffs, StageInfoExport } from "../import-export/entity"
-import { assertNever, deepCompare, RegisterClass } from "../lib"
-import { Pos, Position } from "../lib/geometry"
-import { L_Interaction } from "../locale"
-import { createProjectTile, ProjectTile } from "../tiles/ProjectTile"
-import { SurfaceProvider } from "./entity-highlights"
-import { createIndicator, createNotification } from "./notifications"
-import { ProjectSettings } from "./ProjectSettings"
-import { prepareArea } from "./surfaces"
-import { registerUndoAction, UndoAction, UndoHandler } from "./undo"
-import { WorldPresenter } from "./WorldPresentation"
+} from "../../entity/ProjectEntity"
+import { allowOverlapDifferentDirection, areUpgradeableTypes } from "../../entity/prototype-info"
+import { canBeAnyDirection, saveEntity } from "../../entity/save-load"
+import { findUndergroundPair } from "../../entity/underground-belt"
+import { saveWireConnections } from "../../entity/wires"
+import { fromExportStageDiffs, StageInfoExport } from "../../import-export/entity"
+import { Colors, Settings } from "../../constants"
+import { assertNever, deepCompare, RegisterClass } from "../../lib"
+import { Pos, Position } from "../../lib/geometry"
+import { L_Interaction } from "../../locale"
+import { SurfaceProvider } from "../entity-highlights"
+import { createIndicator, createNotification, notifyIfMoveError, notifyIfUpdateError } from "./notifications"
+import { ProjectSettings } from "../ProjectSettings"
+import { prepareArea } from "../surfaces"
+import * as TileActions from "./tile-actions"
+import * as UgActions from "./underground-belt-actions"
+import { registerUndoAction, UndoAction } from "./undo"
+import {
+  EntityUpdateResult,
+  lastStageChangeUndo,
+  StageMoveResult,
+  undoBringToStage,
+  undoDeleteEntity,
+  undoManualStageMove,
+  undoSendToStage,
+  WireUpdateResult,
+} from "./undo-records"
+import { WorldPresenter } from "../WorldPresentation"
 
-export declare const enum EntityUpdateResult {
-  Updated = "updated",
-  NoChange = "no-change",
-  CannotRotate = "cannot-rotate",
-  CannotUpgradeChangedPair = "cannot-upgrade-changed-pair",
+export {
+  EntityUpdateResult,
+  lastStageChangeUndo,
+  StageMoveResult,
+  undoBringToStage,
+  undoDeleteEntity,
+  undoManualStageMove,
+  undoSendToStage,
+  WireUpdateResult,
 }
-
-export declare const enum WireUpdateResult {
-  Updated = "updated",
-  NoChange = "no-change",
-}
-
-export declare const enum StageMoveResult {
-  Updated = "updated",
-  NoChange = "no-change",
-  CannotMovePastLastStage = "cannot-move-past-last-stage",
-  CannotMoveBeforeFirstStage = "cannot-move-before-first-stage",
-  IntersectsAnotherEntity = "intersects-another-entity",
-  EntityIsPersistent = "entity-is-persistent",
-}
-
-interface ProjectEntityRecord {
-  actions: ProjectActions
-  entity: ProjectEntity
-}
-
-interface StageChangeRecord extends ProjectEntityRecord {
-  oldStage: StageNumber
-}
-
-interface LastStageChangeRecord extends ProjectEntityRecord {
-  oldLastStage: StageNumber | nil
-}
-
-export const undoDeleteEntity = UndoHandler<ProjectEntityRecord>("delete entity", (_, { actions, entity }) => {
-  actions.readdDeletedEntity(entity)
-})
-
-export const undoManualStageMove = UndoHandler<StageChangeRecord>(
-  "stage move",
-  (player, { actions, entity, oldStage }) => {
-    const actualEntity = actions.findCompatibleEntityForUndo(entity)
-    if (actualEntity) {
-      actions.userTryMoveEntityToStage(actualEntity, oldStage, player.index, true)
-    }
-  },
-)
-
-export const undoSendToStage = UndoHandler<StageChangeRecord>(
-  "send to stage",
-  (player, { actions, entity, oldStage }) => {
-    const actualEntity = actions.findCompatibleEntityForUndo(entity)
-    if (actualEntity) {
-      actions.userBringEntityToStage(actualEntity, oldStage, player.index)
-    }
-  },
-)
-
-export const undoBringToStage = UndoHandler<StageChangeRecord>(
-  "bring to stage",
-  (player, { actions, entity, oldStage }) => {
-    const actualEntity = actions.findCompatibleEntityForUndo(entity)
-    if (actualEntity) {
-      actions.userSendEntityToStage(actualEntity, actualEntity.firstStage, oldStage, player.index)
-    }
-  },
-)
-
-export const lastStageChangeUndo = UndoHandler(
-  "last stage change",
-  (player, { actions, entity, oldLastStage }: LastStageChangeRecord) => {
-    const actualEntity = actions.findCompatibleEntityForUndo(entity)
-    if (actualEntity) {
-      actions.userTrySetLastStage(actualEntity, oldLastStage, player.index)
-    }
-  },
-)
 
 @RegisterClass("ProjectActions")
 export class ProjectActions {
   valid = true
 
   constructor(
-    private readonly content: MutableProjectContent,
-    private readonly worldPresenter: WorldPresenter,
-    private readonly settings: ProjectSettings,
-    private readonly surfaces: SurfaceProvider,
+    readonly content: MutableProjectContent,
+    readonly worldPresenter: WorldPresenter,
+    readonly settings: ProjectSettings,
+    readonly surfaces: SurfaceProvider,
   ) {}
 
   // === Entity creation ===
@@ -194,7 +135,7 @@ export class ProjectActions {
     const internalEntity = createNewProjectEntity(entity, stage, stagedInfo, items)
     if (!internalEntity) return nil
 
-    fixNewUndergroundBelt(this.content, internalEntity, entity, stage)
+    UgActions.fixNewUndergroundBelt(this.content, internalEntity, entity, stage)
 
     if (internalEntity.getType() == "locomotive") {
       internalEntity.isNewRollingStock = true
@@ -287,7 +228,7 @@ export class ProjectActions {
     if (!projectEntity) return
 
     const result = this.tryUpdateEntityFromWorld(projectEntity, stage, items)
-    this.notifyIfUpdateError(result, projectEntity, byPlayer)
+    notifyIfUpdateError(result, projectEntity, byPlayer)
     return projectEntity
   }
 
@@ -312,7 +253,7 @@ export class ProjectActions {
 
     this.worldPresenter.replaceWorldOrPreviewEntity(compatible, stage, entity)
     const result = this.setValueFromStagedInfo(compatible, stagedInfo, items, entity)
-    this.notifyIfMoveError(result, compatible, byPlayer)
+    notifyIfMoveError(result, compatible, byPlayer)
     return compatible
   }
 
@@ -374,7 +315,8 @@ export class ProjectActions {
     items: BlueprintInsertPlan[] | nil,
   ): EntityUpdateResult {
     if (entity.isUndergroundBelt()) {
-      return this.handleUndergroundBeltUpdate(
+      return UgActions.handleUndergroundBeltUpdate(
+        this,
         entity,
         entitySource,
         stage,
@@ -452,143 +394,6 @@ export class ProjectActions {
 
   // === Underground belt handling ===
 
-  private updatePair(
-    entity1: UndergroundBeltProjectEntity,
-    entity1Stage: StageNumber,
-    entity2: UndergroundBeltProjectEntity,
-    entity2Stage: StageNumber,
-  ): void {
-    this.worldPresenter.refreshEntity(entity1, entity1Stage)
-    this.worldPresenter.refreshEntity(entity2, entity2Stage)
-  }
-
-  private handleUndergroundFlippedBack(
-    entity: UndergroundBeltProjectEntity,
-    worldEntity: LuaEntity,
-    stage: StageNumber,
-    targetDirection: defines.direction,
-    pair: UndergroundBeltProjectEntity | nil,
-  ): EntityUpdateResult {
-    if (!pair) {
-      this.worldPresenter.refreshEntity(entity, stage)
-      return EntityUpdateResult.NoChange
-    }
-    if (pair.direction == targetDirection) {
-      this.updatePair(entity, entity.firstStage, pair, pair.firstStage)
-      return EntityUpdateResult.NoChange
-    }
-    const rotateAllowed = stage == entity.firstStage || pair.firstStage == stage
-    if (!rotateAllowed) {
-      forceFlipUnderground(worldEntity)
-      return EntityUpdateResult.CannotRotate
-    }
-    const oppositeType = worldEntity.belt_to_ground_type == "input" ? "output" : "input"
-    this.content.batch(() => {
-      this.content.setEntityDirection(pair, worldEntity.direction)
-      this.content.setTypeProperty(pair, oppositeType)
-    })
-    this.updatePair(entity, entity.firstStage, pair, pair.firstStage)
-    return EntityUpdateResult.Updated
-  }
-
-  private doUndergroundBeltUpdate(
-    thisUg: UndergroundBeltProjectEntity,
-    worldEntity: LuaEntity,
-    pair: UndergroundBeltProjectEntity | nil,
-    stage: StageNumber,
-    targetDirection: defines.direction | nil,
-    targetUpgrade: NameAndQuality,
-  ): EntityUpdateResult {
-    const rotated = targetDirection && targetDirection != thisUg.direction
-
-    const oldUpgrade = thisUg.getUpgradeAtStage(stage)
-    const upgraded = targetUpgrade.name != oldUpgrade.name || targetUpgrade.quality != oldUpgrade.quality
-
-    if (!rotated && !upgraded) {
-      if (!targetDirection) return EntityUpdateResult.NoChange
-      return this.handleUndergroundFlippedBack(thisUg, worldEntity, stage, targetDirection, pair)
-    }
-
-    const isSelfOrPairFirstStage = stage == thisUg.firstStage || (pair && pair.firstStage == stage)
-
-    if (rotated) {
-      const rotateAllowed = isSelfOrPairFirstStage
-      if (!rotateAllowed) {
-        this.worldPresenter.resetUnderground(thisUg, stage)
-        return EntityUpdateResult.CannotRotate
-      }
-
-      const oldType = thisUg.firstValue.type
-      const newType = oldType == "input" ? "output" : "input"
-      this.content.batch(() => {
-        this.content.setEntityDirection(thisUg, targetDirection)
-        this.content.setTypeProperty(thisUg, newType)
-        if (pair) {
-          this.content.setEntityDirection(pair, targetDirection)
-          this.content.setTypeProperty(pair, oldType)
-        }
-      })
-    }
-
-    const applyStage = isSelfOrPairFirstStage ? thisUg.firstStage : stage
-    const pairApplyStage = pair && isSelfOrPairFirstStage ? pair.firstStage : stage
-    let cannotUpgradeChangedPair = false
-    let newPair: UndergroundBeltProjectEntity | nil = nil
-    if (upgraded) {
-      this.content.applyEntityUpgrade(thisUg, applyStage, targetUpgrade)
-      newPair = findUndergroundPair(this.content, thisUg, stage, targetUpgrade.name)
-      if (pair == nil) {
-        if (newPair != nil) {
-          const pairPair = findUndergroundPair(this.content, newPair, stage, nil, thisUg)
-          cannotUpgradeChangedPair = pairPair != nil && pairPair != thisUg
-        }
-      } else {
-        cannotUpgradeChangedPair = newPair != nil && newPair != pair
-      }
-      if (cannotUpgradeChangedPair) {
-        this.content.applyEntityUpgrade(thisUg, stage, oldUpgrade)
-      } else if (pair) {
-        if (undergroundCanReach(thisUg, pair, targetUpgrade.name)) {
-          this.content.applyEntityUpgrade(pair, pairApplyStage, targetUpgrade)
-        } else {
-          pair = nil
-        }
-      }
-    }
-
-    if (cannotUpgradeChangedPair && !rotated) {
-      this.worldPresenter.refreshEntity(thisUg, stage)
-      if (pair) this.worldPresenter.refreshEntity(pair, stage)
-    } else if (!pair) {
-      this.worldPresenter.refreshEntity(thisUg, applyStage)
-    } else {
-      this.updatePair(thisUg, applyStage, pair, pairApplyStage)
-    }
-    return cannotUpgradeChangedPair ? EntityUpdateResult.CannotUpgradeChangedPair : EntityUpdateResult.Updated
-  }
-
-  private handleUndergroundBeltUpdate(
-    entity: UndergroundBeltProjectEntity,
-    worldEntity: LuaEntity,
-    stage: StageNumber,
-    targetDirection: defines.direction | nil,
-    targetUpgrade: NameAndQuality,
-  ): EntityUpdateResult {
-    const pair = findUndergroundPair(this.content, entity, stage)
-    const updateResult = this.doUndergroundBeltUpdate(entity, worldEntity, pair, stage, targetDirection, targetUpgrade)
-
-    const newWorldEntity = this.worldPresenter.getWorldEntity(entity, stage)
-    if (newWorldEntity) {
-      const worldPair = newWorldEntity.neighbours as LuaEntity | nil
-      if (worldPair && (!pair || this.worldPresenter.getWorldEntity(pair, stage) != worldPair)) {
-        const worldPairEntity = this.content.findCompatibleWithLuaEntity(worldPair, nil, stage)
-        if (worldPairEntity) this.worldPresenter.refreshEntity(worldPairEntity, stage)
-      }
-    }
-
-    return updateResult
-  }
-
   // === Rotation ===
 
   onEntityRotated(
@@ -605,7 +410,7 @@ export class ProjectActions {
 
   private handleRotate(projectEntity: ProjectEntity, stage: StageNumber, byPlayer: PlayerIndex | nil): void {
     const result = this.tryRotateEntityFromWorld(projectEntity, stage)
-    this.notifyIfUpdateError(result, projectEntity, byPlayer)
+    notifyIfUpdateError(result, projectEntity, byPlayer)
 
     if (projectEntity.isUndergroundBelt()) {
       const freshWorldEntity = this.worldPresenter.getWorldEntity(projectEntity, stage)
@@ -652,7 +457,7 @@ export class ProjectActions {
     if (!projectEntity) return
 
     const result = this.tryUpgradeEntityFromWorld(projectEntity, stage)
-    this.notifyIfUpdateError(result, projectEntity, byPlayer)
+    notifyIfUpdateError(result, projectEntity, byPlayer)
     if (entity.valid) entity.cancel_upgrade(entity.force)
   }
 
@@ -802,7 +607,7 @@ export class ProjectActions {
       this.replaceUnstagedValueViaContent(entity, info)
 
       if (entity.isUndergroundBelt()) {
-        this.handleUndergroundBeltValueSet(entity, oldStageDiffs, stageDiffs)
+        UgActions.handleUndergroundBeltValueSet(this, entity, oldStageDiffs, stageDiffs)
       }
     })
     return moveResult
@@ -817,28 +622,6 @@ export class ProjectActions {
         if (stageNumber == nil) continue
         this.content.setEntityUnstagedValue(entity, stageNumber, value)
       }
-    }
-  }
-
-  private handleUndergroundBeltValueSet(
-    entity: UndergroundBeltProjectEntity,
-    oldStageDiffs: StageDiffs | nil,
-    stageDiffs: StageDiffs | nil,
-  ): void {
-    const possiblyUpdatedStages = newLuaSet<StageNumber>()
-    if (oldStageDiffs) {
-      for (const [stage] of pairs(oldStageDiffs)) possiblyUpdatedStages.add(stage)
-    }
-    if (stageDiffs) {
-      for (const [stage] of pairs(stageDiffs)) possiblyUpdatedStages.add(stage)
-    }
-    const ugPairs = newLuaSet<UndergroundBeltProjectEntity>()
-    for (const stage of possiblyUpdatedStages) {
-      const pair = findUndergroundPair(this.content, entity, stage)
-      if (pair) ugPairs.add(pair)
-    }
-    for (const pair of ugPairs) {
-      this.worldPresenter.refreshEntity(pair, pair.firstStage)
     }
   }
 
@@ -915,87 +698,23 @@ export class ProjectActions {
   // === Tiles ===
 
   setTileAtStage(position: Position, stage: StageNumber, value: string | nil): void {
-    let tile = this.content.tiles.get(position.x, position.y)
-
-    if (!tile && value != nil) {
-      tile = createProjectTile()
-      this.content.setTile(position, tile)
-    }
-
-    if (!tile) return
-
-    tile.setTileAtStage(stage, value)
-
-    const wasEmpty = tile.isEmpty()
-    if (wasEmpty) {
-      this.content.deleteTile(position)
-    }
-
-    const collision = this.worldPresenter.updateTiles(position, stage)
-
-    if (collision) {
-      if (wasEmpty) {
-        tile = createProjectTile()
-        this.content.setTile(position, tile)
-      }
-      tile.setTileAtStage(collision.stage, collision.actualValue)
-    }
+    TileActions.setTileAtStage(this, position, stage, value)
   }
 
   deleteTile(position: Position): boolean {
-    const result = this.content.deleteTile(position)
-    if (result) {
-      this.worldPresenter.updateTiles(position, 1)
-    }
-    return result
+    return TileActions.deleteTile(this, position)
   }
 
   scanProjectForExistingTiles(): void {
-    const bbox = this.content.computeBoundingBox()
-    const tilesToUpdateArray: Array<[Position, ProjectTile]> = []
-    const tilesToUpdateSet = new LuaSet<ProjectTile>()
-
-    for (const stage of $range(1, this.settings.stageCount())) {
-      const surface = this.surfaces.getSurface(stage)!
-      const tiles = surface.find_tiles_filtered({
-        area: bbox,
-        name: Object.keys(getPrototypeInfo().blueprintableTiles),
-      })
-
-      for (const tile of tiles) {
-        const position = tile.position
-        let projectTile = this.content.tiles.get(position.x, position.y)
-
-        if (!projectTile) {
-          projectTile = createProjectTile()
-          this.content.setTile(position, projectTile)
-        }
-
-        projectTile.setTileAtStage(stage, tile.name)
-        if (!tilesToUpdateSet.has(projectTile)) {
-          tilesToUpdateArray.push([position, projectTile])
-          tilesToUpdateSet.add(projectTile)
-        }
-      }
-    }
-
-    for (const [position, tile] of tilesToUpdateArray) {
-      this.worldPresenter.updateTiles(position, tile.getFirstStage())
-    }
+    TileActions.scanProjectForExistingTiles(this)
   }
 
-  // === Tile events ===
-
   onTileBuilt(position: Position, name: string, stage: StageNumber): void {
-    if (!getPrototypeInfo().blueprintableTiles.has(name)) {
-      this.setTileAtStage(position, stage, nil)
-      return
-    }
-    this.setTileAtStage(position, stage, name)
+    TileActions.onTileBuilt(this, position, name, stage)
   }
 
   onTileMined(position: Position, stage: StageNumber): void {
-    this.setTileAtStage(position, stage, nil)
+    TileActions.onTileMined(this, position, stage)
   }
 
   // === Selection tools ===
@@ -1099,21 +818,30 @@ export class ProjectActions {
     if (area) prepareArea(this.surfaces.getSurface(stage)!, area)
   }
 
-  // === User actions with undo ===
+  // === User stage actions ===
+
+  findCompatibleEntityForUndo(entity: ProjectEntity): ProjectEntity | nil {
+    if (!this.valid) return nil
+    if (!this.content.hasEntity(entity)) {
+      const matching = this.content.findCompatibleWithExistingEntity(entity, entity.firstStage)
+      if (!matching || entity.firstStage != matching.firstStage || !deepCompare(entity.firstValue, matching.firstValue))
+        return nil
+      return matching
+    }
+    return entity
+  }
 
   userRevivedSettingsRemnant(entity: ProjectEntity, stage: StageNumber, byPlayer: PlayerIndex | nil): void {
     const result = this.tryReviveSettingsRemnant(entity, stage)
     if (result != "updated" && result != "no-change") {
-      this.notifyIfMoveError(result, entity, byPlayer)
+      notifyIfMoveError(result, entity, byPlayer)
       this.worldPresenter.refreshEntity(entity, stage)
     }
   }
 
   userMoveEntityToStageWithUndo(entity: ProjectEntity, stage: StageNumber, byPlayer: PlayerIndex): void {
     const undoAction = this.userTryMoveEntityToStageWithUndo(entity, stage, byPlayer)
-    if (undoAction) {
-      registerUndoAction(undoAction)
-    }
+    if (undoAction) registerUndoAction(undoAction)
   }
 
   userSetLastStageWithUndo(projectEntity: ProjectEntity, newLastStage: StageNumber | nil, byPlayer: PlayerIndex): void {
@@ -1126,10 +854,9 @@ export class ProjectActions {
     if (oldStage == stage) return false
     const result = this.trySetFirstStage(projectEntity, stage)
     if (result != "updated") {
-      this.notifyIfMoveError(result, projectEntity, byPlayer)
+      notifyIfMoveError(result, projectEntity, byPlayer)
       return false
     }
-
     if (oldStage < stage) createIndicator(projectEntity, byPlayer, ">>", Colors.Blueish)
     return true
   }
@@ -1142,25 +869,11 @@ export class ProjectActions {
   ): boolean {
     const result = this.trySetFirstStage(projectEntity, toStage)
     if (result != "updated") {
-      this.notifyIfMoveError(result, projectEntity, byPlayer)
+      notifyIfMoveError(result, projectEntity, byPlayer)
       return false
     }
     if (toStage < fromStage) createIndicator(projectEntity, byPlayer, "<<", Colors.Orange)
     return true
-  }
-
-  // Internal undo helpers
-
-  findCompatibleEntityForUndo(entity: ProjectEntity): ProjectEntity | nil {
-    if (!this.valid) return nil
-
-    if (!this.content.hasEntity(entity)) {
-      const matching = this.content.findCompatibleWithExistingEntity(entity, entity.firstStage)
-      if (!matching || entity.firstStage != matching.firstStage || !deepCompare(entity.firstValue, matching.firstValue))
-        return nil
-      return matching
-    }
-    return entity
   }
 
   userTryMoveEntityToStage(
@@ -1193,7 +906,7 @@ export class ProjectActions {
     if (result == "no-change") {
       createNotification(entity, byPlayer, [L_Interaction.AlreadyAtFirstStage], true)
     } else {
-      this.notifyIfMoveError(result, entity, byPlayer)
+      notifyIfMoveError(result, entity, byPlayer)
     }
     return false
   }
@@ -1204,7 +917,7 @@ export class ProjectActions {
     byPlayer: PlayerIndex | nil,
   ): boolean {
     const result = this.trySetLastStage(projectEntity, newLastStage)
-    this.notifyIfMoveError(result, projectEntity, byPlayer)
+    notifyIfMoveError(result, projectEntity, byPlayer)
     return result == StageMoveResult.Updated
   }
 
@@ -1231,38 +944,6 @@ export class ProjectActions {
         entity: projectEntity,
         oldLastStage: oldStage,
       })
-    }
-  }
-
-  // === Notification helpers ===
-
-  private notifyIfUpdateError(result: EntityUpdateResult, entity: ProjectEntity, byPlayer: PlayerIndex | nil): void {
-    if (result == "no-change" || result == "updated") return
-    if (result == "cannot-rotate") {
-      createNotification(entity, byPlayer, [L_Game.CantBeRotated], true)
-    } else if (result == "cannot-upgrade-changed-pair") {
-      createNotification(entity, byPlayer, [L_Interaction.CannotUpgradeUndergroundChangedPair], true)
-    } else {
-      assertNever(result)
-    }
-  }
-
-  private notifyIfMoveError(result: StageMoveResult, entity: ProjectEntity, byPlayer: PlayerIndex | nil): void {
-    if (
-      result == StageMoveResult.Updated ||
-      result == StageMoveResult.NoChange ||
-      result == StageMoveResult.EntityIsPersistent
-    )
-      return
-
-    if (result == StageMoveResult.CannotMovePastLastStage) {
-      createNotification(entity, byPlayer, [L_Interaction.CannotMovePastLastStage], true)
-    } else if (result == StageMoveResult.CannotMoveBeforeFirstStage) {
-      createNotification(entity, byPlayer, [L_Interaction.CannotDeleteBeforeFirstStage], true)
-    } else if (result == StageMoveResult.IntersectsAnotherEntity) {
-      createNotification(entity, byPlayer, [L_Interaction.MoveWillIntersectAnotherEntity], true)
-    } else {
-      assertNever(result)
     }
   }
 }
@@ -1303,23 +984,6 @@ function createProjectEntityFromStagedInfo(
   }
   replaceUnstagedValueDirect(projectEntity, stageInfo)
   return projectEntity
-}
-
-function fixNewUndergroundBelt(
-  content: MutableProjectContent,
-  projectEntity: InternalProjectEntity,
-  entity: LuaEntity,
-  stage: StageNumber,
-): void {
-  if (entity.type != "underground-belt") return
-  assume<InternalUndergroundBeltProjectEntity>(projectEntity)
-  const pair = findUndergroundPair(content, projectEntity, stage)
-  if (!pair) return
-  const expectedType = pair.firstValue.type == "output" ? "input" : "output"
-  if (expectedType != projectEntity.firstValue.type) {
-    projectEntity.setTypeProperty(expectedType)
-    projectEntity.direction = pair.direction
-  }
 }
 
 function replaceUnstagedValueDirect(entity: InternalProjectEntity, info: StageInfoExport<Entity>): void {
