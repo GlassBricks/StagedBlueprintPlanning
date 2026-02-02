@@ -6,7 +6,9 @@
 import {
   BlueprintEntityWrite,
   CarBlueprintEntity,
+  InserterBlueprintEntity,
   LuaEntity,
+  LuaInserterControlBehavior,
   LuaSurface,
   ScriptRaisedBuiltEvent,
 } from "factorio:runtime"
@@ -386,6 +388,73 @@ test("can rotate entity", () => {
   const newEntity = updateEntity(entity, { name: "inserter" } as Entity, nil, defines.direction.south)[0]
   expect(entity).toBe(newEntity)
   expect(entity.direction).toBe(defines.direction.south)
+})
+
+test("updating entity with default control behavior overwrites existing control behavior", () => {
+  const pole = surface.create_entity({
+    name: "small-electric-pole",
+    position: { x: 11.5, y: 12.5 },
+    force: "player",
+  })!
+
+  const inserter = surface.create_entity({
+    name: "inserter",
+    position: { x: 12.5, y: 12.5 },
+    force: "player",
+    direction: defines.direction.north,
+  })!
+  inserter
+    .get_wire_connector(defines.wire_connector_id.circuit_red, true)
+    .connect_to(pole.get_wire_connector(defines.wire_connector_id.circuit_red, true))
+  const cb = inserter.get_or_create_control_behavior() as LuaInserterControlBehavior
+  cb.circuit_set_stack_size = true
+  cb.circuit_stack_control_signal = { type: "virtual", name: "signal-S" }
+
+  const freshInserter = surface.create_entity({
+    name: "inserter",
+    position: { x: 14.5, y: 14.5 },
+    force: "player",
+    direction: defines.direction.north,
+  })!
+  freshInserter
+    .get_wire_connector(defines.wire_connector_id.circuit_red, true)
+    .connect_to(pole.get_wire_connector(defines.wire_connector_id.circuit_red, true))
+  freshInserter.get_or_create_control_behavior()
+  const [defaultCbValue] = saveEntity(freshInserter)
+  freshInserter.destroy()
+
+  expect((defaultCbValue as InserterBlueprintEntity).control_behavior).toBeAny()
+
+  const [updated] = updateEntity(inserter, defaultCbValue! as Entity, nil, defines.direction.north)
+
+  const updatedCb = updated!.get_or_create_control_behavior() as LuaInserterControlBehavior
+  expect(updatedCb.circuit_set_stack_size).toBe(false)
+})
+
+test("updating entity with nil control behavior overwrites existing control behavior", () => {
+  const pole = surface.create_entity({
+    name: "small-electric-pole",
+    position: { x: 11.5, y: 12.5 },
+    force: "player",
+  })!
+
+  const inserter = surface.create_entity({
+    name: "inserter",
+    position: { x: 12.5, y: 12.5 },
+    force: "player",
+    direction: defines.direction.north,
+  })!
+  inserter
+    .get_wire_connector(defines.wire_connector_id.circuit_red, true)
+    .connect_to(pole.get_wire_connector(defines.wire_connector_id.circuit_red, true))
+  const cb = inserter.get_or_create_control_behavior() as LuaInserterControlBehavior
+  cb.circuit_set_stack_size = true
+  cb.circuit_stack_control_signal = { type: "virtual", name: "signal-S" }
+
+  const [updated] = updateEntity(inserter, { name: "inserter" } as Entity, nil, defines.direction.north)
+
+  const updatedCb = updated!.get_or_create_control_behavior() as LuaInserterControlBehavior
+  expect(updatedCb.circuit_set_stack_size).toBe(false)
 })
 
 test("can delete tree in the way", () => {

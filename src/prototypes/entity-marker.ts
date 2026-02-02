@@ -35,6 +35,41 @@ function createHiddenEntity(name: string): (SimpleEntityWithOwnerPrototype | Ite
     } satisfies ItemPrototype,
   ]
 }
+data.extend([
+  {
+    type: "electric-pole",
+    name: Prototypes.PastePole,
+    icon: "__core__/graphics/spawn-flag.png",
+    icon_size: 64,
+    hidden: true,
+    flags: ["not-deconstructable", "player-creation", "placeable-off-grid"],
+    collision_mask: { layers: {} },
+    tile_buildability_rules: [
+      {
+        area: [
+          [-0.5, -0.5],
+          [0.5, 0.5],
+        ],
+        required_tiles: { layers: { water_tile: true } },
+        colliding_tiles: { layers: { water_tile: true } },
+      },
+    ],
+    supply_area_distance: 0,
+    connection_points: [{ wire: {}, shadow: {} }],
+    maximum_wire_distance: 64,
+  },
+  {
+    type: "item",
+    name: Prototypes.PastePole,
+    icon: "__core__/graphics/spawn-flag.png",
+    icon_size: 64,
+    stack_size: 1,
+    hidden: true,
+    flags: [],
+    place_result: Prototypes.PastePole,
+  } satisfies ItemPrototype,
+])
+
 data.extend(createHiddenEntity(Prototypes.EntityMarker))
 data.extend(createHiddenEntity(Prototypes.UndoReference))
 

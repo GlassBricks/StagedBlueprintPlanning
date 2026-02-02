@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.13.2
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fixed that resetting an entity to default control behavior would not affect later stages.
 ---------------------------------------------------------------------------------------------------
 Version: 2.13.1
 Date: 2026-02-01
