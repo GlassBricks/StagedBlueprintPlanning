@@ -8,6 +8,7 @@ import {
   BlueprintEntity,
   BlueprintEquipment,
   BlueprintInsertPlan,
+  BlueprintWire,
   BoundingBox,
   CarBlueprintEntity,
   CargoWagonBlueprintEntity,
@@ -104,12 +105,20 @@ function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
   }
 }
 
+const fakePoleEntity = {
+  entity_number: 2,
+  name: Prototypes.PastePole,
+  position: { x: 0, y: 0 },
+} as Mutable<BlueprintEntity>
+const fakePoleWire: BlueprintWire = [1, defines.wire_connector_id.circuit_red, 2, defines.wire_connector_id.circuit_red]
+
 function setBlueprintEntity(
   stack: LuaItemStack,
   value: Mutable<BlueprintEntity>,
   unstagedValue: UnstagedEntityProps | nil,
   position: Position,
   direction: defines.direction,
+  targetHasControlBehavior: boolean,
 ): void {
   assume<Mutable<AssemblingMachineBlueprintEntity>>(value)
 
@@ -117,14 +126,20 @@ function setBlueprintEntity(
   if (unstagedValue) {
     addItemRequests(value, unstagedValue.items)
   }
-  // reuse the same table to avoid several allocations
   value.position = position
   value.direction = direction
   value.entity_number = 1
   const oldRecipe = value.recipe
   value.recipe = nil
 
-  stack.set_blueprint_entities([value])
+  assume<Mutable<{ wires?: BlueprintWire[] }>>(value)
+  const oldWires = value.wires
+  if (targetHasControlBehavior) {
+    value.wires = [fakePoleWire]
+    fakePoleEntity.position = { x: position.x + 1, y: position.y }
+  }
+  stack.set_blueprint_entities(targetHasControlBehavior ? [value, fakePoleEntity] : [value])
+  value.wires = oldWires
 
   value.position = nil!
   value.direction = nil!
@@ -150,7 +165,8 @@ function pasteEntity(
   if (pasteEntityVersion != entityVersion) {
     pasteEntityVersion = entityVersion
     const offsetPosition = Pos.minus(position, tilePosition)
-    setBlueprintEntity(bpStack, value, unstagedValue, offsetPosition, direction)
+    const targetHasControlBehavior = target != nil && target.get_control_behavior() != nil
+    setBlueprintEntity(bpStack, value, unstagedValue, offsetPosition, direction, targetHasControlBehavior)
     bpStack.blueprint_snap_to_grid = [1, 1]
     bpStack.blueprint_absolute_snapping = true
   }

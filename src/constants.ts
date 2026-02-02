@@ -38,6 +38,8 @@ export const enum Prototypes {
 
   PassedPrototypeInfo = "bp100_passed-prototype-info",
 
+  PastePole = "bp100_paste-pole",
+
   BANANA = "bp100_banana",
 }
 
