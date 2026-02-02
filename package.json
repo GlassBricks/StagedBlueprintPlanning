@@ -21,7 +21,7 @@
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-prettier": "^5.5.4",
     "factorio-test": "^3.0.0",
-    "factorio-test-cli": "^3.3.1",
+    "factorio-test-cli": "^3.5.0",
     "factoriomod-debug": "^2.0.8",
     "gb-tstl-utils": "^1.0.2",
     "globals": "^17.1.0",
