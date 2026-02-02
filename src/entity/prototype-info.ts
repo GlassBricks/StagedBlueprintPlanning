@@ -235,8 +235,10 @@ let nameToCategory: PrototypeInfo["nameToCategory"]
 let nameToType: PrototypeInfo["nameToType"]
 let categories: PrototypeInfo["categories"]
 let rotationTypes: PrototypeInfo["rotationTypes"]
+let twoDirectionTanks: PrototypeInfo["twoDirectionTanks"]
+let mayHaveModdedGui: PrototypeInfo["mayHaveModdedGui"]
 OnPrototypeInfoLoaded.addListener((info) => {
-  ;({ nameToCategory, categories, rotationTypes, nameToType } = info)
+  ;({ nameToCategory, categories, rotationTypes, nameToType, twoDirectionTanks, mayHaveModdedGui } = info)
 })
 
 export function areUpgradeableTypes(a: string, b: string): boolean {
@@ -266,6 +268,15 @@ export function isTrainEntity(entityName: string): boolean {
 }
 export function isPersistentEntity(entityName: string): boolean {
   return nameToType.get(entityName) == "space-platform-hub"
+}
+export function getEntityType(entityName: string): EntityType | nil {
+  return nameToType.get(entityName)
+}
+export function isTwoDirectionTank(entityName: string): boolean {
+  return twoDirectionTanks.has(entityName)
+}
+export function hasMayHaveModdedGui(entityName: string): boolean {
+  return mayHaveModdedGui.has(entityName)
 }
 
 export function isPreviewEntity(entity: LuaEntity): boolean {

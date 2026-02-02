@@ -44,6 +44,7 @@ Since Typescript code compiles to Lua:
 
 - Use `==` instead of `===`, `!=` instead of `!==`
 - Use `nil` instead of `undefined`, avoid `null`
+- Exported `let` variables are captured by value at require-time. For cross-module mutable state, use getter functions instead of direct exports
 
 Storage:
 
@@ -95,7 +96,7 @@ src/
 
 in `src/project/`:
 
-1. `event-handlers.ts` - Parses Factorio events, dispatches to actions
+1. `event-handlers/` - Parses Factorio events, dispatches to actions
 2. `ProjectActions` - Handles player interactions and state changes
 3. `ProjectContent` (observable) - State changes notify observer
 4. `WorldPresentation` (ContentObserver) - Syncs world state with project
@@ -117,7 +118,7 @@ See [docs/Migrations.md](docs/Migrations.md) for full reference and patterns.
 
 ### Debugging
 
-- `print()`, `localised_print()` (Factorio builtins) or `debugPrint()` (custom lib) can be added to code; output shows up in test failure output
+- `print()`, `localised_print()` (Factorio builtins) or `debugPrint()` (custom lib) can be added to code; output shows up in test failure output. Use `--verbose` flag to see output on passing tests
 
 ### Testing
 
