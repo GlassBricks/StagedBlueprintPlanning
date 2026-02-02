@@ -150,10 +150,10 @@ OnPrototypeInfoLoaded.addListener((i) => {
 })
 
 interface BatchedNotification {
-  minChangedStage: StageNumber | nil
-  lastStageChanged: boolean
-  firstOldLastStage: StageNumber | nil
-  wiresChanged: boolean
+  minChangedStage?: StageNumber
+  lastStageChanged?: true
+  firstOldLastStage?: StageNumber
+  wiresChanged?: true
 }
 
 @RegisterClass("EntityMap")
@@ -201,12 +201,7 @@ class ProjectContentImpl implements MutableProjectContent {
       if (existing) {
         existing.minChangedStage = math.min(existing.minChangedStage ?? fromStage, fromStage)
       } else {
-        this.batchedNotifications.set(entity, {
-          minChangedStage: fromStage,
-          lastStageChanged: false,
-          firstOldLastStage: nil,
-          wiresChanged: false,
-        })
+        this.batchedNotifications.set(entity, { minChangedStage: fromStage })
       }
       return
     }
@@ -223,10 +218,8 @@ class ProjectContentImpl implements MutableProjectContent {
         }
       } else {
         this.batchedNotifications.set(entity, {
-          minChangedStage: nil,
           lastStageChanged: true,
           firstOldLastStage: oldLastStage,
-          wiresChanged: false,
         })
       }
       return
@@ -240,12 +233,7 @@ class ProjectContentImpl implements MutableProjectContent {
       if (existing) {
         existing.wiresChanged = true
       } else {
-        this.batchedNotifications.set(entity, {
-          minChangedStage: nil,
-          lastStageChanged: false,
-          firstOldLastStage: nil,
-          wiresChanged: true,
-        })
+        this.batchedNotifications.set(entity, { wiresChanged: true })
       }
       return
     }
