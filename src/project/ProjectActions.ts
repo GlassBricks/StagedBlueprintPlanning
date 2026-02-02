@@ -5,6 +5,8 @@ import { MutableProjectContent } from "../entity/ProjectContent"
 import {
   getNameAndQuality,
   InserterProjectEntity,
+  InternalProjectEntity,
+  InternalUndergroundBeltProjectEntity,
   LoaderProjectEntity,
   MovableProjectEntity,
   NameAndQuality,
@@ -181,21 +183,24 @@ export class ProjectActions {
     this.addNewEntity(entity, stage, stagedInfo, items)
   }
 
+  // After content.addEntity(), treat as ProjectEntity (read-only); all further
+  // mutations go through MutableProjectContent to trigger observer notifications.
   addNewEntity(
     entity: LuaEntity,
     stage: StageNumber,
     stagedInfo?: StageInfoExport,
     items?: BlueprintInsertPlan[],
   ): ProjectEntity | nil {
-    const projectEntity = this.createNewProjectEntity(entity, stage, stagedInfo, items)
-    if (!projectEntity) return nil
+    const internalEntity = createNewProjectEntity(entity, stage, stagedInfo, items)
+    if (!internalEntity) return nil
 
-    this.fixNewUndergroundBelt(projectEntity, entity, stage)
+    fixNewUndergroundBelt(this.content, internalEntity, entity, stage)
 
-    if (projectEntity.getType() == "locomotive") {
-      projectEntity._asMut().isNewRollingStock = true
+    if (internalEntity.getType() == "locomotive") {
+      internalEntity.isNewRollingStock = true
     }
 
+    const projectEntity: ProjectEntity = internalEntity
     this.worldPresenter.replaceWorldOrPreviewEntity(projectEntity, stage, entity)
     this.content.addEntity(projectEntity)
 
@@ -208,58 +213,6 @@ export class ProjectActions {
     )
 
     return projectEntity
-  }
-
-  private createNewProjectEntity(
-    entity: LuaEntity,
-    stage: StageNumber,
-    stageInfo: StageInfoExport | nil,
-    items?: BlueprintInsertPlan[],
-  ): ProjectEntity | nil {
-    if (stageInfo) {
-      return this.createProjectEntityFromStagedInfo(entity, stageInfo, items)
-    }
-    const [value, unstagedValue] = saveEntity(entity, items)
-    if (!value) return nil
-    return newProjectEntity(value, entity.position, entity.direction, stage, unstagedValue)
-  }
-
-  private createProjectEntityFromStagedInfo(
-    entity: LuaEntity,
-    stageInfo: StageInfoExport,
-    items: BlueprintInsertPlan[] | nil,
-  ): ProjectEntity | nil {
-    const [value, unstagedValue] = saveEntity(entity, items)
-    if (!value) return nil
-
-    const projectEntity = newProjectEntity(
-      stageInfo.firstValue ?? value,
-      entity.position,
-      entity.direction,
-      stageInfo.firstStage,
-      unstagedValue,
-    )
-    projectEntity.setLastStageUnchecked(stageInfo.lastStage)
-    const diffs = stageInfo.stageDiffs
-    if (diffs) {
-      projectEntity.setStageDiffsDirectly(fromExportStageDiffs(diffs))
-    }
-    this.replaceUnstagedValueDirect(projectEntity, stageInfo)
-    return projectEntity
-  }
-
-  private fixNewUndergroundBelt(projectEntity: ProjectEntity, entity: LuaEntity, stage: StageNumber): void {
-    if (entity.type != "underground-belt") return
-    assume<UndergroundBeltProjectEntity>(projectEntity)
-    const pair = findUndergroundPair(this.content, projectEntity, stage)
-    if (pair) {
-      const expectedType = pair.firstValue.type == "output" ? "input" : "output"
-      if (expectedType != projectEntity.firstValue.type) {
-        const mut = projectEntity._asMut()
-        mut.setTypeProperty(expectedType)
-        mut.direction = pair.direction
-      }
-    }
   }
 
   // === Entity deletion ===
@@ -855,30 +808,15 @@ export class ProjectActions {
     return moveResult
   }
 
-  private replaceUnstagedValueDirect(entity: ProjectEntity<Entity>, info: StageInfoExport<Entity>): void {
-    const unstagedValues = info.unstagedValue
-    if (unstagedValues != nil) {
-      const entityMut = entity._asMut()
-      entityMut.clearPropertyInAllStages("unstagedValue")
-      for (const [stage, value] of pairs(unstagedValues)) {
-        const stageNumber = tonumber(stage)
-        if (stageNumber == nil) continue
-        entityMut.setUnstagedValue(stageNumber, value)
-      }
-    }
-  }
-
   private replaceUnstagedValueViaContent(entity: ProjectEntity<Entity>, info: StageInfoExport<Entity>): void {
     const unstagedValues = info.unstagedValue
     if (unstagedValues != nil) {
-      this.content.batch(() => {
-        this.content.clearEntityUnstagedValues(entity)
-        for (const [stage, value] of pairs(unstagedValues)) {
-          const stageNumber = tonumber(stage)
-          if (stageNumber == nil) continue
-          this.content.setEntityUnstagedValue(entity, stageNumber, value)
-        }
-      })
+      this.content.clearEntityUnstagedValues(entity)
+      for (const [stage, value] of pairs(unstagedValues)) {
+        const stageNumber = tonumber(stage)
+        if (stageNumber == nil) continue
+        this.content.setEntityUnstagedValue(entity, stageNumber, value)
+      }
     }
   }
 
@@ -1325,6 +1263,73 @@ export class ProjectActions {
       createNotification(entity, byPlayer, [L_Interaction.MoveWillIntersectAnotherEntity], true)
     } else {
       assertNever(result)
+    }
+  }
+}
+
+function createNewProjectEntity(
+  entity: LuaEntity,
+  stage: StageNumber,
+  stageInfo: StageInfoExport | nil,
+  items?: BlueprintInsertPlan[],
+): InternalProjectEntity | nil {
+  if (stageInfo) {
+    return createProjectEntityFromStagedInfo(entity, stageInfo, items)
+  }
+  const [value, unstagedValue] = saveEntity(entity, items)
+  if (!value) return nil
+  return newProjectEntity(value, entity.position, entity.direction, stage, unstagedValue)
+}
+
+function createProjectEntityFromStagedInfo(
+  entity: LuaEntity,
+  stageInfo: StageInfoExport,
+  items: BlueprintInsertPlan[] | nil,
+): InternalProjectEntity | nil {
+  const [value, unstagedValue] = saveEntity(entity, items)
+  if (!value) return nil
+
+  const projectEntity = newProjectEntity(
+    stageInfo.firstValue ?? value,
+    entity.position,
+    entity.direction,
+    stageInfo.firstStage,
+    unstagedValue,
+  )
+  projectEntity.setLastStageUnchecked(stageInfo.lastStage)
+  const diffs = stageInfo.stageDiffs
+  if (diffs) {
+    projectEntity.setStageDiffsDirectly(fromExportStageDiffs(diffs))
+  }
+  replaceUnstagedValueDirect(projectEntity, stageInfo)
+  return projectEntity
+}
+
+function fixNewUndergroundBelt(
+  content: MutableProjectContent,
+  projectEntity: InternalProjectEntity,
+  entity: LuaEntity,
+  stage: StageNumber,
+): void {
+  if (entity.type != "underground-belt") return
+  assume<InternalUndergroundBeltProjectEntity>(projectEntity)
+  const pair = findUndergroundPair(content, projectEntity, stage)
+  if (!pair) return
+  const expectedType = pair.firstValue.type == "output" ? "input" : "output"
+  if (expectedType != projectEntity.firstValue.type) {
+    projectEntity.setTypeProperty(expectedType)
+    projectEntity.direction = pair.direction
+  }
+}
+
+function replaceUnstagedValueDirect(entity: InternalProjectEntity, info: StageInfoExport<Entity>): void {
+  const unstagedValues = info.unstagedValue
+  if (unstagedValues != nil) {
+    entity.clearPropertyInAllStages("unstagedValue")
+    for (const [stage, value] of pairs(unstagedValues)) {
+      const stageNumber = tonumber(stage)
+      if (stageNumber == nil) continue
+      entity.setUnstagedValue(stageNumber, value)
     }
   }
 }
