@@ -26,7 +26,7 @@ import { LoopTask, submitTask } from "../lib/task"
 import { L_GuiTasks } from "../locale"
 import { ProjectTile } from "../tiles/ProjectTile"
 import { withTileEventsDisabled } from "../tiles/tile-events"
-import { EntityHighlights, HasErrorAt, HighlightTypes, SurfaceProvider } from "./entity-highlights"
+import { EntityHighlights, HasErrorAt, HighlightTypes, SurfaceProvider } from "./EntityHiglights"
 import { EntityStorage } from "./EntityStorage"
 import { ProjectSettings } from "./ProjectSettings"
 

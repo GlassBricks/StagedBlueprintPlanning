@@ -5,7 +5,7 @@
 
 import expect from "tstl-expect"
 import { ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
-import { HighlightTypes, getItemRequestSampleItemName, HighlightConstants } from "../../project/entity-highlights"
+import { HighlightTypes, getItemRequestSampleItemName, HighlightConstants } from "../../project/EntityHiglights"
 import { WorldPresentation } from "../../project/WorldPresentation"
 
 function iterateTypeIsEmpty(wp: WorldPresentation, entity: ProjectEntity, type: keyof HighlightTypes): boolean {
