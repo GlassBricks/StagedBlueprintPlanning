@@ -1,10 +1,11 @@
-import { BlueprintInsertPlan, LuaEntity, LuaTrain, nil, PlayerIndex } from "factorio:runtime"
+import { BlueprintInsertPlan, LocalisedString, LuaEntity, LuaTrain, nil, PlayerIndex } from "factorio:runtime"
 import { Entity, LuaEntityInfo, TrainEntity } from "../../entity/Entity"
 import { MutableProjectContent } from "../../entity/ProjectContent"
 import {
   getNameAndQuality,
   InserterProjectEntity,
   InternalProjectEntity,
+  isWorldEntityProjectEntity,
   LoaderProjectEntity,
   MovableProjectEntity,
   NameAndQuality,
@@ -19,6 +20,8 @@ import { saveWireConnections } from "../../entity/wires"
 import { fromExportStageDiffs, StageInfoExport } from "../../import-export/entity"
 import { Colors, Settings } from "../../constants"
 import { assertNever, deepCompare, RegisterClass } from "../../lib"
+import { LoopTask, submitTask } from "../../lib/task"
+import { L_GuiTasks } from "../../locale"
 import { Pos, Position } from "../../lib/geometry"
 import { L_Interaction } from "../../locale"
 import { SurfaceProvider } from "../EntityHiglights"
@@ -38,7 +41,7 @@ import {
   undoSendToStage,
   WireUpdateResult,
 } from "./undo-records"
-import { WorldPresenter } from "../WorldPresentation"
+import { _setWorldUpdatesBlocked, WorldPresenter } from "../WorldPresentation"
 
 export {
   EntityUpdateResult,
@@ -811,6 +814,10 @@ export class ProjectActions {
     }
   }
 
+  resyncWithWorld(): void {
+    submitTask(new ResyncWithWorldTask(this))
+  }
+
   // === Surface ===
 
   onSurfaceCleared(stage: StageNumber): void {
@@ -948,6 +955,51 @@ export class ProjectActions {
         oldLastStage: oldStage,
       })
     }
+  }
+}
+
+@RegisterClass("ResyncWithWorldTask")
+class ResyncWithWorldTask extends LoopTask {
+  constructor(private actions: ProjectActions) {
+    super(actions.settings.stageCount() * 2)
+  }
+
+  override getTitle(): LocalisedString {
+    return [L_GuiTasks.ResyncWithWorld]
+  }
+
+  protected override doStep(i: number): void {
+    const numStages = this.actions.settings.stageCount()
+    if (i < numStages) {
+      this.doReadStep(i + 1)
+    } else {
+      const rebuildStage = i - numStages + 1
+      if (rebuildStage == 1) _setWorldUpdatesBlocked(false)
+      this.actions.worldPresenter.rebuildStage(rebuildStage)
+    }
+  }
+
+  private doReadStep(stage: StageNumber): void {
+    if (stage == 1) _setWorldUpdatesBlocked(true)
+    const surface = this.actions.surfaces.getSurface(stage)
+    if (!surface) return
+    for (const entity of surface.find_entities()) {
+      if (isWorldEntityProjectEntity(entity)) {
+        this.actions.onEntityPossiblyUpdated(entity, stage, nil, nil)
+      }
+    }
+  }
+
+  protected getTitleForStep(step: number): LocalisedString {
+    const numStages = this.actions.settings.stageCount()
+    if (step < numStages) {
+      return [L_GuiTasks.ReadingStage, this.actions.settings.getStageName(step + 1)]
+    }
+    return [L_GuiTasks.RebuildingStage, this.actions.settings.getStageName(step - numStages + 1)]
+  }
+
+  override cancel(): void {
+    _setWorldUpdatesBlocked(false)
   }
 }
 

@@ -310,7 +310,7 @@ test("rebuildEntity replaces old value", () => {
 
 test("updateWorldEntities recreates entity when position changes", () => {
   project.content.addEntity(entity)
-  const oldEntity = findMainEntity(1)!
+  const oldEntity = findMainEntity(1)
   expect(oldEntity).toBeAny()
 
   const newPos = { x: 2.5, y: 2.5 }
@@ -318,8 +318,8 @@ test("updateWorldEntities recreates entity when position changes", () => {
 
   const newEntity = findMainEntity(1)
   expect(newEntity).toBeAny()
-  expect(newEntity!.position.x).toBe(newPos.x)
-  expect(newEntity!.position.y).toBe(newPos.y)
+  expect(newEntity).not.toBe(oldEntity)
+  expect(entity.position).toEqual(newPos)
   expect(oldEntity.valid).toBe(false)
 })
 

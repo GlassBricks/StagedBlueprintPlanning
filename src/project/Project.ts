@@ -2,21 +2,20 @@
 // SPDX-FileCopyrightText: 2025 GlassBricks
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
-import { LocalisedString, LuaSurface, nil, SurfaceIndex } from "factorio:runtime"
+import { LuaSurface, nil, SurfaceIndex } from "factorio:runtime"
 import { BlueprintSettingsTable } from "../blueprints/blueprint-settings"
 import { MutableProjectContent, newProjectContent } from "../entity/ProjectContent"
-import { isWorldEntityProjectEntity, StageNumber } from "../entity/ProjectEntity"
+import { StageNumber } from "../entity/ProjectEntity"
 import { Events, Mutable, RegisterClass, SimpleEvent, SimpleSubscribable } from "../lib"
 import { BBox } from "../lib/geometry"
-import { LoopTask, submitTask } from "../lib/task"
-import { L_GuiTasks } from "../locale"
+
 import { getStageAtSurface } from "./project-refs"
 import { ProjectActions } from "./actions"
 import { addProject, stageDeleted as globalStageDeleted, removeProject } from "./ProjectList"
 import { ProjectSettings, StageSettingsData } from "./ProjectSettings"
 import { ProjectSurfaces } from "./ProjectSurfaces"
 import { getDefaultSurfaceSettings, SurfaceSettings } from "./surfaces"
-import { _setWorldUpdatesBlocked, WorldPresentation } from "./WorldPresentation"
+import { WorldPresentation } from "./WorldPresentation"
 
 export type ProjectId = number & {
   _projectIdBrand: never
@@ -48,8 +47,6 @@ export interface Project {
   insertStage(index: StageNumber): Stage
   mergeStage(index: StageNumber): void
   discardStage(index: StageNumber): void
-
-  resyncWithWorld(): void
 
   delete(): void
 }
@@ -90,51 +87,6 @@ Events.on_init(() => {
 })
 
 export { getAllProjects, moveProjectDown, moveProjectUp } from "./ProjectList"
-
-@RegisterClass("ResyncWithWorldTask")
-class ResyncWithWorldTask extends LoopTask {
-  constructor(private project: Project) {
-    super(project.settings.stageCount() * 2)
-  }
-
-  override getTitle(): LocalisedString {
-    return [L_GuiTasks.ResyncWithWorld]
-  }
-
-  protected override doStep(i: number): void {
-    const numStages = this.project.settings.stageCount()
-    if (i < numStages) {
-      this.doReadStep(i + 1)
-    } else {
-      const rebuildStage = i - numStages + 1
-      if (rebuildStage == 1) _setWorldUpdatesBlocked(false)
-      this.project.worldPresentation.rebuildStage(rebuildStage)
-    }
-  }
-
-  private doReadStep(stage: StageNumber): void {
-    if (stage == 1) _setWorldUpdatesBlocked(true)
-    const surface = this.project.surfaces.getSurface(stage)
-    if (!surface) return
-    for (const entity of surface.find_entities()) {
-      if (isWorldEntityProjectEntity(entity)) {
-        this.project.actions.onEntityPossiblyUpdated(entity, stage, nil, nil)
-      }
-    }
-  }
-
-  protected getTitleForStep(step: number): LocalisedString {
-    const numStages = this.project.settings.stageCount()
-    if (step < numStages) {
-      return [L_GuiTasks.ReadingStage, this.project.settings.getStageName(step + 1)]
-    }
-    return [L_GuiTasks.RebuildingStage, this.project.settings.getStageName(step - numStages + 1)]
-  }
-
-  override cancel(): void {
-    _setWorldUpdatesBlocked(false)
-  }
-}
 
 declare const luaLength: LuaLength<Record<number, any>, number>
 
@@ -205,10 +157,6 @@ class ProjectImpl implements Project {
   getStage(stageNumber: StageNumber): Stage | nil {
     return this.stages[stageNumber]
   }
-  resyncWithWorld(): void {
-    submitTask(new ResyncWithWorldTask(this))
-  }
-
   getAllStages(): readonly StageImpl[] {
     return this.stages as unknown as readonly StageImpl[]
   }

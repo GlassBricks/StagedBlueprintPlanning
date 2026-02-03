@@ -336,7 +336,7 @@ describe("resyncWithWorld", () => {
     ctx.wp.getWorldEntity(entity1, 3)!.inserter_stack_size_override = 3
     unregisteredEntity.clone({ position: entity2Pos, surface: ctx.surfaces[2] })!.inserter_stack_size_override = 5
 
-    ctx.project.resyncWithWorld()
+    ctx.project.actions.resyncWithWorld()
     runEntireCurrentTask()
 
     expect(entity1.stageDiffs).toMatchTable({ 3: { override_stack_size: 3 } })
