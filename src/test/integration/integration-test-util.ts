@@ -15,7 +15,7 @@ import { Pos } from "../../lib/geometry"
 import { checkForEntityUpdates } from "../../project/event-handlers"
 import { Project } from "../../project/Project"
 import { _deleteAllProjects, createProject } from "../../project/Project"
-import { HighlightTypes } from "../../project/EntityHiglights"
+import { HighlightTypes } from "../../project/EntityHighlights"
 import { WorldPresentation } from "../../project/WorldPresentation"
 
 function iterateTypeIsEmpty(wp: WorldPresentation, entity: ProjectEntity, type: keyof HighlightTypes): boolean {

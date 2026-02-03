@@ -123,7 +123,7 @@ See [docs/Migrations.md](docs/Migrations.md) for full reference and patterns.
 ### Testing
 
 - Place in in `src/test/` or `src/lib/test/`
-- test file names mirror source: `src/foo/bar.ts` → `src/test/foo/bar.test.ts`
+- test file names mirror source: `src/foo/bar.ts` → `src/test/foo/bar.test.ts`. When renaming or moving source files, update the corresponding test file name too
 - High test coverage expected
 - Framework: factorio-test (Jest-like), assertions via tstl-expect
 - Lifecycle hooks: `before_each`, `after_each`, `before_all`, `after_all`

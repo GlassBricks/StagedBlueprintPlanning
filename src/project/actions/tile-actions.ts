@@ -3,7 +3,7 @@ import { getPrototypeInfo } from "../../entity/prototype-info"
 import { Position } from "../../lib/geometry"
 import { StageNumber } from "../../entity/ProjectEntity"
 import { createProjectTile, ProjectTile } from "../../tiles/ProjectTile"
-import { SurfaceProvider } from "../EntityHiglights"
+import { SurfaceProvider } from "../EntityHighlights"
 import { ProjectSettings } from "../ProjectSettings"
 import { WorldPresenter } from "../WorldPresentation"
 
