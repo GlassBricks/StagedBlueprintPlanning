@@ -603,7 +603,6 @@ export function createPreviewEntity(
   return entity
 }
 
-
 /** Currently only true if is a square assembling machine with no fluid inputs. */
 export function canBeAnyDirection(luaEntity: LuaEntity): boolean {
   return (

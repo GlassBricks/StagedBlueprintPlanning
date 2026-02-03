@@ -220,4 +220,3 @@ export function resetSpacePlatformTiles(stage: Stage): boolean {
 
   return true
 }
-

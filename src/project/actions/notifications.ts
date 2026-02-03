@@ -77,4 +77,3 @@ export function notifyIfMoveError(result: StageMoveResult, entity: ProjectEntity
     assertNever(result)
   }
 }
-

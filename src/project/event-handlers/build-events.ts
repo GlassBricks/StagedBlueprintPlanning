@@ -9,14 +9,18 @@ import { Pos } from "../../lib/geometry"
 import { getStageAtSurface } from "../project-refs"
 import { Stage } from "../Project"
 import { onUndoReferenceBuilt, registerUndoActionLater } from "../actions/undo"
-import { onEntityMarkerBuilt, onPreBlueprintPasted } from "./blueprint-paste"
 import {
+  clearCurrentBlueprintPaste,
   clearToBeFastReplaced,
-  getInnerName,
-  luaEntityPossiblyUpdated,
+  getToBeFastReplaced,
+  clearToBeFastReplacedField,
+  isInBlueprintPaste,
+  isInBplibPaste,
+  onEntityMarkerBuilt,
+  onPreBlueprintPasted,
   setToBeFastReplaced,
-  getState,
-} from "./shared-state"
+} from "./blueprint-paste"
+import { getInnerName, getState, luaEntityPossiblyUpdated } from "./shared-state"
 
 const Events = ProtectedEvents
 
@@ -38,7 +42,7 @@ if (blueprint_settings_pasted_event_id) {
 
 Events.on_pre_build((e) => {
   const player = game.get_player(e.player_index)!
-  getState().currentBlueprintPaste = nil
+  clearCurrentBlueprintPaste()
 
   const surface = player.surface
   if (player.is_cursor_blueprint()) {
@@ -127,7 +131,7 @@ function isFastReplaceMine(mineEvent: OnPlayerMinedEntityEvent): boolean | nil {
 }
 
 Events.on_player_mined_entity((e) => {
-  if (getState().currentBlueprintPaste != nil) return
+  if (isInBlueprintPaste()) return
   const { entity } = e
 
   const preMinedItemCalled = getState().preMinedItemCalled
@@ -152,12 +156,11 @@ Events.on_built_entity((e) => {
     return onUndoReferenceBuilt(e.player_index, entity)
   }
 
-  const currentBlueprintPaste = getState().currentBlueprintPaste
-  if (currentBlueprintPaste) {
+  if (isInBlueprintPaste()) {
     if (innerName == Prototypes.EntityMarker) onEntityMarkerBuilt(e, entity)
     return
   }
-  if (getState().pendingBplibPaste) {
+  if (isInBplibPaste()) {
     return
   }
   if (innerName == Prototypes.EntityMarker) {
@@ -198,12 +201,12 @@ Events.on_built_entity((e) => {
 })
 
 function tryFastReplace(entity: LuaEntity, stage: Stage, player: PlayerIndex): boolean | nil {
-  const { toBeFastReplaced } = getState()
+  const toBeFastReplaced = getToBeFastReplaced()
   if (!toBeFastReplaced) return
 
   if (isFastReplaceable(toBeFastReplaced, entity)) {
     stage.actions.onEntityPossiblyUpdated(entity, stage.stageNumber, toBeFastReplaced.direction, player)
-    getState().toBeFastReplaced = nil
+    clearToBeFastReplacedField()
     return true
   }
   clearToBeFastReplaced()
