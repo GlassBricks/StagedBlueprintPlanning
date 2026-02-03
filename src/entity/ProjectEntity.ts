@@ -373,33 +373,35 @@ class ProjectEntityImpl<T extends Entity = Entity>
   declare applyDiff: <T extends Entity>(this: void, value: T, diff: StageDiff<T>) => Mutable<T>
 
   protected override moveFirstStageUp(newFirstStage: StageNumber): void {
-    const unstagedDiff = this.stageProperties?.unstagedValue
-    if (unstagedDiff) {
-      for (const [stage] of pairs(unstagedDiff)) {
-        if (stage < newFirstStage) {
-          delete unstagedDiff[stage]
-        }
-      }
-      if (isEmpty(unstagedDiff)) {
-        this.stageProperties!.unstagedValue = nil
-      }
-    }
+    this.trimStagePropertiesBefore(newFirstStage)
     super.moveFirstStageUp(newFirstStage)
   }
 
   protected override moveLastStageDown(newLastStage: number): void {
-    const unstagedDiff = this.stageProperties?.unstagedValue
-    if (unstagedDiff) {
-      for (const [stage] of pairs(unstagedDiff)) {
-        if (stage > newLastStage) {
-          delete unstagedDiff[stage]
-        }
-      }
-      if (isEmpty(unstagedDiff)) {
-        this.stageProperties!.unstagedValue = nil
-      }
-    }
+    this.trimStagePropertiesAfter(newLastStage)
     super.moveLastStageDown(newLastStage)
+  }
+
+  private trimStagePropertiesBefore(stage: StageNumber): void {
+    const { stageProperties } = this
+    if (!stageProperties) return
+    for (const [key, byStage] of pairs(stageProperties)) {
+      for (const [s] of pairs(byStage)) {
+        if (s < stage) delete byStage[s]
+      }
+      if (isEmpty(byStage)) delete stageProperties[key]
+    }
+  }
+
+  private trimStagePropertiesAfter(stage: StageNumber): void {
+    const { stageProperties } = this
+    if (!stageProperties) return
+    for (const [key, byStage] of pairs(stageProperties)) {
+      for (const [s] of pairs(byStage)) {
+        if (s > stage) delete byStage[s]
+      }
+      if (isEmpty(byStage)) delete stageProperties[key]
+    }
   }
 
   adjustValueAtStage(stage: StageNumber, value: T): boolean {

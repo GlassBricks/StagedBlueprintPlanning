@@ -424,7 +424,9 @@ describe("setFirstStageUnchecked", () => {
     expect(projectEntity.firstStage).toBe(1)
   })
 
-  test("moving up; also merges stage diffs and clears unstaged value", () => {
+  test("moving up; also merges stage diffs and clears stage properties below new first stage", () => {
+    projectEntity.setExcludedFromBlueprints(3, true)
+    projectEntity.setExcludedFromBlueprints(5, true)
     const valueAt5 = projectEntity.getValueAtStage(5)
     projectEntity.setFirstStageUnchecked(5)
     expect(projectEntity.firstValue).toEqual(valueAt5)
@@ -432,6 +434,8 @@ describe("setFirstStageUnchecked", () => {
     expect(next(diffs)[0]).toBe(7)
     expect(projectEntity.getUnstagedValue(3)).toBe(nil)
     expect(projectEntity.getUnstagedValue(5)).toBeAny()
+    expect(projectEntity.isExcludedFromBlueprints(3)).toBe(false)
+    expect(projectEntity.isExcludedFromBlueprints(5)).toBe(true)
   })
 
   test("cannot move past last stage", () => {
@@ -460,7 +464,9 @@ describe("trySetLastStage", () => {
   test("cannot move below first stage", () => {
     expect(() => projectEntity.setLastStageUnchecked(0)).toError()
   })
-  test("moving down deletes later stage diffs and resets unstaged values", () => {
+  test("moving down deletes later stage diffs and stage properties beyond new last stage", () => {
+    projectEntity.setExcludedFromBlueprints(5, true)
+    projectEntity.setExcludedFromBlueprints(7, true)
     projectEntity.setLastStageUnchecked(5)
     expect(projectEntity.lastStage).toBe(5)
     const diffs = projectEntity.stageDiffs!
@@ -468,6 +474,8 @@ describe("trySetLastStage", () => {
     expect(next(diffs)[0]).toBe(3)
     expect(projectEntity.getUnstagedValue(7)).toBeNil()
     expect(projectEntity.getUnstagedValue(5)).toBeAny()
+    expect(projectEntity.isExcludedFromBlueprints(7)).toBe(false)
+    expect(projectEntity.isExcludedFromBlueprints(5)).toBe(true)
   })
   test("if is rolling stock, setting last stage does nothing", () => {
     const projectEntity = newProjectEntity({ name: "locomotive" }, Pos(0, 0), 0, 2)
