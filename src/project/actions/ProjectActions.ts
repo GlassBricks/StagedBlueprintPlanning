@@ -283,7 +283,7 @@ export class ProjectActions {
     return compatible
   }
 
-  tryUpdateEntityFromWorld(
+  private tryUpdateEntityFromWorld(
     entity: ProjectEntity,
     stage: StageNumber,
     items: BlueprintInsertPlan[] | nil,
@@ -293,13 +293,13 @@ export class ProjectActions {
     return this.handleUpdate(entity, entitySource, stage, entitySource.direction, nil, true, items)
   }
 
-  tryRotateEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult {
+  private tryRotateEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult {
     const entitySource = this.worldPresenter.getWorldEntity(entity, stage)
     if (!entitySource) return EntityUpdateResult.NoChange
     return this.handleUpdate(entity, entitySource, stage, entitySource.direction, nil, false, nil)
   }
 
-  tryUpgradeEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult {
+  private tryUpgradeEntityFromWorld(entity: ProjectEntity, stage: StageNumber): EntityUpdateResult {
     const entitySource = this.worldPresenter.getWorldEntity(entity, stage)
     if (!entitySource) return EntityUpdateResult.NoChange
 
@@ -447,7 +447,7 @@ export class ProjectActions {
     }
   }
 
-  updateWiresFromWorld(entity: ProjectEntity, stage: StageNumber): WireUpdateResult {
+  private updateWiresFromWorld(entity: ProjectEntity, stage: StageNumber): WireUpdateResult {
     const connectionsChanged = saveWireConnections(this.content, entity, stage, stage, this.worldPresenter)
     if (!connectionsChanged) return WireUpdateResult.NoChange
     return WireUpdateResult.Updated
@@ -579,7 +579,7 @@ export class ProjectActions {
 
   // === Staged info / value ===
 
-  setValueFromStagedInfo(
+  private setValueFromStagedInfo(
     entity: ProjectEntity,
     info: StageInfoExport,
     items: BlueprintInsertPlan[] | nil,
