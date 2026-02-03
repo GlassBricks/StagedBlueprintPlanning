@@ -3,6 +3,7 @@ Version: 2.13.3
 Date: ????
   Bugfixes:
     - Fixed that "Exclude from future blueprints" was not highlighted when using a per-stage override.
+    - Fixed that pasting a blueprint with overlapping rails would sometimes not be registered.
   Changes:
 ---------------------------------------------------------------------------------------------------
 Version: 2.13.2

@@ -10,6 +10,7 @@ import {
 import { oppositedirection } from "util"
 import { Prototypes } from "../../constants"
 import { LuaEntityInfo } from "../../entity/Entity"
+import { isWorldEntityProjectEntity } from "../../entity/ProjectEntity"
 import {
   getCompatibleNames,
   getEntityType,
@@ -18,15 +19,14 @@ import {
   isTwoDirectionTank,
   RotationType,
 } from "../../entity/prototype-info"
-import { isWorldEntityProjectEntity } from "../../entity/ProjectEntity"
 import { getRegisteredProjectEntityFromUnitNumber, getStageFromUnitNumber } from "../../entity/registration"
 import { StageInfoExport } from "../../import-export/entity"
 import { isEmpty, ProtectedEvents } from "../../lib"
 import { DelayedEvent } from "../../lib/delayed-event"
-import { floorToCardinalDirection } from "../../lib/geometry"
-import { getStageAtSurface } from "../project-refs"
+import { floorToCardinalDirection, Pos } from "../../lib/geometry"
 import { Stage } from "../Project"
 import { UndoAction } from "../actions/undo"
+import { getStageAtSurface } from "../project-refs"
 
 const Events = ProtectedEvents
 
@@ -251,11 +251,15 @@ export function findPastedEntity(params: FindPastedEntityParams): FindPastedEnti
     radius: 0,
     name: searchNames,
   })
-
   if (isEmpty(luaEntities)) return { entity: nil, wasUpgraded: false }
 
+  const normalizedPos = Pos.normalize(position)
+
   const type = getEntityType(referencedName)!
-  let luaEntity = luaEntities.find((e) => !e.supports_direction || e.direction == expectedDirection)
+  let luaEntity =
+    luaEntities.find(
+      (e) => (!e.supports_direction || e.direction == expectedDirection) && Pos.equals(e.position, normalizedPos),
+    ) ?? luaEntities.find((e) => !e.supports_direction || e.direction == expectedDirection)
 
   if (type == "underground-belt") {
     const valueType = (blueprintEntity as UndergroundBeltBlueprintEntity).type ?? "input"

@@ -316,6 +316,51 @@ describe.each([false, true])("blueprinting (using bplib %s)", (useBplib) => {
     })
   })
 
+  test("pasting two overlapping curved-rail-a matches both by position", () => {
+    const entities: BlueprintEntity[] = [
+      {
+        entity_number: 1,
+        name: "curved-rail-a",
+        position: Pos(0, 0),
+        direction: defines.direction.northwest,
+      },
+      {
+        entity_number: 2,
+        name: "curved-rail-a",
+        position: Pos(2, 0),
+        direction: defines.direction.northwest,
+      },
+    ]
+    const stack = ctx.player.cursor_stack!
+    stack.set_stack("blueprint")
+    stack.set_blueprint_entities(entities)
+
+    ctx.player.teleport([0, 0], ctx.surfaces[0])
+    ctx.player.build_from_cursor({
+      position: Pos(0, 0),
+      direction: defines.direction.north,
+      build_mode: defines.build_mode.forced,
+    })
+
+    waitForPaste(useBplib, () => {
+      const rails = ctx.surfaces[0].find_entities_filtered({
+        name: "curved-rail-a",
+        area: BBox.around(Pos(0, 0), 10),
+      })
+      expect(rails.length).toBe(2)
+
+      const [rail1, rail2] = rails
+      const projEntity1 = ctx.project.content.findCompatibleWithLuaEntity(rail1, nil, 1)
+      const projEntity2 = ctx.project.content.findCompatibleWithLuaEntity(rail2, nil, 1)
+      expect(projEntity1).not.toBeNil()
+      expect(projEntity2).not.toBeNil()
+      expect(projEntity1).not.toEqual(projEntity2)
+
+      expect(ctx.wp.getWorldEntity(projEntity1!, 1)).toEqual(rail1)
+      expect(ctx.wp.getWorldEntity(projEntity2!, 1)).toEqual(rail2)
+    })
+  })
+
   test("pasting rotate blueprint with a rotated fluid tank", () => {
     const entity: BlueprintEntity = {
       entity_number: 1,
