@@ -450,7 +450,7 @@ class ProjectContentImpl implements MutableProjectContent {
     if (x == newX && y == newY) return false
     const { byPosition } = this
     byPosition.delete(x, y, entity)
-    entity._asMut().setPositionUnchecked(position)
+    entity._asMut().position = position
     byPosition.add(newX, newY, entity)
     this.notifyEntityChanged(entity, entity.firstStage)
     return true

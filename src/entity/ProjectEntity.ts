@@ -110,7 +110,7 @@ export interface InternalProjectEntity<T extends Entity = Entity>
   extends ProjectEntity<T>, StagedValue<T, StageDiff<T>> {
   position: Position
   direction: defines.direction
-  setPositionUnchecked(position: Position): void
+
 
   isSettingsRemnant: true | nil
   isNewRollingStock: true | nil
@@ -210,10 +210,6 @@ class ProjectEntityImpl<T extends Entity = Entity>
       return orientationToDirection((this.firstValue as MovableEntity).orientation)
     }
     return this.direction
-  }
-
-  setPositionUnchecked(position: Position): void {
-    this.position = position
   }
 
   isUndergroundBelt(): this is UndergroundBeltProjectEntity {
