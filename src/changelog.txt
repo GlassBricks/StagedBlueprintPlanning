@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.13.3
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fixed that pasting a blueprint with overlapping rails would sometimes not be registered.
 ---------------------------------------------------------------------------------------------------
 Version: 2.13.2
 Date: 2026-02-01

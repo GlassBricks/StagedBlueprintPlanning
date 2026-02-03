@@ -872,8 +872,13 @@ function findPastedEntity(params: FindPastedEntityParams): FindPastedEntityResul
 
   if (isEmpty(luaEntities)) return { entity: nil, wasUpgraded: false }
 
+  const normalizedPos = Pos.normalize(position)
+
   const type = nameToType.get(referencedName)!
-  let luaEntity = luaEntities.find((e) => !e.supports_direction || e.direction == expectedDirection)
+  let luaEntity =
+    luaEntities.find(
+      (e) => (!e.supports_direction || e.direction == expectedDirection) && Pos.equals(e.position, normalizedPos),
+    ) ?? luaEntities.find((e) => !e.supports_direction || e.direction == expectedDirection)
 
   if (type == "underground-belt") {
     const valueType = (blueprintEntity as UndergroundBeltBlueprintEntity).type ?? "input"
