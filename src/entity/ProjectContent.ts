@@ -520,7 +520,7 @@ class ProjectContentImpl implements MutableProjectContent {
   setEntityFirstStage(entity: ProjectEntity, stage: StageNumber): void {
     const oldFirstStage = entity.firstStage
     const oldLastStage = entity.lastStage
-    entity._asMut().setFirstStageUnchecked(stage)
+    entity._asMut().setFirstStage(stage)
     this.notifyEntityChanged(entity, math.min(stage, oldFirstStage))
     if (entity.lastStage != oldLastStage) {
       this.notifyLastStageChanged(entity, oldLastStage)
@@ -529,7 +529,7 @@ class ProjectContentImpl implements MutableProjectContent {
 
   setEntityLastStage(entity: ProjectEntity, stage: StageNumber | nil): void {
     const oldLastStage = entity.lastStage
-    entity._asMut().setLastStageUnchecked(stage)
+    entity._asMut().setLastStage(stage)
     this.notifyLastStageChanged(entity, oldLastStage)
   }
 
@@ -616,7 +616,7 @@ class ProjectContentImpl implements MutableProjectContent {
   reviveEntity(entity: ProjectEntity, stage: StageNumber): void {
     const internal = entity._asMut()
     internal.isSettingsRemnant = nil
-    internal.setFirstStageUnchecked(stage)
+    internal.setFirstStage(stage)
     this.observer?.onEntityRevived(entity)
   }
 

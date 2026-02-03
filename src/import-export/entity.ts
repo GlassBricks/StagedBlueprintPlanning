@@ -97,7 +97,7 @@ export function importEntity(info: EntityExport): ProjectEntity {
   const stageDiffs = info.stageDiffs && fromExportStageDiffs(info.stageDiffs)
 
   const entity = newProjectEntity(info.firstValue, info.position, info.direction ?? 0, info.firstStage)
-  entity.setLastStageUnchecked(info.lastStage)
+  entity.setLastStage(info.lastStage)
   entity.setStageDiffsDirectly(stageDiffs)
 
   if (info.unstagedValue) {

@@ -125,8 +125,8 @@ export interface InternalProjectEntity<T extends Entity = Entity>
 
   setFirstValueDirectly(value: T): void
   setStageDiffsDirectly(stageDiffs: PRRecord<StageNumber, StageDiff<T>> | nil): void
-  setFirstStageUnchecked(stage: StageNumber): void
-  setLastStageUnchecked(stage: StageNumber | nil): void
+  setFirstStage(stage: StageNumber): void
+  setLastStage(stage: StageNumber | nil): void
   clearPropertyInAllStages<T extends keyof StageProperties>(key: T): void
 
   setUnstagedValue(stage: StageNumber, value: UnstagedEntityProps | nil): boolean

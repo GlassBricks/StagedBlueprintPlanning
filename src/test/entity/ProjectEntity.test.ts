@@ -76,7 +76,7 @@ test("defaults lastStage to nil when not set", () => {
 })
 
 test("isInStage", () => {
-  projectEntity.setLastStageUnchecked(4)
+  projectEntity.setLastStage(4)
   expect(projectEntity.isInStage(1)).toBe(false)
   expect(projectEntity.isInStage(2)).toBe(true)
   expect(projectEntity.isInStage(3)).toBe(true)
@@ -86,13 +86,13 @@ test("isInStage", () => {
 })
 
 test("isPastLastStage", () => {
-  projectEntity.setLastStageUnchecked(4)
+  projectEntity.setLastStage(4)
   expect(projectEntity.isPastLastStage(3)).toBe(false)
   expect(projectEntity.isPastLastStage(4)).toBe(false)
   expect(projectEntity.isPastLastStage(5)).toBe(true)
   expect(projectEntity.isPastLastStage(6)).toBe(true)
 
-  projectEntity.setLastStageUnchecked(nil)
+  projectEntity.setLastStage(nil)
   expect(projectEntity.isPastLastStage(4)).toBe(false)
   expect(projectEntity.isPastLastStage(5)).toBe(false)
   expect(projectEntity.isPastLastStage(6)).toBe(false)
@@ -230,12 +230,12 @@ describe.each([
   test.each([true, false])("with diff %s", (withDiff) => {
     const expected = []
     if (!withDiff) {
-      projectEntity.setFirstStageUnchecked(10)
-      projectEntity.setFirstStageUnchecked(3)
+      projectEntity.setFirstStage(10)
+      projectEntity.setFirstStage(3)
       // setting up/down should clear diffs
       expect(projectEntity.hasStageDiff()).toBe(false)
     }
-    projectEntity.setFirstStageUnchecked(3)
+    projectEntity.setFirstStage(3)
     for (let stage = start; stage <= end; stage++) {
       expected[stage] = projectEntity.getValueAtStage(stage) ?? "nil"
     }
@@ -417,9 +417,9 @@ describe("moving stage diff props", () => {
   })
 })
 
-describe("setFirstStageUnchecked", () => {
+describe("setFirstStage", () => {
   test("move down", () => {
-    projectEntity.setFirstStageUnchecked(1)
+    projectEntity.setFirstStage(1)
     expect(projectEntity.firstValue).toEqual(entity)
     expect(projectEntity.firstStage).toBe(1)
   })
@@ -428,7 +428,7 @@ describe("setFirstStageUnchecked", () => {
     projectEntity.setExcludedFromBlueprints(3, true)
     projectEntity.setExcludedFromBlueprints(5, true)
     const valueAt5 = projectEntity.getValueAtStage(5)
-    projectEntity.setFirstStageUnchecked(5)
+    projectEntity.setFirstStage(5)
     expect(projectEntity.firstValue).toEqual(valueAt5)
     const diffs = projectEntity.stageDiffs!
     expect(next(diffs)[0]).toBe(7)
@@ -439,35 +439,35 @@ describe("setFirstStageUnchecked", () => {
   })
 
   test("cannot move past last stage", () => {
-    projectEntity.setLastStageUnchecked(4)
-    expect(() => projectEntity.setFirstStageUnchecked(4)).not.toError()
-    expect(() => projectEntity.setFirstStageUnchecked(5)).toError()
+    projectEntity.setLastStage(4)
+    expect(() => projectEntity.setFirstStage(4)).not.toError()
+    expect(() => projectEntity.setFirstStage(5)).toError()
   })
 
   test("if is rolling stock, setting first stage also sets last stage", () => {
     const projectEntity = newProjectEntity({ name: "locomotive" }, Pos(0, 0), 0, 2)
-    projectEntity.setFirstStageUnchecked(3)
+    projectEntity.setFirstStage(3)
     expect(projectEntity.lastStage).toBe(3)
   })
 })
 
 describe("trySetLastStage", () => {
   test("set", () => {
-    projectEntity.setLastStageUnchecked(5)
+    projectEntity.setLastStage(5)
     expect(projectEntity.lastStage).toBe(5)
   })
   test("can set back to nil", () => {
-    projectEntity.setLastStageUnchecked(5)
-    projectEntity.setLastStageUnchecked(nil)
+    projectEntity.setLastStage(5)
+    projectEntity.setLastStage(nil)
     expect(projectEntity.lastStage).toBe(nil)
   })
   test("cannot move below first stage", () => {
-    expect(() => projectEntity.setLastStageUnchecked(0)).toError()
+    expect(() => projectEntity.setLastStage(0)).toError()
   })
   test("moving down deletes later stage diffs and stage properties beyond new last stage", () => {
     projectEntity.setExcludedFromBlueprints(5, true)
     projectEntity.setExcludedFromBlueprints(7, true)
-    projectEntity.setLastStageUnchecked(5)
+    projectEntity.setLastStage(5)
     expect(projectEntity.lastStage).toBe(5)
     const diffs = projectEntity.stageDiffs!
     expect(diffs).not.toHaveKey(7)
@@ -479,7 +479,7 @@ describe("trySetLastStage", () => {
   })
   test("if is rolling stock, setting last stage does nothing", () => {
     const projectEntity = newProjectEntity({ name: "locomotive" }, Pos(0, 0), 0, 2)
-    projectEntity.setLastStageUnchecked(3)
+    projectEntity.setLastStage(3)
     expect(projectEntity.lastStage).toBe(2)
   })
 })
@@ -582,7 +582,7 @@ describe("insert/deleting stages", () => {
     entity._applyDiffAtStage(2, { override_stack_size: 2 })
     entity._applyDiffAtStage(3, { override_stack_size: 3 })
     entity._applyDiffAtStage(4, { override_stack_size: 4 })
-    entity.setLastStageUnchecked(4)
+    entity.setLastStage(4)
 
     entity.insertStage(3)
 
@@ -604,14 +604,14 @@ describe("insert/deleting stages", () => {
 
   test("if inserting stage right above last stage, last stage increases", () => {
     const entity = newProjectEntity<InserterEntity>({ name: "fast-inserter" }, Pos(0, 0), 0, 2)
-    entity.setLastStageUnchecked(3)
+    entity.setLastStage(3)
 
     entity.insertStage(4)
     expect(entity.lastStage).toBe(4)
   })
   test("if inserting stage well after last stage, last stage stays the same", () => {
     const entity = newProjectEntity<InserterEntity>({ name: "fast-inserter" }, Pos(0, 0), 0, 2)
-    entity.setLastStageUnchecked(3)
+    entity.setLastStage(3)
 
     entity.insertStage(5)
     expect(entity.lastStage).toBe(3)
@@ -648,7 +648,7 @@ describe("insert/deleting stages", () => {
     entity._applyDiffAtStage(2, { override_stack_size: 2, filter_mode: "blacklist" })
     entity._applyDiffAtStage(3, { override_stack_size: 3 })
     entity._applyDiffAtStage(4, { override_stack_size: 4 })
-    entity.setLastStageUnchecked(4)
+    entity.setLastStage(4)
 
     entity.mergeStage(3)
 
@@ -690,7 +690,7 @@ describe("insert/deleting stages", () => {
       0,
       3,
     )
-    entity.setLastStageUnchecked(4)
+    entity.setLastStage(4)
 
     entity.mergeStage(5)
     expect(entity.lastStage).toBe(4)
@@ -787,7 +787,7 @@ describe("discarding stages", () => {
 
   test("updates lastStage when discarding at lastStage", () => {
     const entity = newProjectEntity({ name: "inserter" }, Pos(0, 0), 0, 1)
-    entity.setLastStageUnchecked(3)
+    entity.setLastStage(3)
     entity.discardStage(3)
     expect(entity.lastStage).toEqual(2)
   })

@@ -39,8 +39,8 @@ export interface ReadonlyStagedValue<T, D> {
 
 export interface StagedValue<T, D> extends ReadonlyStagedValue<T, D> {
   setFirstValueDirectly(value: T): void
-  setFirstStageUnchecked(stage: StageNumber): void
-  setLastStageUnchecked(stage: StageNumber | nil): void
+  setFirstStage(stage: StageNumber): void
+  setLastStage(stage: StageNumber | nil): void
   setStageDiffsDirectly(stageDiffs: PRRecord<StageNumber, D> | nil): void
 
   adjustValueAtStage(stage: StageNumber, value: T): boolean
@@ -71,7 +71,7 @@ export abstract class BaseStagedValue<T, D> implements StagedValue<T, D> {
 
   protected abstract applyDiff(this: void, value: Mutable<T>, diff: D): Mutable<T>
 
-  setFirstStageUnchecked(stage: StageNumber): void {
+  setFirstStage(stage: StageNumber): void {
     const { firstStage, lastStage } = this
     if (this.oneStageOnly()) {
       this.lastStage = stage
@@ -96,7 +96,7 @@ export abstract class BaseStagedValue<T, D> implements StagedValue<T, D> {
     }
   }
 
-  setLastStageUnchecked(stage: StageNumber | nil): void {
+  setLastStage(stage: StageNumber | nil): void {
     if (this.oneStageOnly()) {
       return
     }

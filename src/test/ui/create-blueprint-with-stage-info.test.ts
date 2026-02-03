@@ -40,7 +40,7 @@ test("create blueprint of simple entity", () => {
     position: Pos(0, 0),
     force: "player",
   })
-  entity._asMut().setLastStageUnchecked(3)
+  entity._asMut().setLastStage(3)
 
   const stack = createBlueprintWithStageInfo(player, project.getStage(3)!, {
     left_top: Pos(-1, -1),

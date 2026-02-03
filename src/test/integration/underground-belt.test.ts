@@ -250,7 +250,7 @@ describe("underground belt inconsistencies", () => {
       ctx.assertEntityCorrect(middleUnderground, false)
     })
     test("when deleting an underground causing old pair to flip, project.updates highlights on old pair", () => {
-      middleUnderground._asMut().setFirstStageUnchecked(1)
+      middleUnderground._asMut().setFirstStage(1)
       ctx.wp.updateWorldEntities(middleUnderground, 1)
 
       ctx.wp.getWorldEntity(middleUnderground, 1)!.rotate({ by_player: ctx.player })

@@ -43,16 +43,16 @@ describe("findCompatible", () => {
   test("does not match if passed stage is higher than entity's last stage", () => {
     const entity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
     content.addEntity(entity)
-    entity.setLastStageUnchecked(2)
+    entity.setLastStage(2)
 
     expect(content.findCompatibleEntity("foo", { x: 0, y: 0 }, defines.direction.north, 3)).toBeNil()
   })
 
   test.each(["12", "21"])("if multiple matches, finds one with smallest firstStage, order %s", (o) => {
     const e1 = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
-    e1.setLastStageUnchecked(2)
+    e1.setLastStage(2)
     const e2 = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 3)
-    e2.setLastStageUnchecked(4)
+    e2.setLastStage(4)
 
     if (o == "21") {
       content.addEntity(e2)
@@ -96,7 +96,7 @@ describe("findCompatible", () => {
 
   test("not compatible", () => {
     const entity: InternalProjectEntity = newProjectEntity({ name: "foo" }, { x: 0, y: 0 }, 0, 1)
-    entity.setLastStageUnchecked(2)
+    entity.setLastStage(2)
     expect(content.findCompatibleEntity("test2", entity.position, defines.direction.north, 2)).toBeNil()
     expect(content.findCompatibleEntity("foo", entity.position, defines.direction.south, 2)).toBeNil()
     expect(content.findCompatibleEntity("foo", { x: 1, y: 0 }, defines.direction.north, 2)).toBeNil()

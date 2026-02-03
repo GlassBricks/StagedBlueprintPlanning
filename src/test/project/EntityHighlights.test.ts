@@ -234,7 +234,7 @@ describe("config changed highlight", () => {
   test("clears when moved to higher stage", () => {
     setAt(3)
     assertCorrect()
-    entity._asMut().setFirstStageUnchecked(2)
+    entity._asMut().setFirstStage(2)
     assertCorrect()
     expect(es().get(entity, "configChangedLaterHighlight", 1)).toBeNil()
   })
@@ -242,22 +242,22 @@ describe("config changed highlight", () => {
 
 describe("stage delete highlights", () => {
   test("sets highlight if lastStage is set", () => {
-    entity._asMut().setLastStageUnchecked(3)
+    entity._asMut().setLastStage(3)
     entityHighlights.updateAllHighlights(entity)
     assertLastStageHighlightCorrect(entity, wp())
   })
 
   test("removes highlight if lastStage is cleared", () => {
-    entity._asMut().setLastStageUnchecked(3)
+    entity._asMut().setLastStage(3)
     entityHighlights.updateAllHighlights(entity)
-    entity._asMut().setLastStageUnchecked(nil)
+    entity._asMut().setLastStage(nil)
     entityHighlights.updateAllHighlights(entity)
     assertLastStageHighlightCorrect(entity, wp())
   })
 
   test("does not create highlight if entity is movable", () => {
     const movableEntity = newProjectEntity({ name: "locomotive" }, Pos(1, 1), 0, 2)
-    movableEntity._asMut().setLastStageUnchecked(3)
+    movableEntity._asMut().setLastStage(3)
     entityHighlights.updateAllHighlights(movableEntity)
     assertLastStageHighlightCorrect(movableEntity, wp())
   })

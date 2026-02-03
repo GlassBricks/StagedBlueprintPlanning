@@ -982,7 +982,7 @@ function createProjectEntityFromStagedInfo(
     stageInfo.firstStage,
     unstagedValue,
   )
-  projectEntity.setLastStageUnchecked(stageInfo.lastStage)
+  projectEntity.setLastStage(stageInfo.lastStage)
   const diffs = stageInfo.stageDiffs
   if (diffs) {
     projectEntity.setStageDiffsDirectly(fromExportStageDiffs(diffs))

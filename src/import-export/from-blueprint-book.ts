@@ -71,7 +71,7 @@ export function convertBookToProjectDataOnly(stack: LuaItemStack): Project {
       }
     }
     for (const entity of unaccountedLastStageEntities) {
-      entity._asMut().setLastStageUnchecked(curStageNum - 1)
+      entity._asMut().setLastStage(curStageNum - 1)
     }
     unaccountedLastStageEntities = thisStageEntities
   }

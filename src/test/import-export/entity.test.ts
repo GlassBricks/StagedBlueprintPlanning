@@ -68,7 +68,7 @@ describe("exportEntity and importEntity", () => {
       c: "hello",
     }
     const entity = newProjectEntity(initialEntity, { x: 1, y: 2 }, 4, 1)
-    entity.setLastStageUnchecked(5)
+    entity.setLastStage(5)
     entity.setStageDiffsDirectly({
       2: {
         a: 1,
@@ -153,7 +153,7 @@ test("exportAllEntities", () => {
 describe("unstaged value export/import", () => {
   it("should export and import unstaged values correctly", () => {
     const entity = newProjectEntity({ name: "fast-inserter" }, { x: 1, y: 2 }, 0, 1)
-    entity.setLastStageUnchecked(3)
+    entity.setLastStage(3)
 
     // Add unstaged values for different stages
     const unstagedValue1 = { items: [simpleInsertPlan(defines.inventory.chest, "iron-ore", 0, 10)] }
@@ -186,7 +186,7 @@ describe("unstaged value export/import", () => {
 
   it("should handle partial unstaged values across stages", () => {
     const entity = newProjectEntity({ name: "assembling-machine-1" }, { x: 0, y: 0 }, 0, 2)
-    entity.setLastStageUnchecked(5)
+    entity.setLastStage(5)
 
     // Only set unstaged value for stage 4
     const unstagedValue = { items: [simpleInsertPlan(defines.inventory.crafter_input, "iron-plate", 0, 50)] }

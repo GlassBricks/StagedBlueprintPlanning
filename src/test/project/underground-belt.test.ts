@@ -85,7 +85,7 @@ describe.each([direction.north, direction.west])("findUndergroundPair, direction
   test("if beyond lastStage, does not match", () => {
     const u1 = createUnderground(0, "input", 1)
     const u2 = createUnderground(1, "output", 1)
-    u2.setLastStageUnchecked(1)
+    u2.setLastStage(1)
     checkPair(u1, u2, 1)
     checkPair(u1, nil, 2)
   })

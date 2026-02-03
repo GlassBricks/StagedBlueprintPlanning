@@ -113,14 +113,14 @@ describe("updateWorldEntities()", () => {
     })
 
     test("does not create entities past lastStage", () => {
-      entity._asMut().setLastStageUnchecked(3)
+      entity._asMut().setLastStage(3)
       wp().updateWorldEntities(entity, 1)
       for (let i = 1; i <= 3; i++) assertEntityCorrect(i)
       assertNothingPresent(4)
     })
 
     test("if first stage passed is past last stage, does nothing", () => {
-      entity._asMut().setLastStageUnchecked(3)
+      entity._asMut().setLastStage(3)
       wp().updateWorldEntities(entity, 4)
       for (let i = 1; i <= 4; i++) assertNothingPresent(i)
     })
@@ -143,7 +143,7 @@ describe("updateWorldEntities()", () => {
     })
 
     test("attempting to refresh world entity past last stage deletes entity if it exists", () => {
-      entity._asMut().setLastStageUnchecked(3)
+      entity._asMut().setLastStage(3)
       wp().replaceWorldOrPreviewEntity(entity, 4, {} as any)
       wp().refreshEntity(entity, 4)
       assertNothingPresent(4)
@@ -171,7 +171,7 @@ describe("updateWorldEntities()", () => {
   })
 
   test("creates preview entities in stages below first stage", () => {
-    entity._asMut().setFirstStageUnchecked(3)
+    entity._asMut().setFirstStage(3)
     wp().updateWorldEntities(entity, 1)
     assertHasPreview(1)
     assertHasPreview(2)
@@ -196,7 +196,7 @@ describe("updateWorldEntities()", () => {
   }
 
   test.each([true, false])("entities not in first stage are indestructible, with existing: %s", (withExisting) => {
-    entity._asMut().setFirstStageUnchecked(2)
+    entity._asMut().setFirstStage(2)
     if (withExisting) {
       const luaEntity = createEntity(
         project.surfaces.getSurface(3)!,
@@ -219,7 +219,7 @@ describe("updateWorldEntities()", () => {
 
   test("can handle entity moving up", () => {
     wp().updateWorldEntities(entity, 1)
-    entity._asMut().setFirstStageUnchecked(2)
+    entity._asMut().setFirstStage(2)
     wp().updateWorldEntities(entity, 1)
 
     expect(findMainEntity(1)).toBeNil()
@@ -263,7 +263,7 @@ describe("updateWorldEntities()", () => {
   })
 
   test("refreshEntity also builds previews", () => {
-    entity._asMut().setFirstStageUnchecked(2)
+    entity._asMut().setFirstStage(2)
     wp().refreshEntity(entity, 1)
     assertHasPreview(1)
   })
@@ -311,8 +311,8 @@ test("rebuildEntity replaces old value", () => {
 describe("updateWorldEntitiesOnLastStageChanged()", () => {
   test("moving up creates entities", () => {
     const mut = entity._asMut()
-    mut.setFirstStageUnchecked(2)
-    mut.setLastStageUnchecked(2)
+    mut.setFirstStage(2)
+    mut.setLastStage(2)
     wp().updateWorldEntities(entity, 1)
     assertHasPreview(1)
     assertEntityCorrect(2)
@@ -321,7 +321,7 @@ describe("updateWorldEntitiesOnLastStageChanged()", () => {
 
     clearModuleMock(_wireHandler)
 
-    mut.setLastStageUnchecked(3)
+    mut.setLastStage(3)
     wp().updateWorldEntitiesOnLastStageChanged(entity, 2)
     assertHasPreview(1)
     assertEntityCorrect(2)
@@ -333,15 +333,15 @@ describe("updateWorldEntitiesOnLastStageChanged()", () => {
 
   test("moving down destroys entities", () => {
     const mut = entity._asMut()
-    mut.setFirstStageUnchecked(2)
-    mut.setLastStageUnchecked(3)
+    mut.setFirstStage(2)
+    mut.setLastStage(3)
     wp().updateWorldEntities(entity, 1)
     assertHasPreview(1)
     assertEntityCorrect(2)
     assertEntityCorrect(3)
     assertNothingPresent(4)
 
-    mut.setLastStageUnchecked(2)
+    mut.setLastStage(2)
     wp().updateWorldEntitiesOnLastStageChanged(entity, 3)
     assertHasPreview(1)
     assertEntityCorrect(2)
@@ -495,7 +495,7 @@ test("updateWorldEntities calls makeSettingsRemnant", () => {
 
 test("reviveSettingsRemnant revives correct entities", () => {
   const mut = entity._asMut()
-  mut.setFirstStageUnchecked(2)
+  mut.setFirstStage(2)
   mut.isSettingsRemnant = true
   project.content.makeEntitySettingsRemnant(entity)
 
