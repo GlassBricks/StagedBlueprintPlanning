@@ -467,6 +467,12 @@ export class ProjectActions {
     this.onTryFixEntity(entity, stage, true)
   }
 
+  onExcludeFromBlueprintsUsed(entity: LuaEntity, stage: StageNumber, excluded: boolean): void {
+    const projectEntity = this.content.findCompatibleFromPreviewOrLuaEntity(entity, stage)
+    if (!projectEntity) return
+    this.content.setEntityExcludedFromBlueprints(projectEntity, stage, excluded)
+  }
+
   onTryFixEntity(previewEntity: LuaEntity, stage: StageNumber, deleteSettingsRemnants?: boolean): void {
     const existing = this.content.findCompatibleFromPreviewOrLuaEntity(previewEntity, stage)
     if (!existing) return

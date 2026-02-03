@@ -501,6 +501,37 @@ describe("rolling stock", () => {
   })
 })
 
+describe("excludedFromBlueprints", () => {
+  test("defaults to false", () => {
+    expect(projectEntity.isExcludedFromBlueprints(2)).toBe(false)
+    expect(projectEntity.isExcludedFromBlueprints(3)).toBe(false)
+  })
+
+  test("set and get", () => {
+    expect(projectEntity.setExcludedFromBlueprints(2, true)).toBe(true)
+    expect(projectEntity.isExcludedFromBlueprints(2)).toBe(true)
+  })
+
+  test("per-stage only", () => {
+    projectEntity.setExcludedFromBlueprints(3, true)
+    expect(projectEntity.isExcludedFromBlueprints(2)).toBe(false)
+    expect(projectEntity.isExcludedFromBlueprints(3)).toBe(true)
+    expect(projectEntity.isExcludedFromBlueprints(4)).toBe(false)
+  })
+
+  test("clearing exclusion", () => {
+    projectEntity.setExcludedFromBlueprints(3, true)
+    expect(projectEntity.setExcludedFromBlueprints(3, false)).toBe(true)
+    expect(projectEntity.isExcludedFromBlueprints(3)).toBe(false)
+  })
+
+  test("setting same value returns false", () => {
+    expect(projectEntity.setExcludedFromBlueprints(3, false)).toBe(false)
+    projectEntity.setExcludedFromBlueprints(3, true)
+    expect(projectEntity.setExcludedFromBlueprints(3, true)).toBe(false)
+  })
+})
+
 declare module "../../entity/ProjectEntity" {
   // noinspection JSUnusedGlobalSymbols
   export interface StageProperties {

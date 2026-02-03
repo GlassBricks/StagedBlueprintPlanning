@@ -13,7 +13,7 @@ import {
   OnGuiClickEvent,
   PlayerIndex,
 } from "factorio:runtime"
-import { BuildableEntityType, Settings } from "../constants"
+import { BuildableEntityType, L_Game, Settings } from "../constants"
 import { Entity } from "../entity/Entity"
 import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import { StageDiff } from "../entity/stage-diff"
@@ -156,6 +156,18 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
             />,
           ]}
           {currentStageDiff && [<line direction="horizontal" />, this.renderStageDiffSettings(currentStageDiff)]}
+          {entity.isExcludedFromBlueprints(currentStageNum) && [
+            <line direction="horizontal" />,
+            <flow direction="horizontal">
+              <label caption={[L_GuiEntityInfo.ExcludedFromBlueprints]} />
+              <HorizontalPusher />
+              <SmallToolButton
+                sprite="utility/close_black"
+                tooltip={[L_Game.Cancel]}
+                on_gui_click={ibind(this.cancelExcludeFromBlueprints)}
+              />
+            </flow>,
+          ]}
           {isErrorEntity && [
             <line direction="horizontal" />,
             <button
@@ -192,6 +204,11 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
   }
   private setVehicleLocationHere() {
     this.actions.setVehicleLocationHere(this.entity)
+  }
+
+  private cancelExcludeFromBlueprints() {
+    this.stage.project.content.setEntityExcludedFromBlueprints(this.entity, this.stage.stageNumber, false)
+    this.rerender(false)
   }
 
   private deleteEntity() {

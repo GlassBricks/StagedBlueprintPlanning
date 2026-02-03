@@ -95,9 +95,9 @@ Check if any entities are excluded at this stage; if so, ensure `ComputeChangedE
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] `pnpm run test` passes
-- [ ] `pnpm run lint` passes
-- [ ] `pnpm exec tstl` compiles without errors
+- [x] `pnpm run test` passes
+- [x] `pnpm run lint` passes
+- [x] `pnpm exec tstl` compiles without errors
 
 ---
 
@@ -115,7 +115,7 @@ excludedFromBlueprintsHighlight: LuaRenderObject
 
 Add to `HighlightConstants`:
 ```typescript
-ExcludedFromBlueprints = "utility/not_available"
+ExcludedFromBlueprints = "utility/deconstruction_mark"
 ```
 
 Add to `highlightConfigs`:
@@ -154,11 +154,11 @@ Test that highlight is created/destroyed when exclusion is toggled.
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] `pnpm run test` passes
-- [ ] `pnpm exec tstl` compiles
+- [x] `pnpm run test` passes
+- [x] `pnpm exec tstl` compiles
 
 #### Manual Verification:
-- [ ] `utility/not_available` sprite renders on excluded entities at the correct position
+- [ ] `utility/deconstruction_mark` sprite renders on excluded entities at the correct position
 - [ ] Sprite disappears when exclusion is removed
 - [ ] No overlap with other highlight sprites
 
@@ -182,7 +182,7 @@ Define `excludeFromBlueprintsTool: SelectionToolPrototype`:
 - `select`: mode `["any-entity"]`, red-ish border color, cursor type `"not-allowed"`
 - `alt_select`: mode `["any-entity"]`, green border color, cursor type `"entity"`
 - Flags: `["only-in-cursor", "spawnable", "not-stackable"]`
-- Icon: reuse existing icon or use `"utility/not_available"` as base
+- Icon: use "utility/not_available" layered on top of deconstruction tool
 
 Register with `data.extend()` including shortcut and custom input.
 
@@ -232,7 +232,7 @@ onExcludeFromBlueprintsUsed(entity: LuaEntity, stage: StageNumber, excluded: boo
 **File**: `src/locale/en/en.cfg`
 
 ```
-bp100_exclude-from-blueprints-tool=Exclude from blueprints
+bp100_exclude-from-blueprints-tool=Blueprint exclusion tool
 ```
 in `[item-name]` section.
 
@@ -245,9 +245,9 @@ in `[item-name]` section.
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] `pnpm run test` passes
-- [ ] `pnpm exec tstl` compiles
-- [ ] `pnpm run build:locale` generates updated locale types
+- [x] `pnpm run test` passes
+- [x] `pnpm exec tstl` compiles
+- [x] `pnpm run build:locale` generates updated locale types
 
 #### Manual Verification:
 - [ ] Selection tool appears in shortcut bar
@@ -311,9 +311,9 @@ excluded-from-blueprints=Excluded from blueprints
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] `pnpm run test` passes
-- [ ] `pnpm exec tstl` compiles
-- [ ] `pnpm run build:locale` generates updated locale types
+- [x] `pnpm run test` passes
+- [x] `pnpm exec tstl` compiles
+- [x] `pnpm run build:locale` generates updated locale types
 
 #### Manual Verification:
 - [ ] "Excluded from blueprints" text appears in entity info when excluded

@@ -40,6 +40,7 @@ interface ProjectBlueprintPlan {
   stagePlans: LuaMap<StageNumber, StageBlueprintPlan>
 
   excludeFromFutureBlueprintStages: LuaSet<StageNumber>
+  stagesWithExcludedEntities?: LuaSet<StageNumber>
 
   firstStageEntities?: Ref<LuaMap<StageNumber, LuaSet<ProjectEntity>>>
   changedEntities?: Ref<LuaMap<StageNumber, LuaSet<ProjectEntity>>>
@@ -146,6 +147,7 @@ class ComputeUnitNumberFilterStep implements BlueprintStep {
     const result = new LuaSet<UnitNumber>()
     for (const stage of $range(minStage, maxStage)) {
       for (const entity of changedEntities.get(stage)!) {
+        if (entity.isExcludedFromBlueprints(stageNumber)) continue
         const luaEntity = wp.getWorldOrPreviewEntity(entity, stageNumber)
         if (!luaEntity) continue
         const unitNumber = luaEntity.unit_number
@@ -153,6 +155,7 @@ class ComputeUnitNumberFilterStep implements BlueprintStep {
       }
       if (stage == stageNumber || !this.projectPlan.excludeFromFutureBlueprintStages.has(stage)) {
         for (const entity of firstStageEntities.get(stage)!) {
+          if (entity.isExcludedFromBlueprints(stageNumber)) continue
           const luaEntity = wp.getWorldOrPreviewEntity(entity, stageNumber)
           if (!luaEntity) continue
           const unitNumber = luaEntity.unit_number
@@ -414,6 +417,22 @@ class BlueprintingTaskBuilder {
     return new BlueprintCreationTask(this.tasks, this.inventory, taskTitle)
   }
 
+  private hasExcludedEntitiesAtStage(projectPlan: ProjectBlueprintPlan, stageNumber: StageNumber): boolean {
+    if (!projectPlan.stagesWithExcludedEntities) {
+      const stages = new LuaSet<StageNumber>()
+      for (const entity of projectPlan.project.content.allEntities()) {
+        const allStages = entity.getPropertyAllStages("excludedFromBlueprints")
+        if (allStages) {
+          for (const [stage] of pairs(allStages)) {
+            stages.add(stage)
+          }
+        }
+      }
+      projectPlan.stagesWithExcludedEntities = stages
+    }
+    return projectPlan.stagesWithExcludedEntities.has(stageNumber)
+  }
+
   private addTakeBlueprintTasks(projectPlan: ProjectBlueprintPlan, stagePlan: StageBlueprintPlan): void {
     const { stack } = stagePlan
     let blueprintTakeSettings: BlueprintTakeSettings = stagePlan.overridableSettings
@@ -426,7 +445,12 @@ class BlueprintingTaskBuilder {
     } else {
       actualStack = stack
     }
-    if (blueprintTakeSettings.stageLimit != nil || !projectPlan.excludeFromFutureBlueprintStages.isEmpty()) {
+    const stageNumber = stagePlan.stage.stageNumber
+    if (
+      blueprintTakeSettings.stageLimit != nil ||
+      !projectPlan.excludeFromFutureBlueprintStages.isEmpty() ||
+      this.hasExcludedEntitiesAtStage(projectPlan, stageNumber)
+    ) {
       this.ensureHasComputeChangedEntities(projectPlan)
       this.tasks.push(new ComputeUnitNumberFilterStep(projectPlan, stagePlan, blueprintTakeSettings.stageLimit))
     }

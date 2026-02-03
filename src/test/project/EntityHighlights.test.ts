@@ -299,6 +299,29 @@ describe("stage request highlights", () => {
   })
 })
 
+describe("excluded from blueprints highlights", () => {
+  test("creates highlight when entity is excluded", () => {
+    entity._asMut().setExcludedFromBlueprints(3, true)
+    entityHighlights.updateAllHighlights(entity)
+    expect(es().get(entity, "excludedFromBlueprintsHighlight", 3)).toBeAny()
+  })
+
+  test("does not create highlight for non-excluded stages", () => {
+    entity._asMut().setExcludedFromBlueprints(3, true)
+    entityHighlights.updateAllHighlights(entity)
+    expect(es().get(entity, "excludedFromBlueprintsHighlight", 2)).toBeNil()
+    expect(es().get(entity, "excludedFromBlueprintsHighlight", 4)).toBeNil()
+  })
+
+  test("removes highlight when exclusion is cleared", () => {
+    entity._asMut().setExcludedFromBlueprints(3, true)
+    entityHighlights.updateAllHighlights(entity)
+    entity._asMut().setExcludedFromBlueprints(3, false)
+    entityHighlights.updateAllHighlights(entity)
+    expect(es().get(entity, "excludedFromBlueprintsHighlight", 3)).toBeNil()
+  })
+})
+
 test("deleteAllHighlights", () => {
   wp().destroyWorldOrPreviewEntity(entity, 2)
   wp().destroyWorldOrPreviewEntity(entity, 3)

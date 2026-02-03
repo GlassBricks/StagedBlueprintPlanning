@@ -90,6 +90,8 @@ export interface ProjectEntity<out T extends Entity = Entity> extends ReadonlySt
 
   lastStageWith(stageCount: StageCount): StageNumber
 
+  isExcludedFromBlueprints(stage: StageNumber): boolean
+
   getProperty<T extends keyof StageProperties>(key: T, stage: StageNumber): StageProperties[T] | nil
   getPropertyAllStages<T extends keyof StageProperties>(key: T): Record<StageNumber, StageProperties[T]> | nil
   propertySetInAnyStage(key: keyof StageProperties): boolean
@@ -128,6 +130,7 @@ export interface InternalProjectEntity<T extends Entity = Entity>
   clearPropertyInAllStages<T extends keyof StageProperties>(key: T): void
 
   setUnstagedValue(stage: StageNumber, value: UnstagedEntityProps | nil): boolean
+  setExcludedFromBlueprints(stage: StageNumber, excluded: boolean): boolean
 
   setTypeProperty(this: UndergroundBeltProjectEntity, direction: "input" | "output"): void
   setDropPosition(this: InserterProjectEntity, position: Position | nil): void
@@ -147,6 +150,7 @@ export type StageDiffsInternal<E extends Entity = Entity> = PRRecord<StageNumber
 
 export interface StageProperties {
   unstagedValue?: UnstagedEntityProps
+  excludedFromBlueprints?: true
 }
 
 export type UndergroundBeltProjectEntity = ProjectEntity<UndergroundBeltEntity>
@@ -540,6 +544,14 @@ class ProjectEntityImpl<T extends Entity = Entity>
 
   getUnstagedValue(stage: StageNumber): UnstagedEntityProps | nil {
     return this.getProperty("unstagedValue", stage)
+  }
+
+  isExcludedFromBlueprints(stage: StageNumber): boolean {
+    return this.getProperty("excludedFromBlueprints", stage) == true
+  }
+
+  setExcludedFromBlueprints(stage: StageNumber, excluded: boolean): boolean {
+    return this.setProperty("excludedFromBlueprints", stage, excluded ? true : nil)
   }
 
   setProperty<T extends keyof StageProperties>(key: T, stage: StageNumber, value: StageProperties[T] | nil): boolean {

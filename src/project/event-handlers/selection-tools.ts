@@ -173,6 +173,27 @@ addSelectionToolHandlers(Prototypes.ForceDeleteTool, {
   onAltSelected: forceDeleteToolUsed,
 })
 
+function onExcludeFromBlueprintsSelected(e: OnPlayerSelectedAreaEvent): void {
+  const stage = getStageAtSurface(e.surface.index)
+  if (!stage) return
+  for (const entity of e.entities) {
+    stage.actions.onExcludeFromBlueprintsUsed(entity, stage.stageNumber, true)
+  }
+}
+
+function onExcludeFromBlueprintsAltSelected(e: OnPlayerSelectedAreaEvent): void {
+  const stage = getStageAtSurface(e.surface.index)
+  if (!stage) return
+  for (const entity of e.entities) {
+    stage.actions.onExcludeFromBlueprintsUsed(entity, stage.stageNumber, false)
+  }
+}
+
+addSelectionToolHandlers(Prototypes.ExcludeFromBlueprintsTool, {
+  onSelected: onExcludeFromBlueprintsSelected,
+  onAltSelected: onExcludeFromBlueprintsAltSelected,
+})
+
 function cutToolUsed(event: OnPlayerSelectedAreaEvent): void {
   stagedCopyToolUsed(event)
   forceDeleteToolUsed(event)

@@ -231,6 +231,10 @@ setEntityFilters(stagedCutTool, "alt_select", buildableNames)
 setEntityFilters(forceDeleteTool, "select", buildableNames)
 setEntityFilters(forceDeleteTool, "alt_select", entityOrPreviewNames)
 
+const excludeFromBlueprintsTool = data.raw["selection-tool"][Prototypes.ExcludeFromBlueprintsTool]!
+setEntityFilters(excludeFromBlueprintsTool, "select", entityOrPreviewNames)
+setEntityFilters(excludeFromBlueprintsTool, "alt_select", entityOrPreviewNames)
+
 const twoDirectionOnlyTanks: string[] = []
 for (const [name, tank] of pairs(data.raw["storage-tank"])) {
   if (tank.two_direction_only) {

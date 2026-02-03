@@ -291,6 +291,41 @@ test("blueprint with unstaged values includes item requests", () => {
   expect(entities[0].items![0].id.name).toBe("iron-ore")
 })
 
+test("excludes entity marked as excludedFromBlueprints", () => {
+  const [stage1] = project.getAllStages()
+  const e1 = createEntity(stage1, [0.5, 0.5])
+  const e2 = createEntity(stage1, [1.5, 1.5])
+
+  const e1Project = project.content.findCompatibleWithLuaEntity(e1, nil, 1)!
+  project.content.setEntityExcludedFromBlueprints(e1Project, 1, true)
+
+  const stack = player.cursor_stack!
+  const ret = takeStageBlueprint(stage1, stack)
+  expect(ret).toBe(true)
+
+  const entities = stack.get_blueprint_entities()!
+  expect(entities).toHaveLength(1)
+  expect(entities[0].position).toEqual(e2.position)
+})
+
+test("exclusion at one stage does not affect other stages", () => {
+  const [stage1, stage2] = project.getAllStages()
+  const e1 = createEntity(stage1, [0.5, 0.5])
+
+  const e1Project = project.content.findCompatibleWithLuaEntity(e1, nil, 1)!
+  project.content.setEntityExcludedFromBlueprints(e1Project, 2, true)
+
+  const stack = player.cursor_stack!
+  const ret = takeStageBlueprint(stage1, stack)
+  expect(ret).toBe(true)
+  const entities = stack.get_blueprint_entities()!
+  expect(entities).toHaveLength(1)
+  expect(entities[0].position).toEqual(e1.position)
+
+  const ret2 = takeStageBlueprint(stage2, stack)
+  expect(ret2).toBe(false)
+})
+
 test("does not error when taking empty blueprint", () => {
   const [stage1, stage2] = project.getAllStages()
   createEntity(stage1) // create entity only in stage 1

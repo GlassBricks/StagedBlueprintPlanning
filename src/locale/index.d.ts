@@ -16,6 +16,8 @@ export declare const enum L_ItemName {
   Bp100StagedCopyTool = "item-name.bp100_staged-copy-tool",
   /** Cut with stage info */
   Bp100StagedCutTool = "item-name.bp100_staged-cut-tool",
+  /** Blueprint exclusion tool */
+  Bp100ExcludeFromBlueprintsTool = "item-name.bp100_exclude-from-blueprints-tool",
   /** Stage reference */
   Bp100StageReference = "item-name.bp100_stage-reference",
   /** Stage reference-data */
@@ -480,6 +482,8 @@ export declare const enum L_GuiEntityInfo {
   SetLocationHere = "bp100.gui.entity-info.set-location-here",
   /** Force delete entity */
   DeleteEntity = "bp100.gui.entity-info.delete-entity",
+  /** Excluded from blueprints */
+  ExcludedFromBlueprints = "bp100.gui.entity-info.excluded-from-blueprints",
   /** Updated settings */
   StageDiff = "bp100.gui.entity-info.stage-diff",
   /** Remove this change (sets to previous value) */

@@ -38,6 +38,7 @@ export interface HighlightTypes {
   stageDeleteHighlight: LuaRenderObject
   itemRequestHighlight: LuaRenderObject
   itemRequestHighlightOverlay: LuaRenderObject
+  excludedFromBlueprintsHighlight: LuaRenderObject
 }
 
 type HighlightEntity = HighlightBoxEntity | LuaRenderObject
@@ -67,6 +68,7 @@ export const enum HighlightConstants {
   UpgradedLater = "item/upgrade-planner",
   DeletedNextStage = "item/deconstruction-planner",
   ItemRequest = "entity/item-request-proxy",
+  ExcludedFromBlueprints = "utility/deconstruction_mark",
 }
 const highlightConfigs: {
   [P in keyof HighlightTypes]-?: HighlightConfig | SpriteConfig
@@ -116,6 +118,13 @@ const highlightConfigs: {
     sprite: "",
     offset: { x: 0.5, y: 0.05 },
     scale: 0.5,
+    renderLayer: "entity-info-icon-above",
+  },
+  excludedFromBlueprintsHighlight: {
+    type: "sprite",
+    sprite: HighlightConstants.ExcludedFromBlueprints,
+    offset: { x: 0.2, y: 0.8 },
+    scale: 0.2,
     renderLayer: "entity-info-icon-above",
   },
 }
@@ -366,11 +375,21 @@ export class EntityHighlights {
     }
   }
 
+  private updateExcludedFromBlueprintsHighlight(entity: ProjectEntity): void {
+    this.destroyAllExtraEntities(entity, "excludedFromBlueprintsHighlight")
+    const allStages = entity.getPropertyAllStages("excludedFromBlueprints")
+    if (!allStages) return
+    for (const [stage] of pairs(allStages)) {
+      this.createHighlight(entity, stage, this.surfaces.getSurface(stage)!, "excludedFromBlueprintsHighlight")
+    }
+  }
+
   updateAllHighlights(entity: ProjectEntity): void {
     this.updateErrorOutlines(entity)
     this.updateStageDiffHighlights(entity)
     this.updateStageDeleteIndicator(entity)
     this.updateStageRequestIndicator(entity)
+    this.updateExcludedFromBlueprintsHighlight(entity)
   }
 
   deleteAllHighlights(entity: ProjectEntity): void {

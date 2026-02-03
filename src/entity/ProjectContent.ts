@@ -132,6 +132,8 @@ export interface MutableProjectContent extends ProjectContent {
   setEntityUnstagedValue(entity: ProjectEntity, stage: StageNumber, value: UnstagedEntityProps | nil): boolean
   clearEntityUnstagedValues(entity: ProjectEntity): void
 
+  setEntityExcludedFromBlueprints(entity: ProjectEntity, stage: StageNumber, excluded: boolean): boolean
+
   makeEntitySettingsRemnant(entity: ProjectEntity): void
   reviveEntity(entity: ProjectEntity, stage: StageNumber): void
 
@@ -599,6 +601,12 @@ class ProjectContentImpl implements MutableProjectContent {
   clearEntityUnstagedValues(entity: ProjectEntity): void {
     entity._asMut().clearPropertyInAllStages("unstagedValue")
     this.notifyEntityChanged(entity, entity.firstStage)
+  }
+
+  setEntityExcludedFromBlueprints(entity: ProjectEntity, stage: StageNumber, excluded: boolean): boolean {
+    const changed = entity._asMut().setExcludedFromBlueprints(stage, excluded)
+    if (changed) this.notifyEntityChanged(entity, stage)
+    return changed
   }
 
   makeEntitySettingsRemnant(entity: ProjectEntity): void {

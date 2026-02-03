@@ -4,6 +4,8 @@ Date: ????
   Bugfixes:
     - Fixed that "Exclude from future blueprints" was not highlighted when using a per-stage override.
   Changes:
+  Features:
+    - Added "Blueprint exclusion tool" to mark individual entities as excluded from blueprints on a per-stage basis.
 ---------------------------------------------------------------------------------------------------
 Version: 2.13.3
 Date: 2026-02-02

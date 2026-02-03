@@ -33,6 +33,8 @@ export const enum Prototypes {
   StagedCutTool = "bp100_staged-cut-tool",
   ForceDeleteTool = "bp100_force-delete-tool",
 
+  ExcludeFromBlueprintsTool = "bp100_exclude-from-blueprints-tool",
+
   StageReference = "bp100_blueprint-reference",
   StageReferenceData = "bp100_blueprint-reference-data",
 

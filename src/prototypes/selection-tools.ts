@@ -8,6 +8,7 @@ import {
   BlueprintItemPrototype,
   CustomInputPrototype,
   DeconstructionItemPrototype,
+  IconData,
   SelectionToolPrototype,
   ShortcutPrototype,
 } from "factorio:prototype"
@@ -316,7 +317,7 @@ const forceDeleteTool: SelectionToolPrototype = {
   },
   alt_select: {
     mode: ["any-entity"],
-    border_color: deconstructionPlanner.select.border_color,
+    border_color: deconstructionPlanner.alt_select.border_color,
     cursor_box_type: "not-allowed",
   },
 }
@@ -331,6 +332,60 @@ data.extend([
   ),
   selectionToolToInput(forceDeleteTool, nil, false),
 ])
+
+const excludeFromBlueprintsTool: SelectionToolPrototype = {
+  type: "selection-tool",
+  name: Prototypes.ExcludeFromBlueprintsTool,
+  icons: [
+    {
+      icon: "__base__/graphics/icons/deconstruction-planner.png",
+      icon_size: 64,
+      tint: [1, 1, 1, 0.5],
+    },
+    {
+      icon: "__core__/graphics/icons/mip/not-available.png",
+      icon_size: 32,
+      scale: 0.7,
+    },
+  ],
+
+  flags: ["only-in-cursor", "spawnable", "not-stackable"],
+  stack_size: 1,
+
+  subgroup: "tool",
+  order: "z[bp100]-a[a-tools]-f[exclude-from-blueprints-tool]",
+
+  select: {
+    mode: ["any-entity"],
+    border_color: deconstructionPlanner.select.border_color,
+    cursor_box_type: "not-allowed",
+  },
+  alt_select: {
+    mode: ["any-entity"],
+    border_color: deconstructionPlanner.alt_select.border_color,
+    cursor_box_type: "entity",
+  },
+}
+
+const notAvailableIcon: IconData = {
+  icon: "__core__/graphics/icons/mip/not-available.png",
+  icon_size: 32,
+}
+
+const excludeFromBlueprintsShortcut: ShortcutPrototype = {
+  type: "shortcut",
+  name: excludeFromBlueprintsTool.name,
+  order: excludeFromBlueprintsTool.order,
+  action: "spawn-item",
+  item_to_spawn: excludeFromBlueprintsTool.name,
+  icons: [notAvailableIcon],
+  small_icons: [notAvailableIcon],
+  style: "red",
+  associated_control_input: Prototypes.ExcludeFromBlueprintsTool,
+  localised_name: ["item-name." + excludeFromBlueprintsTool.name],
+}
+
+data.extend([excludeFromBlueprintsTool, excludeFromBlueprintsShortcut, selectionToolToInput(excludeFromBlueprintsTool)])
 
 const stageReference = table.deepcopy(data.raw["blueprint"]["blueprint"])!
 stageReference.subgroup = nil

@@ -388,6 +388,44 @@ describe("staged copy, delete, cut", () => {
   })
 })
 
+describe("exclude from blueprints tool", () => {
+  let entity: LuaEntity
+  before_each(() => {
+    entity = ctx.getSurface().create_entity({
+      name: "inserter",
+      position: pos,
+      force: "player",
+    })!
+    expect(entity).toBeAny()
+  })
+  test("select marks entities as excluded", () => {
+    const player = ctx.getPlayer()
+    const surface = ctx.getSurface()
+    Events.raiseFakeEventNamed("on_player_selected_area", {
+      player_index: player.index,
+      item: Prototypes.ExcludeFromBlueprintsTool,
+      surface,
+      area: BBox.around(pos, 10),
+      entities: [entity],
+      tiles: [],
+    })
+    expect(ctx.getProject().actions.onExcludeFromBlueprintsUsed).toHaveBeenCalledWith(entity, 1, true)
+  })
+  test("alt-select unmarks entities", () => {
+    const player = ctx.getPlayer()
+    const surface = ctx.getSurface()
+    Events.raiseFakeEventNamed("on_player_alt_selected_area", {
+      player_index: player.index,
+      item: Prototypes.ExcludeFromBlueprintsTool,
+      surface,
+      area: BBox.around(pos, 10),
+      entities: [entity],
+      tiles: [],
+    })
+    expect(ctx.getProject().actions.onExcludeFromBlueprintsUsed).toHaveBeenCalledWith(entity, 1, false)
+  })
+})
+
 describe("stage delete tool", () => {
   let entity: LuaEntity
   let entity2: LuaEntity
