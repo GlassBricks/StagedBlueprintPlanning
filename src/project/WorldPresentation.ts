@@ -349,15 +349,14 @@ export class WorldPresentation implements WorldEntityLookup, WorldPresenter, Has
       }
     } else if (oldLastStage) {
       this.updateWorldEntities(entity, oldLastStage + 1)
+      return
     }
     this.highlights.updateAllHighlights(entity)
   }
 
   updateNewWorldEntitiesWithoutWires(entity: ProjectEntity): void {
     if (worldUpdatesBlocked) return
-    const hasError = this.updateWorldEntitiesInRange(entity, 1, entity.lastStageWith(this.settings))
-    const mayHaveHighlights = hasError || entity.getPropertyAllStages("unstagedValue") != nil
-    if (mayHaveHighlights) this.highlights.updateAllHighlights(entity)
+    this.updateWorldEntitiesInRange(entity, 1, entity.lastStageWith(this.settings))
   }
 
   updateWireConnections(entity: ProjectEntity): void {
