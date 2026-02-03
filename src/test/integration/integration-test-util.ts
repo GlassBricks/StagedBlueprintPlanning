@@ -15,7 +15,13 @@ import { Pos } from "../../lib/geometry"
 import { checkForEntityUpdates } from "../../project/event-handlers"
 import { Project } from "../../project/Project"
 import { _deleteAllProjects, createProject } from "../../project/Project"
+import { HighlightTypes } from "../../project/entity-highlights"
 import { WorldPresentation } from "../../project/WorldPresentation"
+
+function iterateTypeIsEmpty(wp: WorldPresentation, entity: ProjectEntity, type: keyof HighlightTypes): boolean {
+  for (const [,] of wp.entityStorage.iterateType(entity, type)) return false
+  return true
+}
 import {
   assertConfigChangedHighlightsCorrect,
   assertErrorHighlightsCorrect,
@@ -153,8 +159,8 @@ export function assertEntityNotPresent(project: Project, entity: ProjectEntity, 
   for (const stage of $range(1, entity.lastStageWith(project.settings))) {
     expect(wp.getWorldOrPreviewEntity(entity, stage)).toBeNil()
   }
-  expect(wp.entityStorage.hasAnyOfType(entity, "errorOutline")).toBe(false)
-  expect(wp.entityStorage.hasAnyOfType(entity, "errorElsewhereIndicator")).toBe(false)
+  expect(iterateTypeIsEmpty(wp, entity, "errorOutline")).toBe(true)
+  expect(iterateTypeIsEmpty(wp, entity, "errorElsewhereIndicator")).toBe(true)
 }
 
 export function assertIsSettingsRemnant(project: Project, entity: ProjectEntity, wp: WorldPresentation): void {
@@ -165,8 +171,8 @@ export function assertIsSettingsRemnant(project: Project, entity: ProjectEntity,
     expect(isPreviewEntity(preview)).toBe(true)
     expect(wp.entityStorage.get(entity, "settingsRemnantHighlight", stage)).toBeAny()
   }
-  expect(wp.entityStorage.hasAnyOfType(entity, "errorOutline")).toBe(false)
-  expect(wp.entityStorage.hasAnyOfType(entity, "errorElsewhereIndicator")).toBe(false)
+  expect(iterateTypeIsEmpty(wp, entity, "errorOutline")).toBe(true)
+  expect(iterateTypeIsEmpty(wp, entity, "errorElsewhereIndicator")).toBe(true)
 }
 
 export interface EntityTestContext {

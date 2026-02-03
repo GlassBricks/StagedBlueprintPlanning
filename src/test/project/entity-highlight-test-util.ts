@@ -5,8 +5,13 @@
 
 import expect from "tstl-expect"
 import { ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
-import { getItemRequestSampleItemName, HighlightConstants } from "../../project/entity-highlights"
+import { HighlightTypes, getItemRequestSampleItemName, HighlightConstants } from "../../project/entity-highlights"
 import { WorldPresentation } from "../../project/WorldPresentation"
+
+function iterateTypeIsEmpty(wp: WorldPresentation, entity: ProjectEntity, type: keyof HighlightTypes): boolean {
+  for (const [,] of wp.entityStorage.iterateType(entity, type)) return false
+  return true
+}
 
 export function assertConfigChangedHighlightsCorrect(
   entity: ProjectEntity,
@@ -60,7 +65,7 @@ export function assertErrorHighlightsCorrect(
     }
   }
   if (!anyHasError) {
-    expect(wp.entityStorage.hasAnyOfType(entity, "errorElsewhereIndicator")).toBe(false)
+    expect(iterateTypeIsEmpty(wp, entity, "errorElsewhereIndicator")).toBe(true)
   } else {
     for (const stage of $range(1, maxStage)) {
       const hasError = wp.hasErrorAt(entity, stage)
@@ -83,7 +88,7 @@ export function assertLastStageHighlightCorrect(entity: ProjectEntity, wp: World
       sprite: HighlightConstants.DeletedNextStage,
     })
   } else {
-    expect(wp.entityStorage.hasAnyOfType(entity, "stageDeleteHighlight")).toBe(false)
+    expect(iterateTypeIsEmpty(wp, entity, "stageDeleteHighlight")).toBe(true)
   }
 }
 

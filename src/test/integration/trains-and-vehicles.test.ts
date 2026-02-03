@@ -6,6 +6,7 @@
 import { CarBlueprintEntity } from "factorio:runtime"
 import expect from "tstl-expect"
 import { MovableProjectEntity, ProjectEntity } from "../../entity/ProjectEntity"
+import { isPreviewEntity } from "../../entity/prototype-info"
 import { assert } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { checkForEntityUpdates } from "../../project/event-handlers"
@@ -53,6 +54,26 @@ describe("train entities", () => {
     expect(entity.firstStage).toBe(2)
     expect(entity.lastStage).toBe(2)
     assertTrainEntityCorrect(entity, 2)
+  })
+  test("resetVehicleLocation preserves preview entities at earlier stages", () => {
+    const trainLuaEntity = createRollingStock(ctx.surfaces[3 - 1])
+    const entity = ctx.project.actions.addNewEntity(trainLuaEntity, 3)!
+    assertTrainEntityCorrect(entity, false)
+
+    for (const stage of $range(1, 2)) {
+      const preview = ctx.wp.getWorldOrPreviewEntity(entity, stage)
+      assert(preview, `preview must exist at stage ${stage} before reset`)
+      assert(isPreviewEntity(preview), `entity at stage ${stage} must be preview`)
+    }
+
+    ctx.project.actions.resetVehicleLocation(entity)
+
+    for (const stage of $range(1, 2)) {
+      const preview = ctx.wp.getWorldOrPreviewEntity(entity, stage)
+      assert(preview, `preview must exist at stage ${stage} after reset`)
+      assert(isPreviewEntity(preview), `entity at stage ${stage} must be preview after reset`)
+    }
+    assertTrainEntityCorrect(entity, false)
   })
 })
 

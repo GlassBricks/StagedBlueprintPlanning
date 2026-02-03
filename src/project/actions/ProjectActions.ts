@@ -662,8 +662,7 @@ export class ProjectActions {
     const train = luaEntity.train
     if (train) {
       const projectEntities = train.carriages.map((e) => this.content.findCompatibleWithLuaEntity(e, nil, stage)!)
-      for (const entity of projectEntities) this.worldPresenter.destroyAllWorldOrPreviewEntities(entity)
-      for (const entity of projectEntities) this.worldPresenter.rebuildEntity(entity, stage)
+      this.worldPresenter.rebuildAllEntitiesTogether(projectEntities)
     } else {
       this.worldPresenter.rebuildEntity(entity, stage)
     }

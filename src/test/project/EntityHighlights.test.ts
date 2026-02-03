@@ -323,8 +323,6 @@ describe("excluded from blueprints highlights", () => {
 })
 
 test("deleteAllHighlights", () => {
-  wp().destroyWorldOrPreviewEntity(entity, 2)
-  wp().destroyWorldOrPreviewEntity(entity, 3)
   entityHighlights.updateAllHighlights(entity)
   entityHighlights.deleteAllHighlights(entity)
   for (let i = 1; i <= 5; i++) {

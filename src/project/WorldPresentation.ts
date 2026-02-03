@@ -26,7 +26,7 @@ import { LoopTask, submitTask } from "../lib/task"
 import { L_GuiTasks } from "../locale"
 import { ProjectTile } from "../tiles/ProjectTile"
 import { withTileEventsDisabled } from "../tiles/tile-events"
-import { EntityHighlights, HighlightTypes, SurfaceProvider } from "./entity-highlights"
+import { EntityHighlights, HasErrorAt, HighlightTypes, SurfaceProvider } from "./entity-highlights"
 import { EntityStorage } from "./EntityStorage"
 import { ProjectSettings } from "./ProjectSettings"
 
@@ -38,11 +38,11 @@ export interface WorldEntityLookup {
 
 export interface WorldPresenter extends WorldEntityLookup {
   replaceWorldOrPreviewEntity(entity: ProjectEntity, stage: StageNumber, luaEntity: LuaEntity | nil): void
-  destroyAllWorldOrPreviewEntities(entity: ProjectEntity): void
 
   rebuildStage(stage: StageNumber): void
   rebuildAllStages(): void
   rebuildEntity(entity: ProjectEntity, stage: StageNumber): void
+  rebuildAllEntitiesTogether(entities: ProjectEntity[]): void
   refreshEntity(entity: ProjectEntity, stage: StageNumber): void
   refreshAllEntities(entity: ProjectEntity): void
   deleteEntityAtStage(entity: ProjectEntity, stage: StageNumber): void
@@ -62,8 +62,6 @@ export interface TileCollision {
 export interface WorldEntityTypes extends HighlightTypes {
   worldOrPreviewEntity: LuaEntity
 }
-
-const raise_destroy = script.raise_script_destroy
 
 let nameToType: PrototypeInfo["nameToType"]
 OnPrototypeInfoLoaded.addListener((info) => {
@@ -108,14 +106,14 @@ const deconstructibleTiles = Object.keys(
 )
 
 @RegisterClass("WorldPresentation")
-export class WorldPresentation implements WorldEntityLookup, WorldPresenter, ContentObserver {
+export class WorldPresentation implements WorldEntityLookup, WorldPresenter, HasErrorAt, ContentObserver {
   readonly entityStorage = new EntityStorage<WorldEntityTypes>()
   private highlights: EntityHighlights
 
   constructor(
     private readonly settings: ProjectSettings,
     private readonly surfaces: SurfaceProvider,
-    readonly content: MutableProjectContent,
+    private readonly content: MutableProjectContent,
   ) {
     this.highlights = new EntityHighlights(surfaces, settings, this, this.entityStorage)
   }
@@ -175,10 +173,7 @@ export class WorldPresentation implements WorldEntityLookup, WorldPresenter, Con
   // === WorldEntityLookup ===
 
   getWorldOrPreviewEntity(entity: ProjectEntity, stage: StageNumber): LuaEntity | nil {
-    const luaEntity = this.entityStorage.get(entity, "worldOrPreviewEntity", stage)
-    if (luaEntity && luaEntity.valid) return luaEntity
-    if (luaEntity) this.entityStorage.delete(entity, "worldOrPreviewEntity", stage)
-    return nil
+    return this.entityStorage.get(entity, "worldOrPreviewEntity", stage)
   }
 
   getWorldEntity(entity: ProjectEntity, stage: StageNumber): LuaEntity | nil {
@@ -201,48 +196,18 @@ export class WorldPresentation implements WorldEntityLookup, WorldPresenter, Con
   // === WorldPresenter ===
 
   replaceWorldOrPreviewEntity(entity: ProjectEntity, stage: StageNumber, luaEntity: LuaEntity | nil): void {
-    const existing = this.entityStorage.get(entity, "worldOrPreviewEntity", stage)
-    if (existing && existing.valid && existing != luaEntity) {
-      raise_destroy({ entity: existing })
-      existing.destroy()
-    }
     this.entityStorage.set(entity, "worldOrPreviewEntity", stage, luaEntity)
     if (luaEntity && movableTypes.has(luaEntity.type)) {
       registerEntity(luaEntity, entity)
     }
   }
 
-  destroyWorldOrPreviewEntity(entity: ProjectEntity, stage: StageNumber): void {
-    const existing = this.entityStorage.get(entity, "worldOrPreviewEntity", stage)
-    if (existing && existing.valid) {
-      raise_destroy({ entity: existing })
-      existing.destroy()
-    }
+  private destroyWorldOrPreviewEntity(entity: ProjectEntity, stage: StageNumber): void {
     this.entityStorage.delete(entity, "worldOrPreviewEntity", stage)
   }
 
-  destroyAllWorldOrPreviewEntities(entity: ProjectEntity): void {
-    for (const [, luaEntity] of this.entityStorage.iterateType(entity, "worldOrPreviewEntity")) {
-      if (luaEntity.valid) {
-        raise_destroy({ entity: luaEntity })
-        luaEntity.destroy()
-      }
-    }
+  private destroyAllWorldOrPreviewEntities(entity: ProjectEntity): void {
     this.entityStorage.deleteAllOfType(entity, "worldOrPreviewEntity")
-  }
-
-  hasWorldEntityInRange(entity: ProjectEntity, start: StageNumber, end: StageNumber): boolean {
-    for (const [stage, luaEntity] of this.entityStorage.iterateType(entity, "worldOrPreviewEntity")) {
-      if (stage >= start && stage <= end) {
-        if (luaEntity.valid && !isPreviewEntity(luaEntity)) return true
-        if (!luaEntity.valid) this.entityStorage.delete(entity, "worldOrPreviewEntity", stage)
-      }
-    }
-    return false
-  }
-
-  deleteAllForEntity(entity: ProjectEntity): void {
-    this.entityStorage.deleteAllForEntity(entity)
   }
 
   onStageInserted(stageNumber: StageNumber): void {
@@ -262,7 +227,7 @@ export class WorldPresentation implements WorldEntityLookup, WorldPresenter, Con
     if (!surface) return
     for (const entity of surface.find_entities()) {
       if (isWorldEntityProjectEntity(entity)) {
-        raise_destroy({ entity })
+        script.raise_script_destroy({ entity })
         entity.destroy()
       }
     }
@@ -315,9 +280,13 @@ export class WorldPresentation implements WorldEntityLookup, WorldPresenter, Con
     this.refreshWorldEntityAtStage(entity, stage)
   }
 
+  rebuildAllEntitiesTogether(entities: ProjectEntity[]): void {
+    for (const entity of entities) this.destroyAllWorldOrPreviewEntities(entity)
+    for (const entity of entities) this.updateWorldEntities(entity, 1)
+  }
+
   refreshEntity(entity: ProjectEntity, stage: StageNumber): void {
     this.refreshWorldEntityAtStage(entity, stage)
-    this.highlights.updateAllHighlights(entity)
   }
 
   refreshAllEntities(entity: ProjectEntity): void {
