@@ -603,8 +603,6 @@ export function createPreviewEntity(
   return entity
 }
 
-// noinspection JSUnusedGlobalSymbols
-export const _mockable = true
 
 /** Currently only true if is a square assembling machine with no fluid inputs. */
 export function canBeAnyDirection(luaEntity: LuaEntity): boolean {

@@ -78,4 +78,3 @@ export function notifyIfMoveError(result: StageMoveResult, entity: ProjectEntity
   }
 }
 
-export const _mockable = true
