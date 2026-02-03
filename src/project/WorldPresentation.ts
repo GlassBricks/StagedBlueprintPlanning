@@ -167,9 +167,6 @@ export class WorldPresentation implements WorldEntityLookup, WorldPresenter, Has
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onStageMerged(_stageNumber: StageNumber): void {}
-
   // === WorldEntityLookup ===
 
   getWorldOrPreviewEntity(entity: ProjectEntity, stage: StageNumber): LuaEntity | nil {

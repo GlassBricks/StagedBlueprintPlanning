@@ -47,7 +47,6 @@ export interface ContentObserver {
     updated: ProjectEntity[],
     updatedTiles: MapPosition[],
   ): void
-  onStageMerged(stageNumber: StageNumber): void
 }
 
 export interface ProjectContent {
@@ -476,7 +475,7 @@ class ProjectContentImpl implements MutableProjectContent {
         tile.mergeStage(stageNumber)
       }
     }
-    this.observer?.onStageMerged(stageNumber)
+
   }
 
   discardStage(stageNumber: StageNumber): void {

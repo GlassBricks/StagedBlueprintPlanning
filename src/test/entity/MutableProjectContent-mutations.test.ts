@@ -15,7 +15,6 @@ function createMockObserver(): mock.MockedObject<ContentObserver> {
       onEntityRevived() {},
       onWiresChanged() {},
       onStageDiscarded() {},
-      onStageMerged() {},
     },
     true,
   )
@@ -536,15 +535,6 @@ describe("MutableProjectContent mutations", () => {
     })
   })
 
-  describe("mergeStage()", () => {
-    test("fires onStageMerged", () => {
-      const entity = makeEntity()
-      content.addEntity(entity)
-      content.mergeStage(2)
-      expect(observer.onStageMerged).toHaveBeenCalledWith(2)
-    })
-  })
-
   describe("discardStage()", () => {
     test("fires onStageDiscarded with deleted/updated/tiles", () => {
       const entity1 = makeEntity(0, 1)
@@ -569,7 +559,7 @@ describe("MutableProjectContent mutations", () => {
       content.insertStage(2)
       expect(observer.onEntityAdded).not.toHaveBeenCalled()
       expect(observer.onEntityChanged).not.toHaveBeenCalled()
-      expect(observer.onStageMerged).not.toHaveBeenCalled()
+      expect(observer.onStageDiscarded).not.toHaveBeenCalled()
     })
   })
 
