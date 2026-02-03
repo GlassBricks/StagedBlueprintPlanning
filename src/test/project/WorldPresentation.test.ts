@@ -308,6 +308,21 @@ test("rebuildEntity replaces old value", () => {
   assertEntityCorrect(2)
 })
 
+test("updateWorldEntities recreates entity when position changes", () => {
+  project.content.addEntity(entity)
+  const oldEntity = findMainEntity(1)!
+  expect(oldEntity).toBeAny()
+
+  const newPos = { x: 2.5, y: 2.5 }
+  project.content.changeEntityPosition(entity, newPos)
+
+  const newEntity = findMainEntity(1)
+  expect(newEntity).toBeAny()
+  expect(newEntity!.position.x).toBe(newPos.x)
+  expect(newEntity!.position.y).toBe(newPos.y)
+  expect(oldEntity.valid).toBe(false)
+})
+
 describe("updateWorldEntitiesOnLastStageChanged()", () => {
   test("moving up creates entities", () => {
     const mut = entity._asMut()
