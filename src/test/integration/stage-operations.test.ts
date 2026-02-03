@@ -76,8 +76,7 @@ test("can update an infinity accumulator", () => {
   expect(ctx.wp.getWorldOrPreviewEntity(entity, 2)?.name).toEqual("ee-infinity-accumulator-primary-output")
 })
 
-describe.skip("map gen settings", () => {
-  // Skip due to causing hanging process for some reason
+describe("map gen settings", () => {
   after_each(() => {
     ctx.surfaces.forEach((s) => {
       s.generate_with_lab_tiles = true
