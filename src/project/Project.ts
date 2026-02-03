@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2025 GlassBricks
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
-import { LuaSurface, nil, SurfaceIndex } from "factorio:runtime"
+import { LuaSurface, SurfaceIndex } from "factorio:runtime"
 import { BlueprintSettingsTable } from "../blueprints/blueprint-settings"
 import { MutableProjectContent, newProjectContent } from "../entity/ProjectContent"
 import { StageNumber } from "../entity/ProjectEntity"

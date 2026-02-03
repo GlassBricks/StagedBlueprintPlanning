@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { LuaEntity, LuaInventory, LuaSurface, nil, SignalID, SurfaceIndex } from "factorio:runtime"
+import { LuaEntity, LuaInventory, LuaSurface, SignalID, SurfaceIndex } from "factorio:runtime"
 import {
   BlueprintSettingsOverrideTable,
   BlueprintSettingsTable,

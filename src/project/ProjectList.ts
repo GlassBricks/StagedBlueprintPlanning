@@ -1,4 +1,3 @@
-import { nil } from "factorio:runtime"
 import { remove_from_list } from "util"
 import { globalEvent } from "../lib"
 import { ProjectId, Stage, Project } from "./Project"

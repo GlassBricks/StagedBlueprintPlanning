@@ -3,8 +3,6 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { nil } from "factorio:runtime"
-
 export type Point = [number, number]
 
 class MaxHeap {

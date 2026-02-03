@@ -1,4 +1,4 @@
-import { LocalisedString, LuaEntity, MapPosition, nil, TileWrite } from "factorio:runtime"
+import { LocalisedString, LuaEntity, MapPosition, TileWrite } from "factorio:runtime"
 import { Prototypes } from "../constants"
 import { UnstagedEntityProps } from "../entity/Entity"
 import { ContentObserver, MutableProjectContent } from "../entity/ProjectContent"

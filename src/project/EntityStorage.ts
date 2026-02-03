@@ -1,4 +1,4 @@
-import { LuaEntity, nil } from "factorio:runtime"
+import { LuaEntity } from "factorio:runtime"
 import { ProjectEntity, StageNumber } from "../entity/ProjectEntity"
 import { RegisterClass } from "../lib"
 

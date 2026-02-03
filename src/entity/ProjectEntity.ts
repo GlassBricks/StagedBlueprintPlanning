@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import { EntityType } from "factorio:prototype"
-import { LuaEntity, nil, RealOrientation } from "factorio:runtime"
+import { LuaEntity, RealOrientation } from "factorio:runtime"
 import {
   deepCompare,
   isEmpty,
@@ -110,7 +110,6 @@ export interface InternalProjectEntity<T extends Entity = Entity>
   extends ProjectEntity<T>, StagedValue<T, StageDiff<T>> {
   position: Position
   direction: defines.direction
-
 
   isSettingsRemnant: true | nil
   isNewRollingStock: true | nil

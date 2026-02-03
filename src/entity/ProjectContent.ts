@@ -475,7 +475,6 @@ class ProjectContentImpl implements MutableProjectContent {
         tile.mergeStage(stageNumber)
       }
     }
-
   }
 
   discardStage(stageNumber: StageNumber): void {

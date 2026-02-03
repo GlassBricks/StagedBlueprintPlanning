@@ -43,7 +43,7 @@ These are run as part of full rebuild.
 Since Typescript code compiles to Lua:
 
 - Use `==` instead of `===`, `!=` instead of `!==`
-- Use `nil` instead of `undefined`, avoid `null`
+- Use `nil` instead of `undefined`, avoid `null`. `nil` is a global; do not import it
 - Exported `let` variables are captured by value at require-time. For cross-module mutable state, use getter functions instead of direct exports
 
 Storage:

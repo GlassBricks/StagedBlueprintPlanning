@@ -1,4 +1,4 @@
-import { BlueprintInsertPlan, LocalisedString, LuaEntity, LuaTrain, nil, PlayerIndex } from "factorio:runtime"
+import { BlueprintInsertPlan, LocalisedString, LuaEntity, LuaTrain, PlayerIndex } from "factorio:runtime"
 import { Entity, LuaEntityInfo, TrainEntity } from "../../entity/Entity"
 import { MutableProjectContent } from "../../entity/ProjectContent"
 import {

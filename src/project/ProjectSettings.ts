@@ -1,4 +1,4 @@
-import { LocalisedString, nil } from "factorio:runtime"
+import { LocalisedString } from "factorio:runtime"
 import {
   BlueprintSettingsOverrideTable,
   BlueprintSettingsTable,

@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { nil } from "factorio:runtime"
 import { PRecord, PRRecord, RegisterClass } from "../lib"
 
 export interface LinkedMap2D<

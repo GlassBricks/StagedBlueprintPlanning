@@ -1,4 +1,4 @@
-import { nil, SurfaceIndex } from "factorio:runtime"
+import { SurfaceIndex } from "factorio:runtime"
 import { Stage } from "./Project"
 
 export { getProjectById } from "./ProjectList"

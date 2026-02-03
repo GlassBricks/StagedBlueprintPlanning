@@ -1,4 +1,4 @@
-import { LuaEntity, LuaSurface, nil } from "factorio:runtime"
+import { LuaEntity, LuaSurface } from "factorio:runtime"
 import { StageNumber } from "../entity/ProjectEntity"
 import { bind, ibind, RegisterClass, Subscription } from "../lib"
 import { BBox } from "../lib/geometry"

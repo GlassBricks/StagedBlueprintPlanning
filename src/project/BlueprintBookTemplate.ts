@@ -1,4 +1,4 @@
-import { LuaInventory, LuaItemStack, nil } from "factorio:runtime"
+import { LuaInventory, LuaItemStack } from "factorio:runtime"
 import { createStageReference, getReferencedStage } from "../blueprints/stage-reference"
 import { Prototypes } from "../constants"
 import { StageNumber } from "../entity/ProjectEntity"
