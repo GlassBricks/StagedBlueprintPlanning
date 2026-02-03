@@ -451,7 +451,11 @@ export class WorldPresentation implements WorldEntityLookup, WorldPresenter, Has
     let lastUnstagedValue: UnstagedEntityProps | nil = nil
     for (const [stage, value, diffChanged] of entity.iterateValues(startStage, endStage)) {
       const surface = this.surfaces.getSurface(stage)!
-      const existing = this.getWorldOrPreviewEntity(entity, stage)
+      let existing = this.getWorldOrPreviewEntity(entity, stage)
+      if (existing && (existing.position.x != entity.position.x || existing.position.y != entity.position.y)) {
+        this.destroyWorldOrPreviewEntity(entity, stage)
+        existing = nil
+      }
       const wasPreviewEntity = existing && isPreviewEntity(existing)
       const existingNormalEntity = !wasPreviewEntity && existing
 

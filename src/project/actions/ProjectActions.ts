@@ -678,7 +678,6 @@ export class ProjectActions {
       this.setTrainLocationHere(train, stage)
     } else {
       this.content.changeEntityPosition(entity, luaEntity.position)
-      this.worldPresenter.rebuildEntity(entity, stage)
     }
   }
 
@@ -693,7 +692,6 @@ export class ProjectActions {
           assume<ProjectEntity<TrainEntity>>(projectEntity)
           this.content.setEntityProp(projectEntity, projectEntity.firstStage, "orientation", luaEntity.orientation)
         })
-        this.worldPresenter.rebuildEntity(projectEntity, stage)
       } else {
         this.addNewEntity(luaEntity, stage)
       }
