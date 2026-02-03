@@ -328,7 +328,7 @@ export class EntityHighlights {
   }
 
   private updateExcludedFromBlueprintsHighlight(entity: ProjectEntity): void {
-    this.destroyAllExtraEntities(entity, "excludedFromBlueprintsHighlight")
+    this.entityStorage.deleteAllOfType(entity, "excludedFromBlueprintsHighlight")
     const allStages = entity.getPropertyAllStages("excludedFromBlueprints")
     if (!allStages) return
     for (const [stage] of pairs(allStages)) {
