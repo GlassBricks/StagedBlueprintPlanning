@@ -10,5 +10,10 @@ if [[ -f "$source_root/factorio-test-data-dir/config.ini" ]]; then
     echo "Copied factorio-test-data-dir/config.ini"
 fi
 
+if [[ -d "$source_root/factorio-test-data-dir/saves" ]]; then
+    ln -snf "$source_root/factorio-test-data-dir/saves" "$worktree_path/factorio-test-data-dir/saves"
+    echo "Symlinked factorio-test-data-dir/saves/"
+fi
+
 cd "$worktree_path"
 pnpm i
