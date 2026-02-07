@@ -1,138 +1,147 @@
 # Staged Blueprint Planning
 
-The ultimate mod for designing multi-stage blueprints. A.K.A. the Nefrums-approved anti-anti-Anti-tool.
+The ultimate mod for designing multi-stage blueprints.
 
 Separate your builds into stages. Edit entities in any stage, and changes will be applied to all later stages. Create a blueprint book of all stages in one click.
 
-## Getting started
+Thedoh has made a great video detailing the features of this mod: https://www.youtube.com/watch?v=e8XHsEVqtiY
+Note some of the newer features may not be present in the video.
 
-> Note that this mod is meant to be used in editor mode or a separate planning save, not with a normal game.
+## Getting Started
 
-Create a new staged build by clicking the "Staged Blueprint Projects" button in the top left.
+> Note: this mod is meant to be used in editor mode or a separate planning save, not with a normal game.
 
-Move between stages using the settings window, or the navigation shortcuts (listed below).
+Create a new project by clicking the "Staged Blueprint Projects" button in the top left.
 
-When you build or edit entities, the changes will be applied to the current and _later_ stages.
+Entities placed in a stage propagate to all later stages. Translucent previews appear in earlier stages. Entity properties can differ per-stage, editing in one stage will apply to all later stages.
+Navigate between stages with `Ctrl+Scroll Wheel`, or use the stage buttons in the project settings panel.
 
-In the settings window, you can:
+When ready, you can export individual stage blueprints, or export get a blueprint book with one blueprint per stage.
 
-- Add, rename, or delete stages
-- Create blueprints of stages (or a book for all stages)
+## Editing a Project
 
-### Controls
+### Entity Info Panel
 
-Here are some useful hotkeys. The default keybindings are listed in brackets.
+An entity info panel opens when clicking an entity. Shows first stage, stages with changes, last stage; with navigation buttons to jump between them.
 
-- `[CTRL+Mouse wheel]` to move between stages
-- `[CTRL+Middle mouse button]` to cycle between notable stages of the hovered entity (where the entity is different from the previous stage)
-- `[CTRL+SHIFT+Middle mouse button]` to teleport to the first stage of the hovered entity (or preview)
-- `[CTRL+ALT+Middle mouse button]` to move an entity to the current stage
-- [CTRL+SHIFT+Right mouse button] to _force_ delete an entity (in any stage)
+The ui also allows:
 
-## More details!
+- Move entity to the current stage
+- Per-property reset/move: revert a stage diff to the previous value, or push it down to the previous stage
+- Other buttons depending on entity type and settings
 
-Thedoh has also made a great video detailing the features of this mod in more detail. Check it out here: https://www.youtube.com/watch?v=e8XHsEVqtiY
+Tip: enabling "show additional entity info" in editor mode allows opening this panel for preview entities too.
 
-### Changing entity settings
+### Moving Entities Between Stages
 
-If you change the settings of an entity, those changes will be applied to _later_ stages.
-This mirrors how blueprints can change entity settings.
-The entity will be highlighted in blue to indicate it has been updated, and an indicator will appear at lower stages.
+There are several ways to move entities between stages:
 
-Due to technical limitations, copper/circuit wire changes between stages aren't supported; they're always present in all stages.
-To mitigate this, if you connect a new wire to an inserter or belt, in previous stages the control behavior will be set to "no control".
+- **Move to current stage** shortcut `[Ctrl+Alt+Middle Click]`, or use entity info panel button
+- **Stage Move Tool**:
+  Adjust the target with `Shift+Scroll Wheel`. There are several selections for different workflows:
+  - Select / Alt-select: send entities to target stage
+  - Reverse-select: bring entities to the current stage
+  - Alt-reverse-select: bring entities to the current stage, but only from later stages
+- **Filtered Stage Move Tool**: same as stage move tool, but with entity type filters, and only supports normal select
 
-### Upgrading entities
+All move actions support undo.
 
-Upgrades are also supported: to _upgrade_ an entity, use the _upgrade planner_. This will also highlight the entity.
+### Entity Editing
 
-### Deleting entities
-
-Deleting or rotating an entity is normally only allowed in the entity's _first stage_.
-
-To force-delete an entity, use either the "Force delete" control (see [Controls](#Controls)), or the "Force delete" selection tool (accessed via the shortcuts menu or a custom control).
-
-To delete an entity from _later_ stages, use the Staged Deconstruct Tool (accessed via the shortcuts menu or a custom control).
-Alt-selecting (select for deconstruction cancellation) in the next-to-last stage will undo the decosntruction.
-
-Trains are by default only in 1 stage (set to be deconstructed in the next stage).
-
-### Moving entities between stages
-
-You can move entities between stages using:
-
-- A "move to current stage" control; see [Controls](#Controls).
-- The "Move to current stage" button, in an entity's settings window.
-- Using the stage move tool (accessed via the shortcuts menu right of the quick-bar, or via a custom shortcut).
-    - Use `Shift + scroll wheel` (default keybinding) to change the target stage.
-    - Select entities to move entities from the current stage to the target stage.
-  - Alt-select (select for deconstruction cancellation) to move entities from _any_ stage to the target stage.
-  - Reverse-select to bring entities to the _current_ stage.
-  - Alternative-reverse-select to bring entities to the current stage only if they are from a later stage.
-
-All these actions are compatible with undo!
-
-### Entity info
-
-You can view an entity's stage information when opening its gui.
-The gui also provides a few controls for editing the entity's info; view the tooltips on the controls for more info.
-
-If in editor mode with "show entity extra info" enabled, you can also open the gui of _preview_ entities.
-
-### Upgrade on blueprint paste
-
-If enabled via a user mod setting, pasting a blueprint will upgrade entities if they overlap with a compatible entity.
-
-### Staged Copy/Paste
-
-Use either the dedicated shortcuts, or with the "Switch to staged copy tool" custom control to get a Copy/Cut tool that also copies the entity's stage information.
-This is useful for moving entities that have stage information.
-
-Note: the resulting blueprints from these tools can also be exported to strings and shared. Do with that what you will.
+- **Upgrading an entity**: to upgrade an entity, use the upgrade planner, not fast-replace.
+- **Delete/rotating an entity**: deleting and rotating is only allowed in an entity's first stage. Use force delete or staged deconstruction for other cases.
+- **Force Delete**: There is a shortcut `[Ctrl+Shift+Right Click]`, and a selection tool, to deletes entities regardless of stage. Supports undo
+- **Editing wires**: circuit and copper cable connections are tracked, but must be the same across all stages.
+- **Flipping Underground belts**: paired undergrounds rotate and upgrade together; upgrades that would break pairing are prevented. An error is shown if an underground is forced into the wrong input/output direction
 
 ### Settings remnants
 
-If an entity with stage changes is deleted, a "settings remnant" is left behind (white outline).
-If you then undo, those settings will be restored.
+If you delete an entity with special settings, this will create a "settings remnant" (white boxes). This allows restoring the data on undo.
+If you want to remove these, either force delete the entity or use the **Cleanup tool**.
 
-To remove settings remnants, use the `Staged Build Cleanup Tool` (accessed in the shortcuts menu, right of the quick-bar).
+### Item Requests
 
-Note: this may become obsolete in the near future!
+If you add bot item requests to an entity, these will be included in exported entities (unlike vanilla behavior where non-ghost requests are lost).
+Item requests only apply to the current stage, and will not be included in later stages.
 
-### Cleanup tool
+Modules remain staged normally even though they are technically item requests.
 
-Using the build cleanup tool will remove "settings remnants", and attempt to revive any errored entities.
+### Staged Deconstruction
 
-Reverse-selecting using the cleanup tool will **force delete** errored entities.
+Staged deconstruction sets an entity's last stage, causing it to disappear from that stage onward (and from corresponding blueprints).
 
-### Landfill/tiles
+- Select: set last stage to current stage
+- Reverse-select: set last stage to the _next_ stage
+- Alt-select: cancel (remove last stage)
+- A per-player setting swaps normal select and reverse-select behavior, if you prefer the reverse behavior.
 
-Landfill or other tiles can be automatically placed in blueprints. See the "Stage" tab in the settings gui for more details.
+Deconstruction can also be cancelled in the entity info panel.
 
-The "Flexible Offshore Pump Placement" _startup_ setting enables placing offshore pumps in places not usually allowed. This may be useful when designing blueprints with offshore pumps.
+### Staged Copy/Cut
 
-More complete tiles support may come in the future.
+Copy `[Ctrl+Shift+C]` or cut `[Ctrl+Shift+X]` entities with stage diffs, wires, and item requests preserved. Pasting restores all stage data.
 
-### Blueprints
+A toggle keybind switches between vanilla and staged copy/cut while holding the tool.
+The resulting blueprints can also be exported to strings and shared between saves; however, stage data will be referenced by their absolute position in project, not by name.
 
-The "Blueprints" tab provides many settings for creating blueprints.
+### Overlapping entities
 
-"Default" settings will affect blueprints for all stages.
-"Per stage" settings will override the default settings for individual stages.
+If entities overlap or can not be placed, an error highlight is shown.
+Use the **cleanup tool** on these will to attempt fixing errors, and reverse selecting with the cleanup tool will _delete_ errored entities.
 
-See the tooltips on options for more details.
+### Blueprint Exclusion Tool
 
-### Map settings; set-seed map
+This tool allows marks individual entities as excluded from blueprints, per-stage, per-entity. Alt-select removes the exclusion.
 
-You can set the map generation settings for your project, for example to design blueprints for a set-seed map.
-See the "Sync map gen settings" button in the "Other" tab of the settings window for more details.
+### Vehicles and Trains
 
-### Miscellaneous
+Trains and vehicles exist in a _single stage only_.
+Vehicles can be repositioned; use the entity info panel to reset the vehicle location, or save the current position. Connected trains are moved as a whole unit.
 
-If an entity overlaps with another in a higher stage, a red outline will appear where the entity should be, and a warning indicator will appear in all other stages. Use the `Staged Build Cleanup Tool` to attempt to revive these.
+### Tiles
 
-Rotating/upgrading an underground will affect its paired underground, in any stage.
-If there are inconsistencies in underground directions due to inconsistent pair undergrounds, these will be highlighted in red.
+Staged tiles are optionally supported, to track tile changes across stages like entities.
+
+An alternative is to use **tile filling**, which allows filling tiles with lab tiles, a selected "landfill" tile, or combinations (tile+lab, tile+water)
+See in-game tooltips for full details on each option.
+
+## Blueprints
+
+Blueprint settings and exporting is configured in the Blueprints tab of the project settings panel.
+
+### Blueprint Settings
+
+Most blueprint settings can be configured either as a **Defaults** or a **per-stage overrides**.
+
+Grid size, and grid position, is configured configured by editing a blueprint. This will be applied/synced to all stages such that the grid cursor is at the same location.
+
+See per-setting tooltips for full details.
+
+### Exporting Blueprints
+
+Blueprints can be exported as a single stage, or as a blueprint book.
+
+The blueprint book defaults to a single blueprint per stage. You can also create a **Blueprint book template** to customize layout, nesting, and add other items to the book (e.g. upgrade planners).
+
+## Importing and Exporting Projects
+
+Projects can be imported/exported as a shareable string. It is exported in the "Blueprints" tab, and imported in the main project list GUI opened by upper left button.
+
+## Map Generation Settings
+
+Custom pap generation settings (such as planet settings, or set-seed) can be specified at project creation. See the in-game UI for full details.
+
+If the space age mod is enabled, **space platforms** projects are also supported.
+
+## Troubleshooting
+
+If you run into issues or inconsistencies, try one of:
+
+- **Resync with world**: reads all entities from the world, and updates the saved state to match.
+- **Rebuild stage / rebuild all stages**: _rebuilds_ entire world state from stored project data. However, this means any buggily unsaved entities will be lost!
+- `/clean-broken-entities` command: will removes entities with missing world state. If you have many things that just can't be deleted, try using this command.
+
+If the issue is persistent, please report it on GitHub!
 
 ## Feedback
 
@@ -146,10 +155,8 @@ If you like what you see, consider supporting me on Ko-fi!
 
 ## Acknowledgements
 
-Gallery images are from AntiElitz's recent 100% blueprints.
+Gallery images are from AntiElitz's older 100% blueprints.
 
-Thanks to the [Factorio speedrunning community](https://discord.gg/AntiElitz) and [Warger](https://discord.com/invite/nfkbu6qSCj) for providing inspiration and feedback for this mod.
-
-Thanks to @thedoh for pushing me to add (some) support for other mods.
+Thanks to the [Factorio speedrunning community](https://discord.gg/AntiElitz) and [Warger](https://discord.com/invite/nfkbu6qSCj) for providing inspiration and feedback for this mod. As such, this mod is A.K.A. the Nefrums-approved anti-anti-Anti-tool.
 
 This mod was partly inspired by [Blueprint Stages](https://mods.factorio.com/mod/blueprint-stages).
