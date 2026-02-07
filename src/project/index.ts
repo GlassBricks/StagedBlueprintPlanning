@@ -58,7 +58,7 @@ interface OldProject {
   stageDeleted?: SimpleEvent<unknown>
 }
 
-Migrations.early($CURRENT_VERSION, () => {
+Migrations.early("2.14.0", () => {
   for (const project of getAllProjects()) {
     const old = project as unknown as OldProject
     if (old.settings) continue
@@ -262,7 +262,7 @@ Migrations.to("2.12.0", () => {
   }
 })
 
-Migrations.to($CURRENT_VERSION, () => {
+Migrations.to("2.14.0", () => {
   for (const project of getAllProjects()) {
     interface OldUserProject {
       worldUpdates?: unknown
