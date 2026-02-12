@@ -58,6 +58,22 @@ interface OldProject {
   stageDeleted?: SimpleEvent<unknown>
 }
 
+Migrations.early("2.4.0", () => {
+  interface Pre24Stage {
+    stageBlueprintSettings?: BlueprintSettingsOverrideTable
+    blueprintOverrideSettings?: BlueprintSettingsOverrideTable
+  }
+  for (const project of getAllProjects()) {
+    for (const stage of project.getAllStages()) {
+      const pre = stage as unknown as Pre24Stage
+      if (pre.blueprintOverrideSettings != nil || pre.stageBlueprintSettings == nil) continue
+      const post = stage as unknown as OldStage
+      post.blueprintOverrideSettings = pre.stageBlueprintSettings
+      post.stageBlueprintSettings = createStageBlueprintSettingsTable()
+    }
+  }
+})
+
 Migrations.early("2.14.0", () => {
   for (const project of getAllProjects()) {
     const old = project as unknown as OldProject
@@ -123,29 +139,13 @@ Migrations.to("2.2.0", () => {
         const oldLastStage = entity.lastStage
         if (oldLastStage != entity.firstStage) {
           entity._asMut().setLastStage(entity.firstStage)
-          project.worldPresentation.updateWorldEntitiesOnLastStageChanged(entity, oldLastStage)
-          project.actions.resetVehicleLocation(entity)
+          project.worldPresentation?.updateWorldEntitiesOnLastStageChanged(entity, oldLastStage)
+          project.actions?.resetVehicleLocation(entity)
         }
       }
     }
     for (const stage of project.getAllStages()) {
       stage.getSurface().ignore_surface_conditions = true
-    }
-  }
-})
-
-Migrations.to("2.4.0", () => {
-  interface OldStage {
-    stageBlueprintSettings?: BlueprintSettingsOverrideTable
-  }
-  for (const project of getAllProjects()) {
-    for (const stage of project.getAllStages()) {
-      const oldStage = stage as unknown as OldStage
-      const stageSettings = stage.getSettings()
-      assume<Mutable<typeof stageSettings>>(stageSettings)
-      stageSettings.blueprintOverrideSettings = oldStage.stageBlueprintSettings!
-      delete oldStage.stageBlueprintSettings
-      stageSettings.stageBlueprintSettings = createStageBlueprintSettingsTable()
     }
   }
 })
