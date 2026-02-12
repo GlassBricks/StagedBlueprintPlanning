@@ -94,7 +94,7 @@ declare const storage: {
   blueprintPasteState: BlueprintPasteState
 }
 
-Migrations.since($CURRENT_VERSION, () => {
+Migrations.since("2.14.0", () => {
   pasteState = storage.blueprintPasteState ??= {}
 })
 Events.on_load(() => {
