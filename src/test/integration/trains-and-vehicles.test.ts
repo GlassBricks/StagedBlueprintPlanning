@@ -117,6 +117,42 @@ describe("vehicles", () => {
   })
 })
 
+describe("movable entities are not teleported on update", () => {
+  test("vehicle keeps moved position after refresh", () => {
+    const carEntity = ctx.buildEntity(1, { name: "car", orientation: 0.25 })
+    const worldEntity = ctx.wp.getWorldEntity(carEntity, 1)!
+    expect(worldEntity).toBeAny()
+
+    const originalPos = worldEntity.position
+    worldEntity.teleport([originalPos.x + 5, originalPos.y + 5])
+    const movedPos = worldEntity.position
+
+    ctx.wp.refreshAllEntities(carEntity)
+
+    const afterRefresh = ctx.wp.getWorldEntity(carEntity, 1)!
+    expect(afterRefresh).toBeAny()
+    expect(afterRefresh.position.x).toBe(movedPos.x)
+    expect(afterRefresh.position.y).toBe(movedPos.y)
+  })
+
+  test("train keeps moved position after refresh", () => {
+    const trainLuaEntity = createRollingStock(ctx.surfaces[3 - 1])
+    const entity = ctx.project.actions.addNewEntity(trainLuaEntity, 3)!
+    expect(entity).toBeAny()
+
+    const worldEntity = ctx.wp.getWorldEntity(entity, 3)!
+    expect(worldEntity).toBeAny()
+    const originalPos = worldEntity.position
+
+    ctx.wp.refreshAllEntities(entity)
+
+    const afterRefresh = ctx.wp.getWorldEntity(entity, 3)!
+    expect(afterRefresh).toBeAny()
+    expect(afterRefresh.position.x).toBe(originalPos.x)
+    expect(afterRefresh.position.y).toBe(originalPos.y)
+  })
+})
+
 test("deleting train by removing rail under it", () => {
   const trainEntity = createRollingStock(ctx.surfaces[0], nil, true)
   let train: ProjectEntity | nil

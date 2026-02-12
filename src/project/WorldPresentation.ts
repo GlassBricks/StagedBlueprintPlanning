@@ -453,8 +453,10 @@ export class WorldPresentation implements WorldEntityLookup, WorldPresenter, Has
       const surface = this.surfaces.getSurface(stage)!
       let existing = this.getWorldOrPreviewEntity(entity, stage)
       if (existing && (existing.position.x != entity.position.x || existing.position.y != entity.position.y)) {
-        this.destroyWorldOrPreviewEntity(entity, stage)
-        existing = nil
+        if (!movableTypes.has(existing.type)) {
+          this.destroyWorldOrPreviewEntity(entity, stage)
+          existing = nil
+        }
       }
       const wasPreviewEntity = existing && isPreviewEntity(existing)
       const existingNormalEntity = !wasPreviewEntity && existing
