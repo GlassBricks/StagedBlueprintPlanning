@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.14.1
-Date: ????
+Date: 2026-02-12
   Bugfixes:
     - Fixed that movable entities (trains, cars) would be teleported to their position whenever updated.
     - Fixed that the entity info GUI would persist after clicking "Reset vehicle location" on a train.
