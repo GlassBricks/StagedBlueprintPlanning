@@ -201,6 +201,7 @@ class EntityProjectInfo extends Component<EntityStageInfoProps> {
   }
   private resetVehicleLocation() {
     this.actions.resetVehicleLocation(this.entity)
+    this.rerender(false)
   }
   private setVehicleLocationHere() {
     this.actions.setVehicleLocationHere(this.entity)
