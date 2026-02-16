@@ -22,6 +22,7 @@ function selectionToolToShortcut(
   icon: string,
   associatedControl: string | nil,
   style: ShortcutPrototype["style"],
+  icon_size: number = 32,
 ): ShortcutPrototype {
   return {
     type: "shortcut",
@@ -30,7 +31,7 @@ function selectionToolToShortcut(
     action: "spawn-item",
     item_to_spawn: prototype.name,
     icon,
-    icon_size: 32,
+    icon_size,
     small_icon: icon,
     small_icon_size: 32,
     style,
@@ -98,7 +99,13 @@ const cleanupTool: SelectionToolPrototype = {
 
 data.extend([
   cleanupTool,
-  selectionToolToShortcut(cleanupTool, "__bp100__/graphics/icons/cleanup-white.png", Prototypes.CleanupTool, "blue"),
+  selectionToolToShortcut(
+    cleanupTool,
+    "__bp100__/graphics/icons/cleanup-white.png",
+    Prototypes.CleanupTool,
+    "blue",
+    64,
+  ),
   selectionToolToInput(cleanupTool),
 ])
 
