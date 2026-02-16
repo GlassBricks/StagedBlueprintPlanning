@@ -66,7 +66,8 @@ export default tseslint.config(
       "@typescript-eslint/restrict-plus-operands": "off",
       "@typescript-eslint/no-unsafe-enum-comparison": "off",
       "@typescript-eslint/only-throw-error": "off",
-      "no-unused-vars": "off", // bug somewhere
+      "@typescript-eslint/no-unused-vars": ["error", { args: "all", argsIgnorePattern: "^_" }],
+      "no-unused-vars": "off",
       "no-redeclare": "off",
 
       "@typescript-eslint/no-inferrable-types": [
