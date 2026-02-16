@@ -273,13 +273,13 @@ describe.each([false, true])("blueprinting (using bplib %s)", (useBplib) => {
     "boiler",
     "underground-belt",
   ])("can paste %s", (entityName) => {
-    test.each<[defines.direction, defines.direction, defines.build_mode, string]>([
-      [defines.direction.north, defines.direction.north, defines.build_mode.forced, "not rotated"],
-      [defines.direction.east, defines.direction.north, defines.build_mode.forced, "entity rotated"],
-      [defines.direction.north, defines.direction.east, defines.build_mode.forced, "pasted rotated"],
-      [defines.direction.east, defines.direction.east, defines.build_mode.forced, "entity and paste rotated"],
-      [defines.direction.east, defines.direction.east, defines.build_mode.superforced, "superforced mode"],
-    ])("%s", (entityDirection, pasteDirection, buildMode) => {
+    test.each<[string, defines.direction, defines.direction, defines.build_mode]>([
+      ["not rotated", defines.direction.north, defines.direction.north, defines.build_mode.forced],
+      ["entity rotated", defines.direction.east, defines.direction.north, defines.build_mode.forced],
+      ["pasted rotated", defines.direction.north, defines.direction.east, defines.build_mode.forced],
+      ["entity and paste rotated", defines.direction.east, defines.direction.east, defines.build_mode.forced],
+      ["superforced mode", defines.direction.east, defines.direction.east, defines.build_mode.superforced],
+    ])("%s", (_, entityDirection, pasteDirection, buildMode) => {
       const bboxSize = BBox.size(prototypes.entity[entityName].collision_box)
       const pos = Pos(bboxSize.x % 2 == 0 ? 0 : 0.5, bboxSize.y % 2 == 0 ? 0 : 0.5)
       const entity: BlueprintEntity = {
