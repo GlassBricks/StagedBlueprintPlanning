@@ -4,20 +4,33 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import { BlueprintWire, MapPosition } from "factorio:runtime"
-import { Entity, UnstagedEntityProps } from "../entity/Entity"
+import { Entity } from "../entity/Entity"
 import { MutableProjectContent } from "../entity/ProjectContent"
-import { newProjectEntity, ProjectEntity, StageDiffs, StageNumber } from "../entity/ProjectEntity"
+import {
+  newProjectEntity,
+  ProjectEntity,
+  StagePropertiesData,
+  StageDiffs,
+  StageNumber,
+  StageProperties,
+} from "../entity/ProjectEntity"
 import { getDirectionalInfo } from "../entity/wire-connection"
 import { deepCopy, Events, Mutable, PRRecord } from "../lib"
 import { getNilPlaceholder, NilPlaceholder } from "../utils/diff-value"
 import { EntitiesExport } from "./project"
+
+export type StagePropertiesExport = {
+  [P in keyof StageProperties]?: PRRecord<StageNumber | `${number}`, StageProperties[P]>
+}
 
 export interface StageInfoExport<E extends Entity = Entity> {
   firstStage: StageNumber
   lastStage: StageNumber | nil
   firstValue?: E
   stageDiffs?: StageDiffsExport<E>
-  unstagedValue?: UnstagedValueExport
+  stageProperties?: StagePropertiesExport
+  /** @deprecated Legacy field, use stageProperties instead */
+  unstagedValue?: PRRecord<StageNumber | `${number}`, unknown>
 }
 
 export interface EntityExport extends StageInfoExport {
@@ -42,8 +55,6 @@ export type StageDiffExport<E extends Entity = Entity> = {
 }
 // type might be a string of a number instead, in case of "sparse" array
 export type StageDiffsExport<E extends Entity = Entity> = PRRecord<StageNumber | `${number}`, StageDiffExport<E>>
-
-export type UnstagedValueExport = PRRecord<StageNumber | `${number}`, UnstagedEntityProps>
 
 let nilPlaceholder: NilPlaceholder | nil
 Events.onInitOrLoad(() => {
@@ -76,10 +87,38 @@ export function fromExportStageDiffs(diffs: StageDiffsExport): StageDiffs {
   return ret
 }
 
-// Does NOT handle wires, as those are inter-entity
-export function exportEntity(entity: ProjectEntity, entityNumber: number = 0): EntityExport {
+export function serializeStageProperties(entity: ProjectEntity): StagePropertiesExport | nil {
+  let result: Mutable<StagePropertiesExport> | nil
+  for (const key of keys<StageProperties>()) {
+    const allStages = entity.getPropertyAllStages(key)
+    if (allStages) {
+      result ??= {}
+      result[key] = deepCopy(allStages) as any
+    }
+  }
+  return result
+}
+
+export function parseStagePropertiesExport(props: StagePropertiesExport): StagePropertiesData {
+  const result: Mutable<StagePropertiesData> = {}
+  for (const key of keys<StageProperties>()) {
+    const stages = props[key]
+    if (!stages) continue
+    const converted: any = {}
+    for (const [stage, value] of pairs(stages)) {
+      const stageNumber = tonumber(stage)
+      if (stageNumber != nil) {
+        converted[stageNumber] = value
+      }
+    }
+    result[key] = converted
+  }
+  return result
+}
+
+export function serializeEntity(entity: ProjectEntity, entityNumber: number = 0): EntityExport {
   const stageDiffs = entity.stageDiffs && toExportStageDiffs(entity.stageDiffs)
-  const unstagedValue = exportUnstagedValues(entity)
+  const stageProperties = serializeStageProperties(entity)
   return {
     entityNumber,
     position: entity.position,
@@ -88,26 +127,31 @@ export function exportEntity(entity: ProjectEntity, entityNumber: number = 0): E
     lastStage: entity.lastStage,
     firstValue: entity.firstValue,
     stageDiffs,
-    unstagedValue,
+    stageProperties,
   }
 }
 
-// Does NOT handle wires, as those are inter-entity
-export function importEntity(info: EntityExport): ProjectEntity {
+export function deserializeEntity(info: EntityExport): ProjectEntity {
   const stageDiffs = info.stageDiffs && fromExportStageDiffs(info.stageDiffs)
 
   const entity = newProjectEntity(info.firstValue, info.position, info.direction ?? 0, info.firstStage)
   entity.setLastStage(info.lastStage)
   entity.setStageDiffsDirectly(stageDiffs)
 
-  if (info.unstagedValue) {
-    importUnstagedValues(entity, info.unstagedValue)
+  const stageProperties = info.stageProperties ?? legacyToStageProperties(info)
+  if (stageProperties) {
+    entity.setStagePropertiesDirectly(parseStagePropertiesExport(stageProperties))
   }
 
   return entity
 }
 
-export function exportAllEntities(entities: ReadonlyLuaSet<ProjectEntity>): EntityExport[] {
+function legacyToStageProperties(info: StageInfoExport): StagePropertiesExport | nil {
+  if (!info.unstagedValue) return nil
+  return { unstagedValue: info.unstagedValue as StagePropertiesExport["unstagedValue"] }
+}
+
+export function serializeAllEntities(entities: ReadonlyLuaSet<ProjectEntity>): EntityExport[] {
   const entityMap = new LuaMap<ProjectEntity, number>()
   const result: EntityExport[] = []
 
@@ -116,7 +160,7 @@ export function exportAllEntities(entities: ReadonlyLuaSet<ProjectEntity>): Enti
   let thisEntityNumber = 0
   for (const entity of entitysArr) {
     thisEntityNumber++
-    const newLocal = exportEntity(entity, thisEntityNumber)
+    const newLocal = serializeEntity(entity, thisEntityNumber)
     result.push(newLocal)
     entityMap.set(entity, thisEntityNumber)
   }
@@ -141,24 +185,10 @@ export function exportAllEntities(entities: ReadonlyLuaSet<ProjectEntity>): Enti
   return result
 }
 
-export function exportUnstagedValues(entity: ProjectEntity): UnstagedValueExport | nil {
-  const value = entity.getPropertyAllStages("unstagedValue")
-  return value && deepCopy(value)
-}
-
-export function importUnstagedValues(entity: ProjectEntity, unstagedValues: UnstagedValueExport): void {
-  for (const [stage, unstagedValue] of pairs(unstagedValues)) {
-    const stageNumber = tonumber(stage)
-    if (stageNumber != nil) {
-      entity._asMut().setUnstagedValue(stageNumber, unstagedValue)
-    }
-  }
-}
-
-export function importAllEntities(content: MutableProjectContent, entities: EntitiesExport): void {
+export function deserializeAllEntities(content: MutableProjectContent, entities: EntitiesExport): void {
   const entityNumberToResult = new LuaMap<number, ProjectEntity>()
   for (const entity of entities) {
-    const newEntity = importEntity(entity)
+    const newEntity = deserializeEntity(entity)
     entityNumberToResult.set(entity.entityNumber, newEntity)
     content.addEntity(newEntity)
   }

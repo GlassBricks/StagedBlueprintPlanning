@@ -16,6 +16,7 @@ import {
   InserterProjectEntity,
   NameAndQuality,
   ProjectEntity,
+  StagePropertiesData,
   StageDiffs,
   StageNumber,
   UndergroundBeltProjectEntity,
@@ -132,6 +133,8 @@ export interface MutableProjectContent extends ProjectContent {
   clearEntityUnstagedValues(entity: ProjectEntity): void
 
   setEntityExcludedFromBlueprints(entity: ProjectEntity, stage: StageNumber, excluded: boolean): boolean
+
+  replaceEntityStageProperties(entity: ProjectEntity, props: StagePropertiesData | nil): void
 
   makeEntitySettingsRemnant(entity: ProjectEntity): void
   reviveEntity(entity: ProjectEntity, stage: StageNumber): void
@@ -605,6 +608,11 @@ class ProjectContentImpl implements MutableProjectContent {
     const changed = entity._asMut().setExcludedFromBlueprints(stage, excluded)
     if (changed) this.notifyEntityChanged(entity, stage)
     return changed
+  }
+
+  replaceEntityStageProperties(entity: ProjectEntity, props: StagePropertiesData | nil): void {
+    entity._asMut().setStagePropertiesDirectly(props)
+    this.notifyEntityChanged(entity, entity.firstStage)
   }
 
   makeEntitySettingsRemnant(entity: ProjectEntity): void {

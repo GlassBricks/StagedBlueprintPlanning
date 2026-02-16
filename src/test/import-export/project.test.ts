@@ -101,8 +101,10 @@ test("exports project correctly", () => {
         firstStage: 2,
         lastStage: nil,
         wires: [[1, fromId, 2, toId]],
-        unstagedValue: {
-          2: { items: [simpleInsertPlan(defines.inventory.chest, "iron-ore", 0, 10)] },
+        stageProperties: {
+          unstagedValue: {
+            2: { items: [simpleInsertPlan(defines.inventory.chest, "iron-ore", 0, 10)] },
+          },
         },
       },
       {
@@ -114,8 +116,10 @@ test("exports project correctly", () => {
         firstStage: 1,
         lastStage: nil,
         wires: [[2, toId, 1, fromId]],
-        unstagedValue: {
-          1: { items: [simpleInsertPlan(defines.inventory.chest, "copper-plate", 1, 25)] },
+        stageProperties: {
+          unstagedValue: {
+            1: { items: [simpleInsertPlan(defines.inventory.chest, "copper-plate", 1, 25)] },
+          },
         },
       },
     ],

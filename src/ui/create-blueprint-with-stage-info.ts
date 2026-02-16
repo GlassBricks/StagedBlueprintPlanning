@@ -5,7 +5,7 @@
 
 import { BlueprintEntity, BoundingBox, LuaInventory, LuaItemStack, LuaPlayer } from "factorio:runtime"
 import { Entity } from "../entity/Entity"
-import { exportUnstagedValues, StageInfoExport, toExportStageDiffs } from "../import-export/entity"
+import { serializeStageProperties, StageInfoExport, toExportStageDiffs } from "../import-export/entity"
 import { isEmpty, Mutable } from "../lib"
 import { Stage } from "../project/Project"
 
@@ -52,7 +52,7 @@ export function createBlueprintWithStageInfo(player: LuaPlayer, stage: Stage, ar
       info.firstValue = projectEntity.firstValue
       info.stageDiffs = toExportStageDiffs(diffs)
     }
-    info.unstagedValue = exportUnstagedValues(projectEntity)
+    info.stageProperties = serializeStageProperties(projectEntity)
     blueprintEntities[number - 1].tags = { bp100: info } satisfies BpStagedInfoTags
   }
 

@@ -8,7 +8,7 @@ import { Stage, StageSettings, Project } from "../project/Project"
 import { type SurfaceSettings } from "../project/surfaces"
 import { createProject } from "../project/Project"
 import { getCurrentValues, getCurrentValuesOf, OverrideTable, setCurrentValuesOf } from "../utils/properties-obj"
-import { EntityExport, exportAllEntities, importAllEntities } from "./entity"
+import { EntityExport, serializeAllEntities, deserializeAllEntities } from "./entity"
 
 export interface ProjectExport {
   name?: string
@@ -33,7 +33,7 @@ export function exportProject(project: Project): ProjectExport {
     defaultBlueprintSettings: getCurrentValues(project.settings.defaultBlueprintSettings),
     surfaceSettings: project.settings.surfaceSettings,
     stages: project.getAllStages().map(exportStage),
-    entities: exportAllEntities(project.content.allEntities()),
+    entities: serializeAllEntities(project.content.allEntities()),
     landfillTile: project.settings.landfillTile.get(),
     stagedTilesEnabled: project.settings.stagedTilesEnabled.get(),
   }
@@ -59,7 +59,7 @@ export function importProjectDataOnly(data: ProjectExport): Project {
   const numStages = stages?.length ?? 3
 
   const content = newProjectContent()
-  importAllEntities(content, assert(data.entities))
+  deserializeAllEntities(content, assert(data.entities))
 
   const result = createProject(data.name ?? "", numStages, data?.surfaceSettings, content)
 

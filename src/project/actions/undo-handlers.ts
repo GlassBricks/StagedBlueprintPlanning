@@ -23,7 +23,7 @@ export declare const enum StageMoveResult {
 import { MutableProjectContent } from "../../entity/ProjectContent"
 import { ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { getDirectionalInfo, ProjectWireConnection } from "../../entity/wire-connection"
-import { EntityExport, exportEntity, importEntity } from "../../import-export/entity"
+import { EntityExport, serializeEntity, deserializeEntity } from "../../import-export/entity"
 import { ProjectId } from "../Project"
 import { getProjectById } from "../ProjectList"
 import { ProjectActions } from "./ProjectActions"
@@ -96,7 +96,7 @@ interface DeleteEntityTagData {
 function undoDeleteEntity(_player: LuaPlayer, data: DeleteEntityTagData): DeleteEntityTagData | nil {
   const actions = getActionsForUndo(data.projectId)
   if (!actions) return nil
-  const entity = importEntity(data.entityExport)
+  const entity = deserializeEntity(data.entityExport)
   actions.content.addEntity(entity)
   restoreWireConnections(actions.content, entity, data.wires)
   return data
@@ -113,7 +113,7 @@ function redoDeleteEntity(_player: LuaPlayer, data: DeleteEntityTagData): Delete
   )
   if (!entity) return nil
   const wires = exportWireConnections(entity)
-  const entityExport = exportEntity(entity)
+  const entityExport = serializeEntity(entity)
   actions.forceDeleteEntity(entity)
   return { entityExport, wires, projectId: data.projectId }
 }
@@ -122,7 +122,7 @@ export const tagUndoDeleteEntity = UndoHandler<DeleteEntityTagData>("delete enti
 
 export function createDeleteEntityUndoData(entity: ProjectEntity, projectId: ProjectId): DeleteEntityTagData {
   return {
-    entityExport: exportEntity(entity),
+    entityExport: serializeEntity(entity),
     wires: exportWireConnections(entity),
     projectId,
   }

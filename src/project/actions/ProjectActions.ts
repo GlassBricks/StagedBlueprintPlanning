@@ -18,7 +18,12 @@ import { allowOverlapDifferentDirection, areUpgradeableTypes } from "../../entit
 import { canBeAnyDirection, saveEntity } from "../../entity/save-load"
 import { findUndergroundPair } from "../../entity/underground-belt"
 import { saveWireConnections } from "../../entity/wires"
-import { fromExportStageDiffs, StageInfoExport } from "../../import-export/entity"
+import {
+  fromExportStageDiffs,
+  parseStagePropertiesExport,
+  StageInfoExport,
+  StagePropertiesExport,
+} from "../../import-export/entity"
 import { assertNever, deepCompare, RegisterClass } from "../../lib"
 import { Pos, Position } from "../../lib/geometry"
 import { LoopTask, submitTask } from "../../lib/task"
@@ -601,7 +606,7 @@ export class ProjectActions {
 
       const stageDiffs = info.stageDiffs ? fromExportStageDiffs(info.stageDiffs) : nil
       this.content.setEntityValue(entity, firstValue, stageDiffs)
-      this.replaceUnstagedValueViaContent(entity, info)
+      this.replaceStagePropertiesViaContent(entity, info)
 
       if (entity.isUndergroundBelt()) {
         UgActions.handleUndergroundBeltValueSet(this, entity, oldStageDiffs, stageDiffs)
@@ -610,16 +615,9 @@ export class ProjectActions {
     return moveResult
   }
 
-  private replaceUnstagedValueViaContent(entity: ProjectEntity<Entity>, info: StageInfoExport<Entity>): void {
-    const unstagedValues = info.unstagedValue
-    if (unstagedValues != nil) {
-      this.content.clearEntityUnstagedValues(entity)
-      for (const [stage, value] of pairs(unstagedValues)) {
-        const stageNumber = tonumber(stage)
-        if (stageNumber == nil) continue
-        this.content.setEntityUnstagedValue(entity, stageNumber, value)
-      }
-    }
+  private replaceStagePropertiesViaContent(entity: ProjectEntity<Entity>, info: StageInfoExport<Entity>): void {
+    const props = info.stageProperties ?? legacyToStageProperties(info)
+    this.content.replaceEntityStageProperties(entity, props ? parseStagePropertiesExport(props) : nil)
   }
 
   // === Props ===
@@ -1021,18 +1019,16 @@ function createProjectEntityFromStagedInfo(
   if (diffs) {
     projectEntity.setStageDiffsDirectly(fromExportStageDiffs(diffs))
   }
-  replaceUnstagedValueDirect(projectEntity, stageInfo)
+  replaceStagePropertiesDirect(projectEntity, stageInfo)
   return projectEntity
 }
 
-function replaceUnstagedValueDirect(entity: InternalProjectEntity, info: StageInfoExport<Entity>): void {
-  const unstagedValues = info.unstagedValue
-  if (unstagedValues != nil) {
-    entity.clearPropertyInAllStages("unstagedValue")
-    for (const [stage, value] of pairs(unstagedValues)) {
-      const stageNumber = tonumber(stage)
-      if (stageNumber == nil) continue
-      entity.setUnstagedValue(stageNumber, value)
-    }
-  }
+function replaceStagePropertiesDirect(entity: InternalProjectEntity, info: StageInfoExport<Entity>): void {
+  const props = info.stageProperties ?? legacyToStageProperties(info)
+  entity.setStagePropertiesDirectly(props ? parseStagePropertiesExport(props) : nil)
+}
+
+function legacyToStageProperties(info: StageInfoExport): StagePropertiesExport | nil {
+  if (!info.unstagedValue) return nil
+  return { unstagedValue: info.unstagedValue as StagePropertiesExport["unstagedValue"] }
 }
