@@ -42,12 +42,18 @@ interface UndoGroupAction {
 }
 
 function createAnchorUndoEntry(player: LuaPlayer, surface: LuaSurface): void {
-  const ghost = surface.create_entity({
-    name: "entity-ghost",
-    inner_name: Prototypes.UndoReference,
+  const entity = surface.create_entity({
+    name: Prototypes.UndoReference,
     position: [0, 1],
+    player,
+    undo_index: 0,
   })
-  if (!ghost || !player.mine_entity(ghost, true)) {
+  if (
+    !entity?.destroy({
+      player,
+      undo_index: 1,
+    })
+  ) {
     error("Failed to create undo anchor")
   }
 }

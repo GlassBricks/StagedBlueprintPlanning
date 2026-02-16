@@ -22,6 +22,7 @@ function createHiddenEntity(name: string): (SimpleEntityWithOwnerPrototype | Ite
       hidden: true,
       flags: ["player-creation", "placeable-off-grid"],
       collision_mask: { layers: {} },
+      minable: { mining_time: 0 },
     } satisfies SimpleEntityWithOwnerPrototype,
     {
       type: "item",
