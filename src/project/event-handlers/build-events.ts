@@ -8,7 +8,7 @@ import { ProtectedEvents } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { getStageAtSurface } from "../project-refs"
 import { Stage } from "../Project"
-import { onUndoReferenceBuilt, pushUndo } from "../actions/undo"
+import { pushUndo } from "../actions/undo"
 import {
   clearCurrentBlueprintPaste,
   clearToBeFastReplaced,
@@ -152,9 +152,7 @@ Events.on_built_entity((e) => {
   if (!entity.valid) return
 
   const innerName = getInnerName(entity)
-  if (innerName == Prototypes.UndoReference) {
-    return onUndoReferenceBuilt(e.player_index, entity)
-  }
+  if (innerName == Prototypes.UndoReference) return
 
   if (isInBlueprintPaste()) {
     if (innerName == Prototypes.EntityMarker) onEntityMarkerBuilt(e, entity)

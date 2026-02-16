@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { AnyBasic, LuaEntity, LuaPlayer, LuaSurface, PlayerIndex, UndoRedoAction } from "factorio:runtime"
+import { AnyBasic, LuaPlayer, LuaSurface, PlayerIndex, UndoRedoAction } from "factorio:runtime"
 import { Prototypes } from "../../constants"
 import { ProtectedEvents } from "../../lib"
 
@@ -96,9 +96,31 @@ function packTag(actions: UndoAction[]): AnyBasic {
   return tag as unknown as AnyBasic
 }
 
+function cleanupOldStyleUndoReferences(actions: UndoRedoAction[]): void {
+  for (const action of actions) {
+    if (action.type != "removed-entity") continue
+    if (action.target.name != Prototypes.UndoReference) continue
+    if (action.tags?.[TAG_NAME]) continue
+    if (action.surface_index == nil) continue
+    const surface = game.get_surface(action.surface_index)
+    if (!surface) continue
+    const pos = action.target.position
+    const ghost = surface.find_entity("entity-ghost", pos)
+    if (ghost && ghost.ghost_name == Prototypes.UndoReference) {
+      ghost.destroy()
+      continue
+    }
+    const real = surface.find_entity(Prototypes.UndoReference, pos)
+    if (real) {
+      real.destroy()
+    }
+  }
+}
+
 ProtectedEvents.on_undo_applied((e) => {
   const player = game.get_player(e.player_index)!
   const stack = player.undo_redo_stack
+  cleanupOldStyleUndoReferences(e.actions)
   for (const i of $range(1, e.actions.length)) {
     const undoActions = extractActions(e.actions[i - 1])
     if (!undoActions) continue
@@ -121,12 +143,6 @@ ProtectedEvents.on_redo_applied((e) => {
     }
   }
 })
-
-// Backward compat: when Factorio undoes/redoes an anchor entity (or old-style undo reference),
-// it rebuilds the ghost. Destroy it silently.
-export function onUndoReferenceBuilt(this: void, _playerIndex: PlayerIndex, entity: LuaEntity): void {
-  entity.destroy()
-}
 
 // === Test simulation helpers ===
 

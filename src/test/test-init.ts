@@ -7,10 +7,9 @@ import * as mod_gui from "mod-gui"
 import { Settings } from "../constants"
 import { Events } from "../lib"
 import { debugPrint, getLastDebugPrintCall } from "../lib/test/misc"
-import { Project } from "../project/Project"
-import { deleteAllFreeSurfaces } from "../project/surfaces"
 import { pushUndo, UndoHandler } from "../project/actions"
-import { createProject } from "../project/Project"
+import { createProject, Project } from "../project/Project"
+import { deleteAllFreeSurfaces } from "../project/surfaces"
 import { getProjectEntityOfEntity } from "../ui/entity-util"
 import { teleportToProject } from "../ui/player-current-stage"
 
@@ -125,6 +124,8 @@ if ("factorio-test" in script.active_mods) {
 
         player.cursor_stack?.clear()
         player.get_main_inventory()?.clear()
+        player.teleport([0, 0], game.surfaces[1])
+        teleportToProject(player, project)
       }
     },
     log_passed_tests: false,
