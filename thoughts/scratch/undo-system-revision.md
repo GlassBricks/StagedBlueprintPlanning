@@ -69,71 +69,91 @@ Instead of creating fake ghost entities and maintaining a separate undo data arr
 
 Tags support `AnyBasic` (`string | boolean | number | table`) with arbitrary nesting depth and no documented size limit. The existing `EntityExport` format already produces data compatible with this (positions, names, stage diffs converted to plain tables). This means all undo data can live in the tags themselves -- no separate per-player storage array, no synchronization between mod state and Factorio's stack.
 
-### Mechanism
+### Event Ordering Constraint
 
-1. **When the mod performs an undoable action** that involves a world entity operation (e.g., `create_entity`, `destroy`), pass `player` and `undo_index` parameters to register it on Factorio's undo stack, then tag the resulting action with the full serialized undo payload.
+Factorio fires entity lifecycle events (`on_built_entity`, `script_raised_destroy`, etc.) **before** `on_undo_applied`/`on_redo_applied`. The mod's normal event handlers process these events immediately, updating project state and world presentation. By the time `on_undo_applied` fires, the normal handlers have already run.
 
-2. **When there's no associated world entity operation** (e.g., a pure project-data change like last stage change), create a minimal "anchor" entity operation -- destroy and immediately recreate a small hidden entity, or pass `player`/`undo_index` to one of the WorldPresentation create/destroy calls that the mod already performs as a side effect. Tag this anchor.
+This means the mod cannot simply tag its real entity operations and handle everything in `on_undo_applied` -- the normal handlers would process undo-triggered events as regular player actions, corrupting project state. Two strategies are needed depending on who initiated the action.
 
-3. **On `on_undo_applied`**: Scan the `actions` array for any with mod tags. The tags contain the complete undo payload (handler name + serialized data). Execute the reversal directly from tag data. Tag the corresponding redo entry with the forward action.
+### Two Strategies
 
-4. **On `on_redo_applied`**: Same pattern -- scan for mod tags, execute redo logic from tag data.
+#### Strategy 1: Anchor Entities (Mod-Initiated Actions)
+
+For actions triggered by mod tools (force delete, send/bring to stage, last stage change, etc.), do NOT register real entity operations on Factorio's undo stack. Instead, create a disposable hidden anchor entity with `player`/`undo_index` and tag it with the undo payload.
+
+During undo, Factorio only recreates/destroys the anchor -- not the real entities. Normal event handlers ignore anchors by entity name. `on_undo_applied` reads tags and handles all project state changes + world presentation refresh.
+
+The mod already fully reconstructs world entities via `WorldPresentation.updateWorldEntitiesInRange()` after any project state change, so not getting "free" world entity reversal from Factorio's undo is not a cost.
+
+#### Strategy 2: Tagging Natural Actions (User-Initiated Events)
+
+For direct player interactions (mining, rotating, pasting settings, wiring), the player's action creates a natural Factorio undo entry. The mod tags that entry with additional data during its event handler.
+
+On undo, two things happen in order:
+
+1. Normal event handlers fire first, partially processing the reversal (e.g., creating a bare entity for an undone mine)
+2. `on_undo_applied` fires -- the undo handler fixes up project state using tag data (e.g., enriching the bare entity with stage diffs and wires)
+
+For many action types (`copy-entity-settings`, `wire-added`, `wire-removed`, `rotated-entity`), the corresponding entity event does NOT fire during undo -- only `on_undo_applied` fires. For these, there is no interference and the undo handler has exclusive control.
 
 ### Detailed Design
 
 #### Tagging Protocol
 
-Use the existing mod ID `bp100` as namespace:
+Use a single tag key `bp100:undo` containing both handler name and data:
 
 ```typescript
-stack.set_undo_tag(1, actionIndex, "bp100:data", serializedData)
+stack.set_undo_tag(1, actionIndex, "bp100:undo", {
+  handler: "firstStageChange",
+  data: { oldStage: 3, newStage: 5 },
+})
 ```
 
-The `data` field contains a fully self-contained, serializable payload -- no references to runtime objects. Example payloads:
+The tag value is fully self-contained and serializable -- no references to runtime objects. Example payloads:
 
-- **Stage move**: `{ handler: "firstStageChange", oldStage: 3, newStage: 5 }` - position, name, etc. can be found from action.
-- **Delete entity**: Full `EntityExport` (position, firstValue, stageDiffs, wires as entity-number references, unstaged values)
-- **Last stage change**: `{ handler: "lastStageChange", oldLastStage: 7 }`
+- **Stage move**: `{ handler: "firstStageChange", data: { oldStage: 3, newStage: 5 } }` - position, name, etc. can be found from the action itself.
+- **Delete entity**: `{ handler: "deleteEntity", data: <EntityExport> }` - full entity data including stageDiffs, wires, unstaged values.
+- **Last stage change**: `{ handler: "lastStageChange", data: { oldLastStage: 7 } }`
 
-#### Making World Operations Undoable
+#### Anchor Entities for Mod-Initiated Actions
 
-Currently all `destroy()` and `create_entity()` calls omit `player`/`undo_index`. To register on the native undo stack, pass these parameters:
+The existing `bp100_undo-reference` prototype (`simple-entity-with-owner`, no collision, hidden, empty sprite) already serves as an anchor entity. Reuse this prototype: create it with `{ player, undo_index: 0 }`, immediately destroy it with `{ player, undo_index: 1 }` (grouping both into one undo item), then tag the resulting action. Normal event handlers already filter this entity by name (routed to `onUndoReferenceBuilt` in `build-events.ts:155`).
 
-```typescript
-// Current: entity.destroy()
-// New: entity.destroy({ player: playerIndex, undo_index: 0 })
+| Mod Action                                              | Anchor Strategy                                   |
+| ------------------------------------------------------- | ------------------------------------------------- |
+| Force delete entity                                     | Anchor + tag with full `EntityExport`             |
+| Send/bring to stage (per entity)                        | Anchor + tag with entity position, old/new stage  |
+| Last stage change                                       | Anchor + tag with entity position, old last stage |
+| Custom inputs (move to stage, force delete)             | Anchor + tag                                      |
+| Selection tools (stage delete, exclude from blueprints) | Anchor + tag                                      |
 
-// Current: surface.create_entity({ name, position, ... })
-// New: surface.create_entity({ name, position, ..., player: playerIndex, undo_index: 0 })
-```
+#### Tagging User-Initiated Events
 
-`undo_index: 0` creates a new undo item; `undo_index: 1` appends to the most recent item.
+For direct player interactions, tag the natural Factorio undo action created by the player's operation. The undo handler fixes up project state after normal handlers have run.
 
-Passing `player` is required -- without it, destroy/create operations don't appear on the undo stack at all.
-
-#### Anchor Operations per Action Type
-
-| Mod Action                           | World Operation                                           | Anchor Strategy                                                                       |
-| ------------------------------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Force delete entity                  | `destroy()` in `forceDeleteEntity`                        | Pass `{ player, undo_index: 0 }` to the destroy call, tag the `removed-entity` action |
-| Manual stage move (preview replaced) | Player-created entity (`on_built_entity`)                 | Tag the `built-entity` action in the existing undo item                               |
-| Send/bring to stage (per entity)     | WorldPresentation creates/destroys entities across stages | Pass `player`/`undo_index` to one of the WorldPresentation operations, tag it         |
-| Last stage change                    | WorldPresentation may destroy or create entities          | Pass `player`/`undo_index` to that destroy, or use anchor if no entity ops occur      |
-
-For actions with no natural world entity operation:
-
-- **Preferred: Piggyback on WorldPresentation operations.** Stage moves trigger `updateWorldEntitiesInRange()` which creates/destroys real entities. Pass `player`/`undo_index` to one of these calls.
-- **Fallback: Disposable anchor entity.** Create a tiny hidden entity with `{ player, undo_index: 0 }`, immediately destroy it, tag the resulting action.
+| User Event                      | Undo Action Type              | Handler Conflict? | Undo Strategy                                                                                                                                                                                                                                  |
+| ------------------------------- | ----------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Build new entity                | `built-entity`                | No                | Self-correcting: undo fires `script_raised_destroy` → `onEntityDeleted` correctly deletes. No tags needed                                                                                                                                      |
+| Mine entity at non-first stage  | `removed-entity`              | No                | Self-correcting: entity stays in project, world entity rebuilt. Undo recreates world entity → `onEntityOverbuilt` → `refreshEntity`                                                                                                            |
+| Mine entity at first stage      | `removed-entity`              | Yes               | Tag with `EntityExport`. On undo, `on_built_entity` → normal handler creates bare entity → undo handler enriches with stage diffs, wires, last stage. On redo, `script_raised_destroy` → normal delete handler suffices                        |
+| Build over preview (stage move) | `built-entity`                | Yes               | Tag with entity data + old stage. On undo, `script_raised_destroy` → normal handler deletes entity → undo handler re-imports with old firstStage. On redo, `on_built_entity` → `onEntityOverbuilt` → `onPreviewReplaced` re-applies stage move |
+| Paste settings                  | `copy-entity-settings`        | No                | `on_entity_settings_pasted` does NOT fire during undo. Undo handler re-reads entity value from world (Factorio already reverted it), or restores from tag data                                                                                 |
+| Rotate entity                   | `rotated-entity`              | No                | Whether `on_player_rotated_entity` fires during undo is uncertain, but irrelevant -- rotation handler is idempotent (re-reads direction from world). Undo handler can also re-read from world. No conflict either way                          |
+| Flip entity                     | `rotated-entity`?             | No                | Same approach as rotation                                                                                                                                                                                                                      |
+| Wire connect/disconnect         | `wire-added` / `wire-removed` | No                | Wire detection uses custom inputs, not Factorio events -- no handler fires during undo. Undo handler re-reads wire connections from world                                                                                                      |
+| Mark for upgrade                | `upgraded-entity`             | Partial           | Mod immediately applies upgrade and cancels marker. Factorio's undo only reverses the marker, not the mod's entity change. Tag with pre-upgrade name/quality; undo handler reverts upgrade in project state + rebuilds world entity            |
+| Simple tile build/mine          | `built-tile` / `removed-tile` | No                | Self-correcting: build handler adds tile, mine handler removes. Symmetric                                                                                                                                                                      |
+| Blueprint paste                 | Multiple `built-entity`       | Yes               | Complex -- see Blueprint Paste Interaction section                                                                                                                                                                                             |
+| GUI settings edit               | None                          | N/A               | No Factorio undo entry created. Needs anchor                                                                                                                                                                                                   |
+| Fast transfer                   | None                          | N/A               | No documented undo action type. Needs anchor if inventory matters to project state                                                                                                                                                             |
 
 #### Per-Entity Undo for Multi-Entity Selection Tools
 
-Send/bring to stage currently groups all entities into one `registerGroupUndoAction`. With the native tag system, this can be achieved by creating one tag per entity, grouped in a single undo item.
+Send/bring to stage currently groups all entities into one `registerGroupUndoAction`. With the native tag system, this can be achieved by creating one anchor per entity, grouped in a single undo item.
 
-Use `undo_index: 0` for the first entity's world operation, then `undo_index: 1` for subsequent entities. Each entity's world operation gets its own tag with that entity's undo data. On undo, iterate through all actions in the item and reverse each tagged one.
+Use `undo_index: 0` for the first entity's anchor, then `undo_index: 1` for subsequent entities. Each anchor gets its own tag with that entity's undo data. On undo, iterate through all actions in the item and reverse each tagged one.
 
 This approach preserves the current behavior (one undo = one selection) while being simpler than the current `_undoGroup` mechanism. Each entity's tag is self-contained, so partial failures are handled naturally.
-
-Since each entity in send/bring operations is already processed independently (`event-handlers.ts:1081-1084` loops through `e.entities` individually), and each entity's world updates are independent (no shared state during `setEntityFirstStage` → `notifyEntityChanged` → `updateWorldEntitiesInRange`), per-entity tags are a natural fit.
 
 #### Serialized Entity Data in Tags (Replacing Object References)
 
@@ -167,21 +187,18 @@ Wire connections require entity-number references to other entities. For single-
 ```typescript
 Events.on_undo_applied((e) => {
   for (const action of e.actions) {
-    const handler = action.tags?.["bp100:handler"] as string | nil
-    if (!handler) continue
-    const data = action.tags?.["bp100:data"]
-    executeUndoHandler(e.player_index, handler, data)
+    const tag = action.tags?.["bp100:undo"] as { handler: string; data: unknown } | nil
+    if (!tag) continue
+    executeUndoHandler(e.player_index, tag.handler, tag.data)
   }
 })
 ```
 
-The undo handler:
+The undo handler behavior depends on the strategy:
 
-1. Deserializes the tag data
-2. Performs the project-level reversal (re-add entity, move stage back, etc.)
-3. Refreshes world presentation to match new project state
+**Anchor-based actions** (mod-initiated): Normal handlers ignored the anchor entity, so the undo handler has full responsibility. It deserializes tag data, performs the project-level reversal, and refreshes world presentation.
 
-**Important subtlety**: Factorio's undo will have already reversed the world entity operation. The mod's handler must account for this -- it shouldn't re-create an entity Factorio already re-created. It should only update project state and refresh world presentation.
+**Tagged natural actions** (user-initiated): Normal handlers already partially processed the undo (e.g., created a bare entity or deleted one). The undo handler fixes up the result -- enriching a bare entity with stage diffs/wires, or re-importing a deleted entity with its full data. For action types where no entity event fires during undo (`copy-entity-settings`, `wire-*`, `rotated-entity`), the undo handler can re-read state directly from the world entity (Factorio has already reverted it).
 
 #### Redo Support
 
@@ -190,8 +207,7 @@ When handling `on_undo_applied`, tag the corresponding redo entry with the forwa
 ```typescript
 // After executing undo, tag the redo entry
 const redoStack = player.undo_redo_stack
-redoStack.set_redo_tag(1, actionIndex, "bp100:handler", redoHandlerName)
-redoStack.set_redo_tag(1, actionIndex, "bp100:data", redoData)
+redoStack.set_redo_tag(1, actionIndex, "bp100:undo", { handler: redoHandlerName, data: redoData })
 ```
 
 When `on_redo_applied` fires, read those tags and re-apply. This gives full undo/redo for free.
@@ -215,21 +231,47 @@ With undo data stored as serialized `EntityExport` in tags, full entity state re
 - **Current flow**: Delete entity with stage diffs → create settings remnant → user builds over it to restore
 - **New flow**: Delete entity → entity fully deleted, full `EntityExport` stored in undo tag → Ctrl+Z fires `on_undo_applied` → mod deserializes export, calls `importEntity()` + `content.addEntity()`
 
-### Expanding Undo Coverage
+### Expanded Undo Coverage
 
-- **Entity settings changes** (copy-paste, GUI edits): Store old values in tag. `copy-entity-settings` action type provides a natural anchor.
-- **Wire connection changes**: `wire-added`/`wire-removed` action types are direct anchors.
-- **Blueprint paste operations**: Tag individual `built-entity` actions within the paste's undo item (per-action tags supported).
-- **Stage diff changes**: Piggyback on the entity refresh operation.
-- **Tile operations**: `built-tile`/`removed-tile` actions provide anchors.
+The two-strategy approach covers all project-modifying events:
+
+**Self-correcting** (no tags needed): New entity build, mine at non-first stage, simple tile build/mine. Normal handlers handle both forward and reverse directions correctly.
+
+**Tag natural action**: Mine at first stage, build over preview, paste settings, rotation, flip, wire changes, upgrade. Tag the Factorio undo entry with mod data; undo handler fixes up or re-reads from world.
+
+**Anchor required**: Force delete, send/bring to stage, last stage change, GUI settings edits, selection tool operations. No natural Factorio undo entry, or mod action is decoupled from the player's world interaction.
+
+**Blueprint paste**: Combination -- tag individual `built-entity` actions within the paste's undo item, and use anchors for any mod-initiated side effects during paste processing.
 
 ### Migration Path
 
-1. Implement tag-based undo alongside the existing ghost system
-2. For new actions, use the tag-based approach exclusively
-3. Migrate existing undo handlers one at a time, verifying each
-4. Remove the ghost entity system, `UndoReference` prototype, `DelayedEvent` usage, and circular buffer storage
-5. Remove settings remnants (cleanup across 13 files)
+**Reusable from existing system:**
+- `bp100_undo-reference` prototype -- reuse as anchor entity (already hidden, no collision, filtered by name in event handlers)
+- Handler registry pattern (`UndoHandler` factory with named handlers) -- adapt to tag-based dispatch. Handler names become tag `handler` values
+- `onUndoReferenceBuilt` detection in `build-events.ts:155` -- update to ignore anchor undo/redo events (Factorio handleexperimentss these natively now)
+
+**Existing undo handlers to migrate:**
+
+| Handler | Current Data | New Approach |
+| --- | --- | --- |
+| `"delete entity"` | `{ actions, entity }` (live ProjectEntity reference) | Anchor + `EntityExport` in tag. Calls `importEntity` + `content.addEntity` on undo |
+| `"stage move"` | `{ actions, entity, oldStage }` (live reference) | Tag natural `built-entity` action with old stage + entity data |
+| `"send to stage"` | `{ actions, entity, oldStage }` (live reference) | Anchor + serialized position/name/oldStage |
+| `"bring to stage"` | `{ actions, entity, oldStage }` (live reference) | Anchor + serialized position/name/oldStage |
+| `"last stage change"` | `{ actions, entity, oldLastStage }` (live reference) | Anchor + serialized position/name/oldLastStage |
+| `"_undoGroup"` | `UndoAction[]` | Replaced by `undo_index: 1` grouping -- multiple anchors in one undo item |
+
+**Migration steps:**
+
+Phase 1: Replace existing undo system with tag-based system + redo support
+1. Add `on_undo_applied`/`on_redo_applied` handlers with tag-based dispatch
+2. Implement anchor entity registration (create+destroy `bp100_undo-reference` with `player`/`undo_index`, tag with `bp100:undo`)
+3. Migrate existing handlers one at a time: replace live `ProjectEntity` references with serialized data, switch from ghost-mine registration to anchor+tag registration. For each handler, also implement the corresponding redo handler
+4. Remove ghost-mine mechanism: circular buffer (`undoEntries`, `nextUndoEntryIndex`), `DelayedEvent` usage, `mine_entity` calls, `_undoGroup`
+
+Phase 2: Remove settings remnants (cleanup across 13 files)
+
+Phase 3: Expand undo coverage to user-initiated events (settings paste, rotation, wires, upgrade, mine at first stage, build over preview)
 
 ## Open Questions
 
