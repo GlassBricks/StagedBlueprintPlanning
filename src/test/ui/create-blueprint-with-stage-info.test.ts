@@ -93,9 +93,11 @@ test("create blueprint of entity with stage diff and unstaged value", () => {
         recipe: { __nil: true },
       },
     },
-    unstagedValue: {
-      "2": {
-        _forTest: "foo",
+    stageProperties: {
+      unstagedValue: {
+        "2": {
+          _forTest: "foo",
+        },
       },
     },
   } satisfies StageInfoExport<AssemblingMachineEntity>)

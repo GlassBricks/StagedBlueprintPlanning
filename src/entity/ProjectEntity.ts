@@ -126,6 +126,7 @@ export interface InternalProjectEntity<T extends Entity = Entity>
   setStageDiffsDirectly(stageDiffs: PRRecord<StageNumber, StageDiff<T>> | nil): void
   setFirstStage(stage: StageNumber): void
   setLastStage(stage: StageNumber | nil): void
+  setStagePropertiesDirectly(props: StagePropertiesData | nil): void
   clearPropertyInAllStages<T extends keyof StageProperties>(key: T): void
 
   setUnstagedValue(stage: StageNumber, value: UnstagedEntityProps | nil): boolean
@@ -150,6 +151,10 @@ export type StageDiffsInternal<E extends Entity = Entity> = PRRecord<StageNumber
 export interface StageProperties {
   unstagedValue?: UnstagedEntityProps
   excludedFromBlueprints?: true
+}
+
+export type StagePropertiesData = {
+  [P in keyof StageProperties]?: PRecord<StageNumber, StageProperties[P]>
 }
 
 export type UndergroundBeltProjectEntity = ProjectEntity<UndergroundBeltEntity>
@@ -586,6 +591,10 @@ class ProjectEntityImpl<T extends Entity = Entity>
     const stageProperties = this.stageProperties
     if (!stageProperties) return
     delete stageProperties[key]
+  }
+
+  setStagePropertiesDirectly(props: StagePropertiesData | nil): void {
+    this.stageProperties = props
   }
 
   override insertStage(stageNumber: StageNumber): void {
