@@ -10,6 +10,10 @@ import { fStubClass } from "../../f-mock"
 import { moduleMock } from "../../module-mock"
 import { Pos } from "../../../lib/geometry"
 
+interface TestTagData {
+  value: string
+}
+
 export interface EventHandlerTestContext {
   getProject(): Project & { actions: mock.MockedObject<ProjectActions> }
   getSurface(): LuaSurface
@@ -17,7 +21,7 @@ export interface EventHandlerTestContext {
   getExpectedNumCalls(): number
   setExpectedNumCalls(n: number): void
   getUndoFn(): ReturnType<typeof mock.fnNoSelf>
-  TestUndo: ReturnType<typeof UndoHandler<string>>
+  TestUndo: ReturnType<typeof UndoHandler<TestTagData>>
   CreateBpWithStageInfo: ReturnType<typeof moduleMock<typeof _createBpWithStageInfo>>
 }
 
@@ -87,7 +91,17 @@ export function setupEventHandlerTests(): EventHandlerTestContext {
     undoFn = mock.fnNoSelf()
   })
 
-  const TestUndo = UndoHandler(`event listener test undo ${setupId}`, (_, data: string) => undoFn(data))
+  const TestUndo = UndoHandler<TestTagData>(
+    `event listener test undo ${setupId}`,
+    (_, data) => {
+      undoFn(data.value)
+      return data
+    },
+    (_, data) => {
+      undoFn(data.value)
+      return data
+    },
+  )
 
   return {
     getProject: () => project,

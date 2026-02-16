@@ -45,10 +45,6 @@ export const enum Prototypes {
   BANANA = "bp100_banana",
 }
 
-export const enum Constants {
-  MAX_UNDO_ENTRIES = 100,
-}
-
 export const enum Styles {
   FakeListBox = "bp100_fake-list-box",
   FakeListBoxItem = "bp100_fake-list-box-item",

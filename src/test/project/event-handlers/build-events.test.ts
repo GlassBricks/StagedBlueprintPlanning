@@ -15,8 +15,8 @@ describe("add", () => {
     const surface = ctx.getSurface()
     ctx
       .getProject()
-      .actions.onEntityCreated.invokes(
-        (_a, _b, byPlayer) => byPlayer && ctx.TestUndo.createAction(byPlayer, "overbuild preview"),
+      .actions.onEntityCreated.invokes((_a, _b, byPlayer) =>
+        byPlayer != nil ? ctx.TestUndo.createAction({ value: "overbuild preview" }) : nil,
       )
     player.cursor_stack!.set_stack("iron-chest")
     player.build_from_cursor({ position: pos })
@@ -31,10 +31,8 @@ describe("add", () => {
     expect(entity).toBeAny()
     expect(ctx.getProject().actions.onEntityCreated).toHaveBeenCalledWith(entity, 1, 1)
 
-    after_ticks(1, () => {
-      _simulateUndo(player)
-      expect(ctx.getUndoFn()).toHaveBeenCalledWith("overbuild preview")
-    })
+    _simulateUndo(player)
+    expect(ctx.getUndoFn()).toHaveBeenCalledWith("overbuild preview")
   })
 })
 

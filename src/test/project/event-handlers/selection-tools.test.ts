@@ -52,9 +52,7 @@ describe("Cleanup tool", () => {
       position: pos,
       force: "player",
     })!
-    ctx
-      .getProject()
-      .actions.onEntityForceDeleteUsed.invokes(() => ctx.TestUndo.createAction(player.index, "force delete"))
+    ctx.getProject().actions.onEntityForceDeleteUsed.invokes(() => ctx.TestUndo.createAction({ value: "force delete" }))
     Events.raiseFakeEventNamed("on_player_reverse_selected_area", {
       player_index: player.index,
       item: Prototypes.CleanupTool,
@@ -74,9 +72,7 @@ describe("move to this stage", () => {
   before_each(() => {
     ctx
       .getProject()
-      .actions.onMoveEntityToStageCustomInput.invokes(() =>
-        ctx.TestUndo.createAction(ctx.getPlayer().index, "move to this stage"),
-      )
+      .actions.onMoveEntityToStageCustomInput.invokes(() => ctx.TestUndo.createAction({ value: "move to this stage" }))
   })
   function testOnEntity(entity: LuaEntity | nil): void {
     const player = ctx.getPlayer()
@@ -123,9 +119,7 @@ test("force delete custom input", () => {
     player_index: player.index,
     cursor_position: player.position,
   })
-  ctx
-    .getProject()
-    .actions.onEntityForceDeleteUsed.invokes(() => ctx.TestUndo.createAction(player.index, "force delete"))
+  ctx.getProject().actions.onEntityForceDeleteUsed.invokes(() => ctx.TestUndo.createAction({ value: "force delete" }))
   expect(ctx.getProject().actions.onEntityForceDeleteUsed).toHaveBeenCalledWith(entity!, 1, 1)
 
   _simulateUndo(player)
@@ -137,17 +131,13 @@ describe("stage move tool", () => {
     let i = 1
     ctx
       .getProject()
-      .actions.onSendToStageUsed.invokes(() => ctx.TestUndo.createAction(ctx.getPlayer().index, "send to stage " + i++))
+      .actions.onSendToStageUsed.invokes(() => ctx.TestUndo.createAction({ value: "send to stage " + i++ }))
     ctx
       .getProject()
-      .actions.onBringToStageUsed.invokes(() =>
-        ctx.TestUndo.createAction(ctx.getPlayer().index, "bring to stage " + i++),
-      )
+      .actions.onBringToStageUsed.invokes(() => ctx.TestUndo.createAction({ value: "bring to stage " + i++ }))
     ctx
       .getProject()
-      .actions.onBringDownToStageUsed.invokes(() =>
-        ctx.TestUndo.createAction(ctx.getPlayer().index, "bring down to stage " + i++),
-      )
+      .actions.onBringDownToStageUsed.invokes(() => ctx.TestUndo.createAction({ value: "bring down to stage " + i++ }))
   })
   let entity: LuaEntity
   let entity2: LuaEntity
@@ -344,9 +334,7 @@ describe("staged copy, delete, cut", () => {
       item: Prototypes.ForceDeleteTool,
       player_index: player.index,
     })
-    ctx
-      .getProject()
-      .actions.onEntityForceDeleteUsed.invokes(() => ctx.TestUndo.createAction(player.index, "force delete"))
+    ctx.getProject().actions.onEntityForceDeleteUsed.invokes(() => ctx.TestUndo.createAction({ value: "force delete" }))
     expect(ctx.getProject().actions.onEntityForceDeleteUsed).toHaveBeenCalledWith(entity, 1, 1)
 
     _simulateUndo(player)
@@ -371,9 +359,7 @@ describe("staged copy, delete, cut", () => {
       BBox.around(pos, 10),
     )
 
-    ctx
-      .getProject()
-      .actions.onEntityForceDeleteUsed.invokes(() => ctx.TestUndo.createAction(player.index, "force delete"))
+    ctx.getProject().actions.onEntityForceDeleteUsed.invokes(() => ctx.TestUndo.createAction({ value: "force delete" }))
     expect(ctx.getProject().actions.onEntityForceDeleteUsed).toHaveBeenCalledWith(entity, 1, 1)
 
     expect(player.is_cursor_blueprint()).toBe(true)
@@ -441,14 +427,10 @@ describe("stage delete tool", () => {
     expect(entity2).toBeAny()
 
     let i = 1
+    ctx.getProject().actions.onStageDeleteUsed.invokes(() => ctx.TestUndo.createAction({ value: "delete " + i++ }))
     ctx
       .getProject()
-      .actions.onStageDeleteUsed.invokes(() => ctx.TestUndo.createAction(ctx.getPlayer().index, "delete " + i++))
-    ctx
-      .getProject()
-      .actions.onStageDeleteCancelUsed.invokes(() =>
-        ctx.TestUndo.createAction(ctx.getPlayer().index, "delete cancel " + i++),
-      )
+      .actions.onStageDeleteCancelUsed.invokes(() => ctx.TestUndo.createAction({ value: "delete cancel " + i++ }))
   })
   test("delete", () => {
     const player = ctx.getPlayer()

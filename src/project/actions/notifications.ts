@@ -9,7 +9,7 @@ import { ProjectEntity } from "../../entity/ProjectEntity"
 import { assertNever } from "../../lib"
 import { Position } from "../../lib/geometry"
 import { L_Interaction } from "../../locale"
-import { EntityUpdateResult, StageMoveResult } from "./undo-records"
+import { EntityUpdateResult, StageMoveResult } from "./undo-handlers"
 
 export function createNotification(
   entity: ProjectEntity,

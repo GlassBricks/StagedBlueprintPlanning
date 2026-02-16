@@ -9,7 +9,7 @@ import { Events } from "../lib"
 import { debugPrint, getLastDebugPrintCall } from "../lib/test/misc"
 import { Project } from "../project/Project"
 import { deleteAllFreeSurfaces } from "../project/surfaces"
-import { UndoHandler } from "../project/actions"
+import { pushUndo, UndoHandler } from "../project/actions"
 import { createProject } from "../project/Project"
 import { getProjectEntityOfEntity } from "../ui/entity-util"
 import { teleportToProject } from "../ui/player-current-stage"
@@ -136,7 +136,6 @@ if ("factorio-test" in script.active_mods) {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function setupManualTests(_project: Project) {
   // const player = game.players[1]
   // function createEntityWithChanges() {
@@ -159,14 +158,22 @@ function setupManualTests(_project: Project) {
   // createEntityWithChanges()
 }
 
-const TestUndo = UndoHandler<string>("in-world-test", (player, data) => {
-  player.print(`Test undo: ${data}`)
-})
+const TestUndo = UndoHandler<string>(
+  "in-world-test",
+  (player, data) => {
+    player.print(`Test undo: ${data}`)
+    return data
+  },
+  (player, data) => {
+    player.print(`Test redo: ${data}`)
+    return data
+  },
+)
 
 commands.add_command("test-undo", "", (e) => {
   const player = game.player!
   const param = e.parameter ?? "no param"
-  TestUndo.register(player, param)
+  pushUndo(player, player.surface, TestUndo.createAction(param))
   player.print(`Setup undo with: ${param}`)
 })
 

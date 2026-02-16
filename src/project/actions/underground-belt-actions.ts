@@ -10,7 +10,7 @@ import {
 } from "../../entity/ProjectEntity"
 import { forceFlipUnderground } from "../../entity/save-load"
 import { findUndergroundPair, undergroundCanReach } from "../../entity/underground-belt"
-import { EntityUpdateResult } from "./undo-records"
+import { EntityUpdateResult } from "./undo-handlers"
 import { WorldPresenter } from "../WorldPresentation"
 
 interface UndergroundBeltContext {

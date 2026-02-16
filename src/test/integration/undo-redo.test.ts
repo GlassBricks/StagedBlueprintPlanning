@@ -1,13 +1,9 @@
-// SPDX-FileCopyrightText: 2026 GlassBricks
-//
-// SPDX-License-Identifier: LGPL-3.0-or-later
-
 import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { Events } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { getProjectPlayerData } from "../../project/player-project-data"
-import { _simulateUndo } from "../../project/actions"
+import { _simulateRedo, _simulateUndo } from "../../project/actions"
 import { applyDiffViaWorld, setupEntityIntegrationTest } from "./integration-test-util"
 
 const pos = Pos(10.5, 10.5)
@@ -37,6 +33,48 @@ describe("undo-redo", () => {
       _simulateUndo(ctx.player)
       ctx.assertEntityCorrect(entity, false)
     })
+
+    test("redo re-deletes entity after undo", () => {
+      const entity = ctx.buildEntity(3)
+
+      Events.raiseFakeEventNamed("on_player_selected_area", {
+        player_index: ctx.player.index,
+        item: Prototypes.ForceDeleteTool,
+        entities: [ctx.wp.getWorldEntity(entity, 3)!],
+        tiles: [],
+        surface: ctx.surfaces[2],
+        area: { left_top: pos, right_bottom: pos },
+      })
+      ctx.assertEntityNotPresent(entity)
+
+      _simulateUndo(ctx.player)
+      ctx.assertEntityCorrect(entity, false)
+
+      _simulateRedo(ctx.player)
+      ctx.assertEntityNotPresent(entity)
+    })
+
+    test("round-trip: delete -> undo -> redo -> undo", () => {
+      const entity = ctx.buildEntity(3)
+
+      Events.raiseFakeEventNamed("on_player_selected_area", {
+        player_index: ctx.player.index,
+        item: Prototypes.ForceDeleteTool,
+        entities: [ctx.wp.getWorldEntity(entity, 3)!],
+        tiles: [],
+        surface: ctx.surfaces[2],
+        area: { left_top: pos, right_bottom: pos },
+      })
+
+      _simulateUndo(ctx.player)
+      ctx.assertEntityCorrect(entity, false)
+
+      _simulateRedo(ctx.player)
+      ctx.assertEntityNotPresent(entity)
+
+      _simulateUndo(ctx.player)
+      ctx.assertEntityCorrect(entity, false)
+    })
   })
 
   describe("move entity to stage undo", () => {
@@ -55,6 +93,27 @@ describe("undo-redo", () => {
 
       _simulateUndo(ctx.player)
       expect(entity.firstStage).toBe(3)
+      ctx.assertEntityCorrect(entity, false)
+    })
+
+    test("redo restores moved stage", () => {
+      const entity = ctx.buildEntity(3)
+
+      Events.raiseFakeEventNamed("on_player_reverse_selected_area", {
+        player_index: ctx.player.index,
+        item: Prototypes.StageMoveTool,
+        entities: [ctx.wp.getWorldOrPreviewEntity(entity, 2)!],
+        tiles: [],
+        surface: ctx.surfaces[1],
+        area: { left_top: pos, right_bottom: pos },
+      })
+      expect(entity.firstStage).toBe(2)
+
+      _simulateUndo(ctx.player)
+      expect(entity.firstStage).toBe(3)
+
+      _simulateRedo(ctx.player)
+      expect(entity.firstStage).toBe(2)
       ctx.assertEntityCorrect(entity, false)
     })
   })
@@ -78,6 +137,27 @@ describe("undo-redo", () => {
       expect(entity.firstStage).toBe(2)
       ctx.assertEntityCorrect(entity, false)
     })
+
+    test("redo re-sends entity to target stage", () => {
+      const entity = ctx.buildEntity(2)
+      getProjectPlayerData(ctx.player.index, ctx.project)!.moveTargetStage = 4
+
+      Events.raiseFakeEventNamed("on_player_selected_area", {
+        player_index: ctx.player.index,
+        item: Prototypes.StageMoveTool,
+        entities: [ctx.wp.getWorldEntity(entity, 2)!],
+        tiles: [],
+        surface: ctx.surfaces[1],
+        area: { left_top: pos, right_bottom: pos },
+      })
+
+      _simulateUndo(ctx.player)
+      expect(entity.firstStage).toBe(2)
+
+      _simulateRedo(ctx.player)
+      expect(entity.firstStage).toBe(4)
+      ctx.assertEntityCorrect(entity, false)
+    })
   })
 
   describe("bring to stage undo", () => {
@@ -96,6 +176,26 @@ describe("undo-redo", () => {
 
       _simulateUndo(ctx.player)
       expect(entity.firstStage).toBe(4)
+      ctx.assertEntityCorrect(entity, false)
+    })
+
+    test("redo re-brings entity to stage", () => {
+      const entity = ctx.buildEntity(4)
+
+      Events.raiseFakeEventNamed("on_player_reverse_selected_area", {
+        player_index: ctx.player.index,
+        item: Prototypes.StageMoveTool,
+        entities: [ctx.wp.getWorldOrPreviewEntity(entity, 2)!],
+        tiles: [],
+        surface: ctx.surfaces[1],
+        area: { left_top: pos, right_bottom: pos },
+      })
+
+      _simulateUndo(ctx.player)
+      expect(entity.firstStage).toBe(4)
+
+      _simulateRedo(ctx.player)
+      expect(entity.firstStage).toBe(2)
       ctx.assertEntityCorrect(entity, false)
     })
   })
@@ -136,6 +236,27 @@ describe("undo-redo", () => {
 
       _simulateUndo(ctx.player)
       expect(entity.lastStage).toBe(nil)
+      ctx.assertEntityCorrect(entity, false)
+    })
+
+    test("redo restores last stage", () => {
+      const entity = ctx.buildEntity(1)
+
+      Events.raiseFakeEventNamed("on_player_selected_area", {
+        player_index: ctx.player.index,
+        item: Prototypes.StageDeconstructTool,
+        entities: [ctx.wp.getWorldEntity(entity, 3)!],
+        tiles: [],
+        surface: ctx.surfaces[2],
+        area: { left_top: pos, right_bottom: pos },
+      })
+      expect(entity.lastStage).toBe(2)
+
+      _simulateUndo(ctx.player)
+      expect(entity.lastStage).toBe(nil)
+
+      _simulateRedo(ctx.player)
+      expect(entity.lastStage).toBe(2)
       ctx.assertEntityCorrect(entity, false)
     })
   })
@@ -196,6 +317,54 @@ describe("undo-redo", () => {
       ctx.assertEntityCorrect(entity1, false)
       ctx.assertEntityCorrect(entity2, false)
       ctx.assertEntityCorrect(entity3, false)
+    })
+
+    test("redo re-deletes all entities", () => {
+      const entity1 = ctx.buildEntity(3)
+      const entity2 = ctx.buildEntity(3, { position: pos2 })
+
+      Events.raiseFakeEventNamed("on_player_selected_area", {
+        player_index: ctx.player.index,
+        item: Prototypes.ForceDeleteTool,
+        entities: [ctx.wp.getWorldEntity(entity1, 3)!, ctx.wp.getWorldEntity(entity2, 3)!],
+        tiles: [],
+        surface: ctx.surfaces[2],
+        area: { left_top: pos, right_bottom: pos2 },
+      })
+
+      _simulateUndo(ctx.player)
+      ctx.assertEntityCorrect(entity1, false)
+      ctx.assertEntityCorrect(entity2, false)
+
+      _simulateRedo(ctx.player)
+      ctx.assertEntityNotPresent(entity1)
+      ctx.assertEntityNotPresent(entity2)
+    })
+  })
+
+  describe("delete entity with stage diffs", () => {
+    test("undo restores diffs, redo deletes again", () => {
+      const entity = ctx.buildEntity(3)
+      applyDiffViaWorld(ctx.wp, entity, 4, (e) => {
+        e.inserter_stack_size_override = 2
+      })
+      expect(entity.hasStageDiff()).toBe(true)
+
+      Events.raiseFakeEventNamed("on_player_selected_area", {
+        player_index: ctx.player.index,
+        item: Prototypes.ForceDeleteTool,
+        entities: [ctx.wp.getWorldEntity(entity, 4)!],
+        tiles: [],
+        surface: ctx.surfaces[3],
+        area: { left_top: pos, right_bottom: pos },
+      })
+      ctx.assertEntityNotPresent(entity)
+
+      _simulateUndo(ctx.player)
+      ctx.assertEntityCorrect(entity, false)
+
+      _simulateRedo(ctx.player)
+      ctx.assertEntityNotPresent(entity)
     })
   })
 })

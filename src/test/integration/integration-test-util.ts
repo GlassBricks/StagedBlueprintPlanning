@@ -44,13 +44,19 @@ export function applyDiffViaWorld(
 
 export function assertEntityCorrect(
   project: Project,
-  entity: ProjectEntity,
+  entityOrOldRef: ProjectEntity,
   expectError: number | false,
   wp: WorldPresentation,
 ): void {
+  const entity =
+    project.content.findCompatibleEntity(
+      entityOrOldRef.firstValue.name,
+      entityOrOldRef.position,
+      entityOrOldRef.direction,
+      1,
+    ) ?? entityOrOldRef
+  expect(project.content.hasEntity(entity)).toBe(true)
   expect(entity.isSettingsRemnant).toBeFalsy()
-  const found = project.content.findCompatibleEntity(entity.firstValue.name, entity.position, entity.direction, 1)
-  expect(found).toBe(entity)
 
   let hasError: number | false = false
   for (const stage of $range(1, entity.lastStageWith(project.settings))) {

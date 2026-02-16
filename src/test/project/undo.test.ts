@@ -1,72 +1,10 @@
-// Copyright (c) 2023 GlassBricks
 // SPDX-FileCopyrightText: 2025 GlassBricks
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { LuaPlayer, PlayerIndex } from "factorio:runtime"
+import { LuaPlayer } from "factorio:runtime"
 import expect, { mock, MockNoSelf } from "tstl-expect"
-import {
-  _simulateTagRedo,
-  _simulateTagUndo,
-  _simulateUndo,
-  pushTagGroupUndo,
-  pushTagUndo,
-  registerGroupUndoAction,
-  TagUndoHandler,
-  UndoHandler,
-} from "../../project/actions"
-
-let fn: MockNoSelf<(playerIndex: PlayerIndex, data: string) => void>
-const TestUndo = UndoHandler("<undo test>", (player, data: string) => {
-  fn?.(player.index, data)
-})
-before_each(() => {
-  fn = mock.fnNoSelf()
-})
-
-test("can run undo action", () => {
-  const player = game.players[1]
-  TestUndo.register(player, "test data")
-
-  _simulateUndo(player)
-
-  expect(fn).toHaveBeenCalledWith(1, "test data")
-})
-
-test("can run multiple undo actions", () => {
-  const player = game.players[1]
-  const index1 = TestUndo.register(player, "test data 1")
-  const index2 = TestUndo.register(player, "test data 2")
-
-  _simulateUndo(player, index2)
-  _simulateUndo(player, index1)
-
-  expect(fn).toHaveBeenNthCalledWith(1, 1, "test data 2")
-  expect(fn).toHaveBeenNthCalledWith(2, 1, "test data 1")
-})
-
-test("can register future undo actions", () => {
-  const player = game.players[1]
-  TestUndo.registerLater(player, "test data")
-  after_ticks(10, () => {
-    _simulateUndo(player)
-
-    expect(fn).toHaveBeenCalledWith(1, "test data")
-  })
-})
-
-test("group undo actions", () => {
-  const player = game.players[1]
-  const index1 = TestUndo.createAction(player.index, "test data 1")
-  const index2 = TestUndo.createAction(player.index, "test data 2")
-
-  registerGroupUndoAction([index1, index2])
-
-  _simulateUndo(player)
-
-  expect(fn).toHaveBeenNthCalledWith(1, 1, "test data 2")
-  expect(fn).toHaveBeenNthCalledWith(2, 1, "test data 1")
-})
+import { _simulateRedo, _simulateUndo, pushGroupUndo, pushUndo, UndoHandler } from "../../project/actions"
 
 interface TestTagData {
   value: string
@@ -76,7 +14,7 @@ describe("tag-based undo/redo", () => {
   let undoFn: MockNoSelf<(player: LuaPlayer, data: TestTagData) => TestTagData | nil>
   let redoFn: MockNoSelf<(player: LuaPlayer, data: TestTagData) => TestTagData | nil>
 
-  const testHandler = TagUndoHandler<TestTagData>(
+  const testHandler = UndoHandler<TestTagData>(
     "<tag undo test>",
     (player, data) => undoFn(player, data),
     (player, data) => redoFn(player, data),
@@ -92,7 +30,7 @@ describe("tag-based undo/redo", () => {
   test("registers handler and creates anchor with correct tags", () => {
     const player = game.players[1]
     const action = testHandler.createAction({ value: "test" })
-    pushTagUndo(player, player.surface, action)
+    pushUndo(player, player.surface, action)
 
     const stack = player.undo_redo_stack
     expect(stack.get_undo_item_count()).toBeGreaterThan(0)
@@ -110,26 +48,26 @@ describe("tag-based undo/redo", () => {
     expect(foundTag).toBe(true)
   })
 
-  test("_simulateTagUndo dispatches to undo handler with correct data", () => {
+  test("_simulateUndo dispatches to undo handler with correct data", () => {
     const player = game.players[1]
-    pushTagUndo(player, player.surface, testHandler.createAction({ value: "hello" }))
+    pushUndo(player, player.surface, testHandler.createAction({ value: "hello" }))
 
-    _simulateTagUndo(player)
+    _simulateUndo(player)
 
     expect(undoFn).toHaveBeenCalledTimes(1)
     const [, callData] = undoFn.calls[0]
     expect(callData.value).toBe("hello")
   })
 
-  test("_simulateTagUndo enables redo; _simulateTagRedo dispatches to redo handler", () => {
+  test("_simulateUndo enables redo; _simulateRedo dispatches to redo handler", () => {
     const player = game.players[1]
-    pushTagUndo(player, player.surface, testHandler.createAction({ value: "original" }))
+    pushUndo(player, player.surface, testHandler.createAction({ value: "original" }))
 
-    _simulateTagUndo(player)
+    _simulateUndo(player)
 
     expect(undoFn).toHaveBeenCalledTimes(1)
 
-    _simulateTagRedo(player)
+    _simulateRedo(player)
 
     expect(redoFn).toHaveBeenCalledTimes(1)
     const [, redoCallData] = redoFn.calls[0]
@@ -138,24 +76,24 @@ describe("tag-based undo/redo", () => {
 
   test("round-trip: register -> undo -> redo -> undo", () => {
     const player = game.players[1]
-    pushTagUndo(player, player.surface, testHandler.createAction({ value: "rt" }))
+    pushUndo(player, player.surface, testHandler.createAction({ value: "rt" }))
 
-    _simulateTagUndo(player)
+    _simulateUndo(player)
     expect(undoFn).toHaveBeenCalledTimes(1)
 
-    _simulateTagRedo(player)
+    _simulateRedo(player)
     expect(redoFn).toHaveBeenCalledTimes(1)
 
-    _simulateTagUndo(player)
+    _simulateUndo(player)
     expect(undoFn).toHaveBeenCalledTimes(2)
   })
 
   test("undo handler returning nil skips redo tag", () => {
     undoFn.invokes(() => nil)
     const player = game.players[1]
-    pushTagUndo(player, player.surface, testHandler.createAction({ value: "no-redo" }))
+    pushUndo(player, player.surface, testHandler.createAction({ value: "no-redo" }))
 
-    _simulateTagUndo(player)
+    _simulateUndo(player)
 
     expect(undoFn).toHaveBeenCalledTimes(1)
     expect(player.undo_redo_stack.get_redo_item_count()).toBe(0)
@@ -168,9 +106,9 @@ describe("tag-based undo/redo", () => {
       testHandler.createAction({ value: "b" }),
       testHandler.createAction({ value: "c" }),
     ]
-    pushTagGroupUndo(player, player.surface, actions)
+    pushGroupUndo(player, player.surface, actions)
 
-    _simulateTagUndo(player)
+    _simulateUndo(player)
 
     expect(undoFn).toHaveBeenCalledTimes(3)
   })
@@ -178,10 +116,10 @@ describe("tag-based undo/redo", () => {
   test("group redo: multiple actions redone together", () => {
     const player = game.players[1]
     const actions = [testHandler.createAction({ value: "x" }), testHandler.createAction({ value: "y" })]
-    pushTagGroupUndo(player, player.surface, actions)
+    pushGroupUndo(player, player.surface, actions)
 
-    _simulateTagUndo(player)
-    _simulateTagRedo(player)
+    _simulateUndo(player)
+    _simulateRedo(player)
 
     expect(redoFn).toHaveBeenCalledTimes(2)
   })
@@ -189,15 +127,15 @@ describe("tag-based undo/redo", () => {
   test("group round-trip: register group -> undo -> redo", () => {
     const player = game.players[1]
     const actions = [testHandler.createAction({ value: "p" }), testHandler.createAction({ value: "q" })]
-    pushTagGroupUndo(player, player.surface, actions)
+    pushGroupUndo(player, player.surface, actions)
 
-    _simulateTagUndo(player)
+    _simulateUndo(player)
     expect(undoFn).toHaveBeenCalledTimes(2)
 
-    _simulateTagRedo(player)
+    _simulateRedo(player)
     expect(redoFn).toHaveBeenCalledTimes(2)
 
-    _simulateTagUndo(player)
+    _simulateUndo(player)
     expect(undoFn).toHaveBeenCalledTimes(4)
   })
 })

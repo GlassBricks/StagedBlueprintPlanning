@@ -343,9 +343,9 @@ New tests for entity export/import in undo context:
 ### Success Criteria
 
 #### Automated Verification
-- [ ] All tests pass: `pnpm run test`
-- [ ] Lint passes: `pnpm run lint`
-- [ ] Format passes: `pnpm run format:fix`
+- [x] All tests pass: `pnpm run test`
+- [x] Lint passes: `pnpm run lint`
+- [x] Format passes: `pnpm run format:fix`
 
 ---
 
@@ -423,13 +423,13 @@ Any existing undo references on Factorio's native undo stack become no-ops: when
 ### Success Criteria
 
 #### Automated Verification
-- [ ] All tests pass: `pnpm run test`
-- [ ] Lint passes: `pnpm run lint`
-- [ ] Format passes: `pnpm run format:fix`
-- [ ] No references to removed functions: grep for old `pushUndoAction`, `pushGroupUndoAction`, `pushUndoActionLater`, `_lastUndoIndex` in non-test code returns nothing
+- [x] All tests pass: `pnpm run test`
+- [x] Lint passes: `pnpm run lint`
+- [x] Format passes: `pnpm run format:fix`
+- [x] No references to removed functions: grep for old `pushUndoAction`, `pushGroupUndoAction`, `pushUndoActionLater`, `_lastUndoIndex` in non-test code returns nothing
 
 #### Manual Verification
-- [ ] Load a save from the previous version — old undo entries silently become no-ops
+- [x] Load a save from the previous version — old undo entries silently become no-ops
 - [ ] Perform force delete → Ctrl+Z undoes it → Ctrl+Y redoes it
 - [ ] Multi-entity selection tool → Ctrl+Z undoes all at once → Ctrl+Y redoes
 - [ ] Stage move operations all undo/redo correctly

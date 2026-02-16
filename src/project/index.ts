@@ -294,7 +294,7 @@ Migrations.to("2.14.0", () => {
         ;(stage as { actions: ProjectActions }).actions = project.actions
       }
     }
-
+    project.actions.projectId = project.id
     ;(project as unknown as { registerEvents(): void }).registerEvents()
 
     interface OldProjectEntity {
@@ -336,6 +336,23 @@ Migrations.to("2.14.0", () => {
           delete data.project
         }
       }
+    }
+  }
+})
+
+Migrations.to($CURRENT_VERSION, () => {
+  interface OldPlayerData {
+    undoEntries?: unknown
+    nextUndoEntryIndex?: unknown
+  }
+  interface OldStorage {
+    players?: Record<number, OldPlayerData>
+  }
+  const players = (globalThis as unknown as { storage: OldStorage }).storage.players
+  if (players) {
+    for (const [, playerData] of pairs(players)) {
+      delete playerData.undoEntries
+      delete playerData.nextUndoEntryIndex
     }
   }
 })

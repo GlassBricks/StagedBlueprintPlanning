@@ -26,37 +26,29 @@ import { Pos, Position } from "../../lib/geometry"
 import { L_Interaction } from "../../locale"
 import { SurfaceProvider } from "../EntityHighlights"
 import { createIndicator, createNotification, notifyIfMoveError, notifyIfUpdateError } from "./notifications"
+import { ProjectId } from "../Project"
 import { ProjectSettings } from "../ProjectSettings"
 import { prepareArea } from "../surfaces"
 import * as TileActions from "./tile-actions"
 import * as UgActions from "./underground-belt-actions"
-import { registerUndoAction, UndoAction } from "./undo"
+import { pushUndo, UndoAction } from "./undo"
+import { EntityUpdateResult, StageMoveResult, WireUpdateResult } from "./undo-handlers"
 import {
-  EntityUpdateResult,
-  lastStageChangeUndo,
-  StageMoveResult,
-  undoBringToStage,
-  undoDeleteEntity,
-  undoManualStageMove,
-  undoSendToStage,
-  WireUpdateResult,
-} from "./undo-records"
+  createBringToStageData,
+  createDeleteEntityUndoData,
+  createLastStageChangeData,
+  createSendToStageData,
+  createStageMoveData,
+  tagUndoDeleteEntity,
+} from "./undo-handlers"
 import { _setWorldUpdatesBlocked, WorldPresenter } from "../WorldPresentation"
 
-export {
-  EntityUpdateResult,
-  lastStageChangeUndo,
-  StageMoveResult,
-  undoBringToStage,
-  undoDeleteEntity,
-  undoManualStageMove,
-  undoSendToStage,
-  WireUpdateResult,
-}
+export { EntityUpdateResult, StageMoveResult, WireUpdateResult }
 
 @RegisterClass("ProjectActions")
 export class ProjectActions {
   valid = true
+  projectId!: ProjectId
 
   constructor(
     readonly content: MutableProjectContent,
@@ -106,7 +98,7 @@ export class ProjectActions {
       [L_Interaction.EntityMovedFromStage, this.settings.getStageName(oldStage)],
       false,
     )
-    return byPlayer && undoManualStageMove.createAction(byPlayer, { actions: this, entity, oldStage })
+    return byPlayer != nil ? createStageMoveData(this.projectId, entity, oldStage, stage) : nil
   }
 
   private tryAddNewEntity(
@@ -494,13 +486,12 @@ export class ProjectActions {
     this.worldPresenter.refreshEntity(existing, stage)
   }
 
-  onEntityForceDeleteUsed(entity: LuaEntity, stage: StageNumber, byPlayer: PlayerIndex): UndoAction | nil {
+  onEntityForceDeleteUsed(entity: LuaEntity, stage: StageNumber, _byPlayer: PlayerIndex): UndoAction | nil {
     const projectEntity = this.content.findCompatibleFromPreviewOrLuaEntity(entity, stage)
-    if (projectEntity) {
-      this.forceDeleteEntity(projectEntity)
-      return undoDeleteEntity.createAction(byPlayer, { actions: this, entity: projectEntity })
-    }
-    return nil
+    if (!projectEntity) return nil
+    const undoData = createDeleteEntityUndoData(projectEntity, this.projectId)
+    this.forceDeleteEntity(projectEntity)
+    return tagUndoDeleteEntity.createAction(undoData)
   }
 
   onEntityDied(entity: LuaEntityInfo, stage: StageNumber): void {
@@ -746,7 +737,7 @@ export class ProjectActions {
     const newLastStage = useNextStage ? stage : stage - 1
     const oldLastStage = projectEntity.lastStage
     if (this.userTrySetLastStage(projectEntity, newLastStage, byPlayer)) {
-      return lastStageChangeUndo.createAction(byPlayer, { actions: this, entity: projectEntity, oldLastStage })
+      return createLastStageChangeData(this.projectId, projectEntity, oldLastStage, newLastStage)
     }
   }
 
@@ -761,7 +752,7 @@ export class ProjectActions {
     if (!projectEntity || projectEntity.isSettingsRemnant) return
     const oldStage = projectEntity.firstStage
     if (this.userBringEntityToStage(projectEntity, stage, byPlayer)) {
-      return undoBringToStage.createAction(byPlayer, { actions: this, entity: projectEntity, oldStage })
+      return createBringToStageData(this.projectId, projectEntity, oldStage, stage)
     }
   }
 
@@ -771,7 +762,7 @@ export class ProjectActions {
     if (projectEntity.firstStage <= stage) return
     const oldStage = projectEntity.firstStage
     if (this.userBringEntityToStage(projectEntity, stage, byPlayer)) {
-      return undoBringToStage.createAction(byPlayer, { actions: this, entity: projectEntity, oldStage })
+      return createBringToStageData(this.projectId, projectEntity, oldStage, stage)
     }
   }
 
@@ -792,11 +783,7 @@ export class ProjectActions {
       return
 
     if (this.userSendEntityToStage(projectEntity, fromStage, toStage, byPlayer)) {
-      return undoSendToStage.createAction(byPlayer, {
-        actions: this,
-        entity: projectEntity,
-        oldStage: fromStage,
-      })
+      return createSendToStageData(this.projectId, projectEntity, fromStage, toStage)
     }
   }
 
@@ -851,12 +838,16 @@ export class ProjectActions {
 
   userMoveEntityToStageWithUndo(entity: ProjectEntity, stage: StageNumber, byPlayer: PlayerIndex): void {
     const undoAction = this.userTryMoveEntityToStageWithUndo(entity, stage, byPlayer)
-    if (undoAction) registerUndoAction(undoAction)
+    if (!undoAction) return
+    const player = game.get_player(byPlayer)
+    if (player) pushUndo(player, player.surface, undoAction)
   }
 
   userSetLastStageWithUndo(projectEntity: ProjectEntity, newLastStage: StageNumber | nil, byPlayer: PlayerIndex): void {
     const undoAction = this.userTrySetLastStageWithUndo(projectEntity, newLastStage, byPlayer)
-    if (undoAction) registerUndoAction(undoAction)
+    if (!undoAction) return
+    const player = game.get_player(byPlayer)
+    if (player) pushUndo(player, player.surface, undoAction)
   }
 
   userBringEntityToStage(projectEntity: ProjectEntity, stage: StageNumber, byPlayer: PlayerIndex): boolean {
@@ -938,7 +929,7 @@ export class ProjectActions {
   ): UndoAction | nil {
     const oldStage = entity.firstStage
     if (this.userTryMoveEntityToStage(entity, stage, byPlayer)) {
-      return undoManualStageMove.createAction(byPlayer, { actions: this, entity, oldStage })
+      return createStageMoveData(this.projectId, entity, oldStage, stage)
     }
   }
 
@@ -947,13 +938,9 @@ export class ProjectActions {
     stage: StageNumber | nil,
     byPlayer: PlayerIndex,
   ): UndoAction | nil {
-    const oldStage = projectEntity.lastStage
+    const oldLastStage = projectEntity.lastStage
     if (this.userTrySetLastStage(projectEntity, stage, byPlayer)) {
-      return lastStageChangeUndo.createAction(byPlayer, {
-        actions: this,
-        entity: projectEntity,
-        oldLastStage: oldStage,
-      })
+      return createLastStageChangeData(this.projectId, projectEntity, oldLastStage, stage)
     }
   }
 }

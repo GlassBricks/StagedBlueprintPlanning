@@ -8,7 +8,7 @@ import { ProtectedEvents } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { getStageAtSurface } from "../project-refs"
 import { Stage } from "../Project"
-import { onUndoReferenceBuilt, registerUndoActionLater } from "../actions/undo"
+import { onUndoReferenceBuilt, pushUndo } from "../actions/undo"
 import {
   clearCurrentBlueprintPaste,
   clearToBeFastReplaced,
@@ -196,7 +196,8 @@ Events.on_built_entity((e) => {
   }
   const undoAction = stage.actions.onEntityCreated(entity, stage.stageNumber, playerIndex)
   if (undoAction) {
-    registerUndoActionLater(undoAction)
+    const player = game.get_player(playerIndex)
+    if (player) pushUndo(player, entity.surface, undoAction)
   }
 })
 

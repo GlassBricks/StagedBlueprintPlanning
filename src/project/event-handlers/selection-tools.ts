@@ -11,8 +11,7 @@ import { L_Interaction } from "../../locale"
 import { createBlueprintWithStageInfo } from "../../ui/create-blueprint-with-stage-info"
 import { getProjectPlayerData } from "../player-project-data"
 import { getStageAtSurface } from "../project-refs"
-import { UndoAction } from "../actions/undo"
-import { registerGroupUndoAction, registerUndoAction } from "../actions/undo"
+import { pushGroupUndo, pushUndo, UndoAction } from "../actions/undo"
 import { getStageAtEntityOrPreview, getState } from "./shared-state"
 
 const Events = ProtectedEvents
@@ -53,7 +52,8 @@ function onCleanupToolReverseSelected(e: OnPlayerSelectedAreaEvent): void {
     const undoAction = actions.onEntityForceDeleteUsed(entity, stageNumber, playerIndex)
     if (undoAction) undoActions.push(undoAction)
   }
-  registerGroupUndoAction(undoActions)
+  const player = game.get_player(playerIndex)
+  if (player) pushGroupUndo(player, e.surface, undoActions)
 }
 
 addSelectionToolHandlers(Prototypes.CleanupTool, {
@@ -80,7 +80,8 @@ function stageMoveToolUsed(e: OnPlayerSelectedAreaEvent): void {
     const undoAction = actions.onSendToStageUsed(entity, stageNumber, targetStage, onlyIfMatchesFirstStage, playerIndex)
     if (undoAction) undoActions.push(undoAction)
   }
-  registerGroupUndoAction(undoActions)
+  const player = game.get_player(playerIndex)
+  if (player) pushGroupUndo(player, e.surface, undoActions)
 }
 
 function selectionToolUsed(
@@ -103,7 +104,8 @@ function selectionToolUsed(
     if (undoAction) undoActions.push(undoAction)
   }
 
-  registerGroupUndoAction(undoActions)
+  const player = game.get_player(playerIndex)
+  if (player) pushGroupUndo(player, e.surface, undoActions)
 }
 
 addSelectionToolHandlers(Prototypes.StageMoveTool, {
@@ -165,7 +167,8 @@ function forceDeleteToolUsed(event: OnPlayerSelectedAreaEvent): void {
     const undoAction = actions.onEntityForceDeleteUsed(entity, stageNumber, event.player_index)
     if (undoAction) undoActions.push(undoAction)
   }
-  registerGroupUndoAction(undoActions)
+  const player = game.get_player(event.player_index)
+  if (player) pushGroupUndo(player, event.surface, undoActions)
 }
 
 addSelectionToolHandlers(Prototypes.ForceDeleteTool, {
@@ -238,7 +241,8 @@ Events.on_player_deconstructed_area((e) => {
   }
   const undoActions = getState().accumulatedUndoActions
   if (undoActions) {
-    registerGroupUndoAction(undoActions)
+    const player = game.get_player(e.player_index)
+    if (player) pushGroupUndo(player, player.surface, undoActions)
     delete getState().accumulatedUndoActions
   }
 })
@@ -254,7 +258,7 @@ Events.on(CustomInputs.ForceDelete, (e) => {
   const undoAction = stage.actions.onEntityForceDeleteUsed(entity, stage.stageNumber, playerIndex)
   if (undoAction) {
     player.play_sound({ path: "entity-mined/" + name, position })
-    registerUndoAction(undoAction)
+    pushUndo(player, player.surface, undoAction)
   }
 })
 
@@ -272,5 +276,5 @@ Events.on(CustomInputs.MoveToThisStage, (e) => {
   }
 
   const undoAction = stage.actions.onMoveEntityToStageCustomInput(entity, stage.stageNumber, e.player_index)
-  if (undoAction) registerUndoAction(undoAction)
+  if (undoAction) pushUndo(player, player.surface, undoAction)
 })
