@@ -184,9 +184,9 @@ describe("tag-based undo/redo", () => {
 ### Success Criteria
 
 #### Automated Verification
-- [ ] New tests pass: `pnpm exec factorio-test run "tag%-based undo"`
-- [ ] Existing tests still pass: `pnpm run test`
-- [ ] Lint passes: `pnpm run lint`
+- [x] New tests pass: `pnpm exec factorio-test run "tag%-based undo"`
+- [x] Existing tests still pass: `pnpm run test`
+- [x] Lint passes: `pnpm run lint`
 
 ---
 
