@@ -79,10 +79,14 @@ export namespace Migrations {
     const formattedOldVersion = formatVersion(oldVersion)
     const availableMigrations = migrations.filter((m) => formattedOldVersion < m.version)
     if (availableMigrations.length == 0) return
-    const allVersions = availableMigrations.map((m) => m.version)
-    log("Running migrations for versions: " + allVersions.join(", "))
     table.sort(availableMigrations, lt)
-    for (const migration of availableMigrations) migration.func()
+    log(`Running ${availableMigrations.length} migrations from ${oldVersion}:`)
+    for (const migration of availableMigrations) {
+      const info = debug.getinfo(migration.func, "S")
+      const source = info != nil ? `${info.short_src}:${info.linedefined}` : "unknown"
+      log(`  prio: ${migration.prio} version: ${migration.version} at ${source}`)
+      migration.func()
+    }
   }
 
   // noinspection JSUnusedGlobalSymbols
