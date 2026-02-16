@@ -119,6 +119,7 @@ See [docs/Migrations.md](docs/Migrations.md) for full reference and patterns.
 ### Debugging
 
 - `print()`, `localised_print()` (Factorio builtins) or `debugPrint()` (custom lib) can be added to code; output shows up in test failure output. Use `--verbose` flag to see output on passing tests
+- `log()` will print to the Factorio log file and also will show up in test output.
 
 ### Testing
 

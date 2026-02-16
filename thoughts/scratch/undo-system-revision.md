@@ -86,16 +86,14 @@ Tags support `AnyBasic` (`string | boolean | number | table`) with arbitrary nes
 Use the existing mod ID `bp100` as namespace:
 
 ```typescript
-// Tags stored directly on the undo action
-stack.set_undo_tag(1, actionIndex, "bp100:handler", handlerName)
 stack.set_undo_tag(1, actionIndex, "bp100:data", serializedData)
 ```
 
 The `data` field contains a fully self-contained, serializable payload -- no references to runtime objects. Example payloads:
 
-- **Stage move**: `{ position: [x, y], name: "assembling-machine-2", oldStage: 3, newStage: 5 }`
+- **Stage move**: `{ handler: "firstStageChange", oldStage: 3, newStage: 5 }` - position, name, etc. can be found from action.
 - **Delete entity**: Full `EntityExport` (position, firstValue, stageDiffs, wires as entity-number references, unstaged values)
-- **Last stage change**: `{ position: [x, y], name: "...", oldLastStage: 7 }`
+- **Last stage change**: `{ handler: "lastStageChange", oldLastStage: 7 }`
 
 #### Making World Operations Undoable
 
@@ -235,10 +233,38 @@ With undo data stored as serialized `EntityExport` in tags, full entity state re
 
 ## Open Questions
 
-- **Timing of `on_undo_applied`**: Does the event fire before or after Factorio has completed the undo? If after, world entities are already in their restored state when our handler runs. If before, we need to defer. Needs testing.
+### Resolved
 
-- **Wire connection restoration for single-entity undo**: When restoring a deleted entity, its wire connections reference other entities by position+name. If those other entities were also deleted (or moved), the wires can't be restored. Multi-entity undo (e.g., blueprint paste undo) handles this via entity numbers within the tag data, but single-entity force-delete undo may lose cross-entity wires. We need to implement a mechanism to track and restore these connections.
+- **`undo_index` grouping reliability**: Confirmed. `undo_index: 0` creates a new item, `undo_index: 1` appends. Grouping works across different surfaces. Mixed create+destroy operations group correctly into a single item.
 
-- **Blueprint paste override tracking**: The mod processes blueprint entities and may override what the blueprint placed. Need to verify that passing `undo_index: 1` to the mod's world operations correctly appends them to the blueprint's undo item (which was created by Factorio before the mod's processing runs). Also need to handle the case where the mod destroys an entity the blueprint just created -- Factorio's undo item contains a `built-entity` action for it, but the mod destroyed it. On undo, Factorio would try to remove an entity that no longer exists.
+- **Tag system fundamentals**: Tags round-trip correctly for strings, nested tables, and large payloads (100 entries with nested data). Each action within an undo item can have independent tags. Tags work on both `built-entity` and `removed-entity` actions.
 
-- **`undo_index` grouping reliability**: When the mod performs multiple world operations across different surfaces (stages) as part of one logical action, `undo_index: 1` should group them. Need to verify this works across surfaces. Or, design a system that only tags undo items within the same surface, even for multi-surface operations.
+- **`destroy()` with undo_index**: `entity.destroy({ player, undo_index: 0 })` registers a `removed-entity` action on the undo stack. Tags can be set on it afterward.
+
+- **Timing of `on_undo_applied`**: The event fires **after** Factorio has completed the undo for _all_ entities. The full sequence for undoing a build is:
+  1. `script_raised_destroy` (entity removed from world)
+  2. `on_undo_applied` (entity already gone; `find_entity` returns nil)
+
+  For redo, the sequence is:
+  1. `on_built_entity` (entity re-placed on world)
+  2. `on_redo_applied` (entity exists; `find_entity` returns it)
+
+  This means the mod's `on_undo_applied` handler can safely assume the world is already in the post-undo state. No deferral needed.
+
+- **Tags available directly on actions in `on_undo_applied`**: The `UndoRedoAction` objects in `e.actions` carry a `.tags` property directly (a `Tags` table). No need to read from the redo stack — tags set via `set_undo_tag()` appear on the action in the event. However, tags do **not** automatically transfer to the redo stack — `get_redo_tags()` returns nil after undo. The mod must explicitly `set_redo_tag()` during `on_undo_applied` if redo support is needed.
+
+- **Create-then-destroy undo behavior**: When undoing an item with both `built-entity` and `removed-entity` for the same position, Factorio processes both actions: it first recreates the entity (`on_built_entity` fires), then immediately destroys it (`script_raised_destroy` fires). The net result is no entity on the surface. Redo does the same — creates then destroys, net result is no entity. This is important: it means the mod sees build/destroy events during undo/redo of create-then-destroy items. The mod's undo handler must be aware of this.
+
+- **Grouped undo works end-to-end**: `undo_index: 1` correctly groups multiple entities into one undo item. Ctrl+Z removes all at once (both `script_raised_destroy` fire on same tick), and Ctrl+Y restores all at once (`on_built_entity` fires for each on same tick). Tags on each action are preserved independently.
+
+- **Blueprint paste undo interaction**: Fully confirmed:
+  - Pasting a blueprint creates one undo item with one `built-entity` action per entity (all as `entity-ghost` type since the paste creates ghosts without construction bots).
+  - `on_undo_applied` fires with all `built-entity` actions. Entities already removed from surface by the time the event fires.
+  - **Tagging during `on_built_entity`**: Works, but with a caveat — all 3 `on_built_entity` events fire on the same tick, and the undo item already has all 3 actions pre-created by the time the first `on_built_entity` fires. The tagging code used `item.length` (always 3) as the action index, so all 3 tags overwrote the same action (action 3). **Fix needed**: match the built entity to the correct action index by position, or tag actions by iterating the undo item to find the matching one.
+  - **Appending via `undo_index: 1`**: Works. The mod-created stone-furnace was added as action 4 in the same undo item. On Ctrl+Z, all 4 actions undone together. Tags on the appended action preserved. The real entity was handled via deconstruction (not outright deletion) since the test was in normal mode, not editor mode — so `find_entity` returned true because the entity was marked for deconstruction rather than destroyed. Redo cancelled the deconstruction.
+
+### Unresolved
+
+- **Wire connection restoration for single-entity undo**: When restoring a deleted entity, its wire connections reference other entities by position+name. If those other entities were also deleted (or moved), the wires can't be restored. Multi-entity undo (e.g., blueprint paste undo) handles this via entity numbers within the tag data, but single-entity force-delete undo may lose cross-entity wires. Design decision needed.
+
+- **Matching undo actions to entities during blueprint paste**: The undo item is pre-populated with all actions before the first `on_built_entity` fires. Need to match built entities to their corresponding undo action index (e.g., by comparing `action.target.position` to the built entity's position).
