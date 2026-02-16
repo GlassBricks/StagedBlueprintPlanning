@@ -63,7 +63,7 @@ function makeGrid(pattern: string[]): { W: number; H: number; required: LuaSet<s
   return { W, H, required }
 }
 
-function verifyConnectivity(W: number, H: number, filled: LuaSet<string>): void {
+function verifyConnectivity(filled: LuaSet<string>): void {
   if (filled.isEmpty()) return
 
   const firstKey = first(filled)
@@ -260,7 +260,7 @@ describe("solveSteinerErosion()", () => {
       }
 
       if (table_size(result) > 0) {
-        verifyConnectivity(W, H, result)
+        verifyConnectivity(result)
         verifyNoHoles(W, H, result)
       }
     })
