@@ -1,4 +1,5 @@
 import { BlueprintInsertPlan, LocalisedString, LuaEntity, LuaTrain, PlayerIndex } from "factorio:runtime"
+import { Colors, Settings } from "../../constants"
 import { Entity, LuaEntityInfo, TrainEntity } from "../../entity/Entity"
 import { MutableProjectContent } from "../../entity/ProjectContent"
 import {
@@ -18,30 +19,30 @@ import { canBeAnyDirection, saveEntity } from "../../entity/save-load"
 import { findUndergroundPair } from "../../entity/underground-belt"
 import { saveWireConnections } from "../../entity/wires"
 import { fromExportStageDiffs, StageInfoExport } from "../../import-export/entity"
-import { Colors, Settings } from "../../constants"
 import { assertNever, deepCompare, RegisterClass } from "../../lib"
-import { LoopTask, submitTask } from "../../lib/task"
-import { L_GuiTasks } from "../../locale"
 import { Pos, Position } from "../../lib/geometry"
-import { L_Interaction } from "../../locale"
+import { LoopTask, submitTask } from "../../lib/task"
+import { L_GuiTasks, L_Interaction } from "../../locale"
 import { SurfaceProvider } from "../EntityHighlights"
-import { createIndicator, createNotification, notifyIfMoveError, notifyIfUpdateError } from "./notifications"
 import { ProjectId } from "../Project"
 import { ProjectSettings } from "../ProjectSettings"
 import { prepareArea } from "../surfaces"
+import { _setWorldUpdatesBlocked, WorldPresenter } from "../WorldPresentation"
+import { createIndicator, createNotification, notifyIfMoveError, notifyIfUpdateError } from "./notifications"
 import * as TileActions from "./tile-actions"
 import * as UgActions from "./underground-belt-actions"
 import { pushUndo, UndoAction } from "./undo"
-import { EntityUpdateResult, StageMoveResult, WireUpdateResult } from "./undo-handlers"
 import {
   createBringToStageData,
   createDeleteEntityUndoData,
   createLastStageChangeData,
   createSendToStageData,
   createStageMoveData,
+  EntityUpdateResult,
+  StageMoveResult,
   tagUndoDeleteEntity,
+  WireUpdateResult,
 } from "./undo-handlers"
-import { _setWorldUpdatesBlocked, WorldPresenter } from "../WorldPresentation"
 
 export { EntityUpdateResult, StageMoveResult, WireUpdateResult }
 
@@ -192,10 +193,6 @@ export class ProjectActions {
 
   forceDeleteEntity(entity: ProjectEntity): void {
     this.content.deleteEntity(entity)
-  }
-
-  readdDeletedEntity(entity: ProjectEntity): void {
-    this.content.addEntity(entity)
   }
 
   // === Entity updates ===
