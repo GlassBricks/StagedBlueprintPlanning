@@ -17,10 +17,10 @@
       "mod-portal/gallery/A3.png"
     ],
     "scripts": {
-      "compile": "npm run build:release",
-      "prepackage": "npm run prepackage",
-      "prepublish": "npm run check && npm run subst-current-version",
-      "postpackage": "npm run postpackage"
+      "compile": "pnpm run build:release",
+      "prepackage": "pnpm run prepackage",
+      "prepublish": "pnpm run check && pnpm run subst-current-version",
+      "postpackage": "pnpm run postpackage"
     },
     "git_publish_branch": "main",
     "ignore": [
