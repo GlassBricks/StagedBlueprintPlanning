@@ -32,10 +32,10 @@ These are run as part of full rebuild.
 ## Code Style
 
 - No semicolons, 120 char line width
-- Explicit member accessibility required (`accessibility: "no-public"`)
+- Explicit member accessibility
 - Explicit module boundary types
 - Test files end with `.test.ts`
-- Never cast to `any` or `Record<..., unknown>` or the like in new code if a more specific type is possible. Always create an explicit type; derive from existing types if applicable, add new type definition if needed.
+- Never cast to `any`, `Record<..., unknown>`, or similar in new code. Always create an explicit type; derive from existing types if applicable, add type definition if needed.
 - Do NOT use properties `get foo()`; use `getFoo(), setFoo()` instead.
 
 ### Lua
@@ -46,11 +46,15 @@ Since Typescript code compiles to Lua:
 - Use `nil` instead of `undefined`, avoid `null`. `nil` is a global; do not import it
 - Exported `let` variables are captured by value at require-time. For cross-module mutable state, use getter functions instead of direct exports
 
-Storage:
+### Storage
 
 - The `storage` table is persistent/serialized
 - Mod needs to behave the same when reloaded at any point
 - CANNOT serialize functions -- use instead either classes and methods with @RegisterClass, or the FuncRef system (see lib)
+
+### Imports
+
+- Circular imports will lead to lua stack overflow. Type-only imports are exempt.
 
 ## Architecture
 
