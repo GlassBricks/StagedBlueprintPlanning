@@ -212,7 +212,14 @@ function setLastStage(player: LuaPlayer, data: LastStageChangeTagData): LastStag
   const entity = findEntityForUndoTag(actions.content, data.position, data.name, data.firstStage)
   if (!entity) return nil
   if (actions.userTrySetLastStage(entity, data.oldLastStage, player.index)) {
-    return { ...data, oldLastStage: data.newLastStage, newLastStage: data.oldLastStage }
+    return {
+      projectId: data.projectId,
+      position: data.position,
+      name: data.name,
+      firstStage: data.firstStage,
+      oldLastStage: data.newLastStage,
+      newLastStage: data.oldLastStage,
+    }
   }
   return nil
 }
