@@ -7,6 +7,7 @@ import { BlueprintWire, MapPosition } from "factorio:runtime"
 import { Entity } from "../entity/Entity"
 import { MutableProjectContent } from "../entity/ProjectContent"
 import {
+  InternalProjectEntity,
   newProjectEntity,
   ProjectEntity,
   StagePropertiesData,
@@ -131,18 +132,20 @@ export function serializeEntity(entity: ProjectEntity, entityNumber: number = 0)
   }
 }
 
-export function deserializeEntity(info: EntityExport): ProjectEntity {
-  const stageDiffs = info.stageDiffs && fromExportStageDiffs(info.stageDiffs)
+export function parseStageProperties(info: StageInfoExport): StagePropertiesData | nil {
+  const props = info.stageProperties ?? legacyToStageProperties(info)
+  return props ? parseStagePropertiesExport(props) : nil
+}
 
-  const entity = newProjectEntity(info.firstValue, info.position, info.direction ?? 0, info.firstStage)
+export function applyStageInfoExport(entity: InternalProjectEntity, info: StageInfoExport): void {
   entity.setLastStage(info.lastStage)
-  entity.setStageDiffsDirectly(stageDiffs)
+  if (info.stageDiffs) entity.setStageDiffsDirectly(fromExportStageDiffs(info.stageDiffs))
+  entity.setStagePropertiesDirectly(parseStageProperties(info))
+}
 
-  const stageProperties = info.stageProperties ?? legacyToStageProperties(info)
-  if (stageProperties) {
-    entity.setStagePropertiesDirectly(parseStagePropertiesExport(stageProperties))
-  }
-
+export function deserializeEntity(info: EntityExport): ProjectEntity {
+  const entity = newProjectEntity(info.firstValue, info.position, info.direction ?? 0, info.firstStage)
+  applyStageInfoExport(entity, info)
   return entity
 }
 
