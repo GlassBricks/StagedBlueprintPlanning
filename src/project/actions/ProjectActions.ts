@@ -19,10 +19,10 @@ import { canBeAnyDirection, saveEntity } from "../../entity/save-load"
 import { findUndergroundPair } from "../../entity/underground-belt"
 import { saveWireConnections } from "../../entity/wires"
 import {
+  applyStageInfoExport,
   fromExportStageDiffs,
-  parseStagePropertiesExport,
+  parseStageProperties,
   StageInfoExport,
-  StagePropertiesExport,
 } from "../../import-export/entity"
 import { assertNever, deepCompare, RegisterClass } from "../../lib"
 import { Pos, Position } from "../../lib/geometry"
@@ -616,8 +616,7 @@ export class ProjectActions {
   }
 
   private replaceStagePropertiesViaContent(entity: ProjectEntity<Entity>, info: StageInfoExport<Entity>): void {
-    const props = info.stageProperties ?? legacyToStageProperties(info)
-    this.content.replaceEntityStageProperties(entity, props ? parseStagePropertiesExport(props) : nil)
+    this.content.replaceEntityStageProperties(entity, parseStageProperties(info))
   }
 
   // === Props ===
@@ -1014,21 +1013,6 @@ function createProjectEntityFromStagedInfo(
     stageInfo.firstStage,
     unstagedValue,
   )
-  projectEntity.setLastStage(stageInfo.lastStage)
-  const diffs = stageInfo.stageDiffs
-  if (diffs) {
-    projectEntity.setStageDiffsDirectly(fromExportStageDiffs(diffs))
-  }
-  replaceStagePropertiesDirect(projectEntity, stageInfo)
+  applyStageInfoExport(projectEntity, stageInfo)
   return projectEntity
-}
-
-function replaceStagePropertiesDirect(entity: InternalProjectEntity, info: StageInfoExport<Entity>): void {
-  const props = info.stageProperties ?? legacyToStageProperties(info)
-  entity.setStagePropertiesDirectly(props ? parseStagePropertiesExport(props) : nil)
-}
-
-function legacyToStageProperties(info: StageInfoExport): StagePropertiesExport | nil {
-  if (!info.unstagedValue) return nil
-  return { unstagedValue: info.unstagedValue as StagePropertiesExport["unstagedValue"] }
 }
