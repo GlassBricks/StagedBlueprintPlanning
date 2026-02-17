@@ -10,6 +10,7 @@ import {
   BlueprintTakeSettings,
   createStageBlueprintSettingsTable,
   iconNumbers,
+  OverrideableBlueprintSettings,
   StageBlueprintSettingsTable,
 } from "../blueprints/blueprint-settings"
 import { newMap2d } from "../entity/map2d"
@@ -17,18 +18,18 @@ import { StageNumber } from "../entity/ProjectEntity"
 import { Mutable, MutableProperty, PRecord, property, SimpleEvent, Subscription } from "../lib"
 import { Position } from "../lib/geometry"
 import { Migrations } from "../lib/migration"
-import { PropertiesTable } from "../utils/properties-obj"
 import { createProjectTile } from "../tiles/ProjectTile"
 import { getNilPlaceholder } from "../utils/diff-value"
-import "./event-handlers"
-import { getDefaultSurfaceSettings, readSurfaceSettings, SurfaceSettings, updateStageSurfaceName } from "./surfaces"
-import "./Project"
+import { PropertiesTable } from "../utils/properties-obj"
+import { ProjectActions } from "./actions"
 import { BlueprintBookTemplate } from "./BlueprintBookTemplate"
+import "./event-handlers"
+import "./Project"
+import { ProjectId } from "./Project"
 import { getAllProjects } from "./ProjectList"
-import { OverrideableBlueprintSettings } from "../blueprints/blueprint-settings"
 import { ProjectSettings, StageSettingsData } from "./ProjectSettings"
 import { ProjectSurfaces } from "./ProjectSurfaces"
-import { ProjectActions } from "./actions"
+import { getDefaultSurfaceSettings, readSurfaceSettings, SurfaceSettings, updateStageSurfaceName } from "./surfaces"
 import { WorldPresentation } from "./WorldPresentation"
 
 declare const luaLength: LuaLength<Record<number, any>, number>
@@ -285,6 +286,7 @@ Migrations.to("2.14.0", () => {
 
     if (!(project.actions instanceof ProjectActions)) {
       project.actions = new ProjectActions(
+        project.id,
         project.content,
         project.worldPresentation,
         project.settings,
@@ -294,6 +296,7 @@ Migrations.to("2.14.0", () => {
         ;(stage as { actions: ProjectActions }).actions = project.actions
       }
     }
+
 
     ;(project as unknown as { registerEvents(): void }).registerEvents()
 
@@ -337,5 +340,11 @@ Migrations.to("2.14.0", () => {
         }
       }
     }
+  }
+})
+
+Migrations.to($CURRENT_VERSION, () => {
+  for (const project of getAllProjects()) {
+    ;(project.actions as { projectId: ProjectId }).projectId = project.id
   }
 })

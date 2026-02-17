@@ -118,7 +118,7 @@ class ProjectImpl implements Project {
     this.settings = new ProjectSettings(name, surfaceSettings)
     this.surfaces = new ProjectSurfaces(this.settings)
     this.worldPresentation = new WorldPresentation(this.settings, this.surfaces, this.content)
-    this.actions = new ProjectActions(this.content, this.worldPresentation, this.settings, this.surfaces)
+    this.actions = new ProjectActions(id, this.content, this.worldPresentation, this.settings, this.surfaces)
     this.content.setObserver(this.worldPresentation)
     for (const i of $range(1, initialNumStages)) {
       this.settings.insertStageSettings(i, `Stage ${i}`)

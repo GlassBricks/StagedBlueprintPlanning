@@ -29,6 +29,7 @@ import { Pos, Position } from "../../lib/geometry"
 import { LoopTask, submitTask } from "../../lib/task"
 import { L_GuiTasks, L_Interaction } from "../../locale"
 import { SurfaceProvider } from "../EntityHighlights"
+import { ProjectId } from "../Project"
 import { createIndicator, createNotification, notifyIfMoveError, notifyIfUpdateError } from "./notifications"
 import { ProjectSettings } from "../ProjectSettings"
 import { prepareArea } from "../surfaces"
@@ -63,6 +64,7 @@ export class ProjectActions {
   valid = true
 
   constructor(
+    readonly projectId: ProjectId,
     readonly content: MutableProjectContent,
     readonly worldPresenter: WorldPresenter,
     readonly settings: ProjectSettings,
