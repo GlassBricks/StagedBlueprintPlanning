@@ -122,11 +122,15 @@ export interface InternalProjectEntity<T extends Entity = Entity>
   moveValueDown(stage: StageNumber): StageNumber | nil
   movePropDown<K extends keyof T>(stage: StageNumber, prop: K): StageNumber | nil
 
+  // use carefully, bypasses diff consistency logic
   setFirstValueDirectly(value: T): void
+  // use carefully, bypasses diff consistency logic
   setStageDiffsDirectly(stageDiffs: PRRecord<StageNumber, StageDiff<T>> | nil): void
+  // use carefully, bypasses property consistency logic
+  setStagePropertiesDirectly(props: StagePropertiesData | nil): void
+
   setFirstStage(stage: StageNumber): void
   setLastStage(stage: StageNumber | nil): void
-  setStagePropertiesDirectly(props: StagePropertiesData | nil): void
   clearPropertyInAllStages<T extends keyof StageProperties>(key: T): void
 
   setUnstagedValue(stage: StageNumber, value: UnstagedEntityProps | nil): boolean
