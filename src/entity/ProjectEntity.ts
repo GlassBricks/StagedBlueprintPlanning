@@ -82,22 +82,25 @@ export interface ProjectEntity<out T extends Entity = Entity> extends ReadonlySt
   isPersistent(): boolean
   getPreviewDirection(): defines.direction
 
+  // values and diffs
   getFirstStageDiffForProp<K extends keyof T>(prop: K): LuaMultiReturn<[] | [StageNumber | nil, T[K]]>
   getUnstagedValue(stage: StageNumber): UnstagedEntityProps | nil
 
+  // first/last stage
   getPropAtStage<K extends keyof T>(stage: StageNumber, prop: K): LuaMultiReturn<[T[K], StageNumber]>
   getUpgradeAtStage(stage: StageNumber): NameAndQuality
 
   lastStageWith(stageCount: StageCount): StageNumber
 
+  // properties
   isExcludedFromBlueprints(stage: StageNumber): boolean
 
   getProperty<T extends keyof StageProperties>(key: T, stage: StageNumber): StageProperties[T] | nil
   getPropertyAllStages<T extends keyof StageProperties>(key: T): Record<StageNumber, StageProperties[T]> | nil
   propertySetInAnyStage(key: keyof StageProperties): boolean
 
+  // internal
   _asMut(): InternalProjectEntity<T>
-
   /** Linked list for Map2D */
   _next: ProjectEntity | nil
 }
@@ -114,6 +117,7 @@ export interface InternalProjectEntity<T extends Entity = Entity>
   isSettingsRemnant: true | nil
   isNewRollingStock: true | nil
 
+  // values and diffs
   adjustValueAtStage(stage: StageNumber, value: T): boolean
   setPropAtStage<K extends keyof T>(stage: StageNumber, prop: K, value: T[K]): boolean
   applyUpgradeAtStage(stage: StageNumber, newValue: NameAndQuality): boolean
@@ -121,32 +125,34 @@ export interface InternalProjectEntity<T extends Entity = Entity>
   resetProp<K extends keyof T>(stage: StageNumber, prop: K): boolean
   moveValueDown(stage: StageNumber): StageNumber | nil
   movePropDown<K extends keyof T>(stage: StageNumber, prop: K): StageNumber | nil
-
-  // use carefully, bypasses diff consistency logic
-  setFirstValueDirectly(value: T): void
-  // use carefully, bypasses diff consistency logic
-  setStageDiffsDirectly(stageDiffs: PRRecord<StageNumber, StageDiff<T>> | nil): void
-  // use carefully, bypasses property consistency logic
-  setStagePropertiesDirectly(props: StagePropertiesData | nil): void
-
-  setFirstStage(stage: StageNumber): void
-  setLastStage(stage: StageNumber | nil): void
-  clearPropertyInAllStages<T extends keyof StageProperties>(key: T): void
-
-  setUnstagedValue(stage: StageNumber, value: UnstagedEntityProps | nil): boolean
-  setExcludedFromBlueprints(stage: StageNumber, excluded: boolean): boolean
+  _applyDiffAtStage(stage: StageNumber, diff: StageDiffInternal<T>): void
 
   setTypeProperty(this: UndergroundBeltProjectEntity, direction: "input" | "output"): void
   setDropPosition(this: InserterProjectEntity, position: Position | nil): void
   setPickupPosition(this: InserterProjectEntity, position: Position | nil): void
 
+  // use carefully, bypasses diff consistency logic
+  setFirstValueDirectly(value: T): void
+  // use carefully, bypasses diff consistency logic
+  setStageDiffsDirectly(stageDiffs: PRRecord<StageNumber, StageDiff<T>> | nil): void
+
+  // first/last stage
+  setFirstStage(stage: StageNumber): void
+  setLastStage(stage: StageNumber | nil): void
+
+  // properties
+  setStagePropertiesDirectly(props: StagePropertiesData | nil): void
+  setProperty<T extends keyof StageProperties>(key: T, stage: StageNumber, value: StageProperties[T] | nil): boolean
+  clearPropertyInAllStages<T extends keyof StageProperties>(key: T): void
+
+  setUnstagedValue(stage: StageNumber, value: UnstagedEntityProps | nil): boolean
+  setExcludedFromBlueprints(stage: StageNumber, excluded: boolean): boolean
+
+  // wires
   addOneWayWireConnection(connection: ProjectWireConnection): boolean
   removeOneWayWireConnection(connection: ProjectWireConnection): void
   syncIngoingConnections(existingEntities: ReadonlyLuaSet<ProjectEntity>): void
   removeIngoingConnections(): void
-
-  setProperty<T extends keyof StageProperties>(key: T, stage: StageNumber, value: StageProperties[T] | nil): boolean
-  _applyDiffAtStage(stage: StageNumber, diff: StageDiffInternal<T>): void
 }
 
 export type StageDiffs<E extends Entity = Entity> = PRRecord<StageNumber, StageDiff<E>>
