@@ -785,6 +785,12 @@ describe("discarding stages", () => {
     expect(entity.firstStage).toEqual(2)
   })
 
+  test("persistent entity stays at stage 1 when first stage is discarded", () => {
+    const entity = newProjectEntity({ name: "space-platform-hub" }, Pos(0, 0), 0, 1)
+    entity.discardStage(1)
+    expect(entity.firstStage).toBe(1)
+  })
+
   test("updates lastStage when discarding at lastStage", () => {
     const entity = newProjectEntity({ name: "inserter" }, Pos(0, 0), 0, 1)
     entity.setLastStage(3)

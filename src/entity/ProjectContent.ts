@@ -485,7 +485,7 @@ class ProjectContentImpl implements MutableProjectContent {
     const updated: ProjectEntity[] = []
     const updatedTiles: MapPosition[] = []
     for (const entity of this.entities) {
-      if (entity.firstStage == stageNumber) {
+      if (entity.firstStage == stageNumber && !entity.isPersistent()) {
         this.deleteEntity(entity)
         deleted.push(entity)
       } else {

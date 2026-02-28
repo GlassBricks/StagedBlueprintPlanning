@@ -355,6 +355,16 @@ describe("discardStage()", () => {
     expect(content.findCompatibleEntity("inserter", entity2.position, 0, 2)).toBeNil()
   })
 
+  test("does not delete persistent entities when discarding their first stage", () => {
+    const hub = newProjectEntity({ name: "space-platform-hub" }, { x: 0, y: 0 }, 0, 1)
+    content.addEntity(hub)
+
+    content.discardStage(1)
+
+    expect(content.countNumEntities()).toEqual(1)
+    expect(content.findCompatibleEntity("space-platform-hub", hub.position, 0, 1)).toBe(hub)
+  })
+
   test("discards stage for remaining entities", () => {
     const entity = newProjectEntity({ name: "inserter" }, { x: 0, y: 0 }, 0, 1)
     content.addEntity(entity)

@@ -620,6 +620,14 @@ class ProjectEntityImpl<T extends Entity = Entity>
     }
   }
 
+  override discardStage(stageNumber: StageNumber): boolean {
+    const result = super.discardStage(stageNumber)
+    if (this.isPersistent()) {
+      this.firstStage = 1
+    }
+    return result
+  }
+
   /**
    * Shifts numeric keys down after stage deletion.
    * Extends base implementation to also shift stageProperties.
