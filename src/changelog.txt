@@ -4,6 +4,7 @@ Date: ????
   Bugfixes:
     - Fixed that "Exclude from blueprints" settings were lost when exporting/importing a project, undoing/redoing entity deletion, or using staged copy/cut.
     - Fixed that discarding the first stage would irreversibly delete the space platform hub.
+    - Fixed a crash when importing a project with blueprint override icons set to "no icon".
 ---------------------------------------------------------------------------------------------------
 Version: 2.14.3
 Date: 2026-02-16

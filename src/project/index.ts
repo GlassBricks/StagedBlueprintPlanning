@@ -297,7 +297,6 @@ Migrations.to("2.14.0", () => {
       }
     }
 
-
     ;(project as unknown as { registerEvents(): void }).registerEvents()
 
     interface OldProjectEntity {

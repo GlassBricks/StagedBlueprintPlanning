@@ -4,11 +4,20 @@
 
 import { OverrideableBlueprintSettings, StageBlueprintSettings } from "../blueprints/blueprint-settings"
 import { newProjectContent } from "../entity/ProjectContent"
-import { Stage, StageSettings, Project } from "../project/Project"
+import { isEmpty } from "../lib"
+import { createProject, Project, Stage, StageSettings } from "../project/Project"
 import { type SurfaceSettings } from "../project/surfaces"
-import { createProject } from "../project/Project"
-import { getCurrentValues, getCurrentValuesOf, OverrideTable, setCurrentValuesOf } from "../utils/properties-obj"
-import { EntityExport, serializeAllEntities, deserializeAllEntities } from "./entity"
+import { getNilPlaceholder } from "../utils/diff-value"
+import {
+  getCurrentValues,
+  getCurrentValuesOf,
+  OverrideTable,
+  PropertyOverrideTable,
+  setCurrentValuesOf,
+} from "../utils/properties-obj"
+import { deserializeAllEntities, EntityExport, serializeAllEntities } from "./entity"
+
+const nilOverrideMarker = "__nil"
 
 export interface ProjectExport {
   name?: string
@@ -42,7 +51,7 @@ export function exportProject(project: Project): ProjectExport {
 export function exportStage(this: unknown, stage: Stage): StageExport {
   const settings = stage.getSettings()
   return {
-    blueprintOverrideSettings: getCurrentValuesOf<OverrideTable<OverrideableBlueprintSettings>>(
+    blueprintOverrideSettings: exportOverrideValues(
       settings.blueprintOverrideSettings,
       keys<OverrideableBlueprintSettings>(),
     ),
@@ -51,6 +60,39 @@ export function exportStage(this: unknown, stage: Stage): StageExport {
       keys<StageBlueprintSettings>(),
     ),
     ...getCurrentValuesOf<StageSettings>(stage.getSettings(), keys<StageSettings>()),
+  }
+}
+
+function exportOverrideValues<T extends object>(
+  propertiesTable: PropertyOverrideTable<T>,
+  ks: Array<keyof T>,
+): Partial<OverrideTable<T>> {
+  const result: Record<string, unknown> = {}
+  for (const key of ks) {
+    const value = propertiesTable[key].get()
+    if (value == nil) continue
+    if (typeof value == "object" && isEmpty(value)) {
+      result[key as string] = nilOverrideMarker
+    } else {
+      result[key as string] = value
+    }
+  }
+  return result as Partial<OverrideTable<T>>
+}
+
+function importOverrideValues<T extends object>(
+  propertiesTable: PropertyOverrideTable<T>,
+  values: Partial<OverrideTable<T>>,
+  ks: Array<keyof T>,
+): void {
+  for (const key of ks) {
+    const value = (values as Record<string, unknown>)[key as string]
+    if (value == nil) continue
+    if (value == nilOverrideMarker || (type(value) == "table" && isEmpty(value))) {
+      propertiesTable[key].set(getNilPlaceholder())
+    } else {
+      propertiesTable[key].set(value as never)
+    }
   }
 }
 
@@ -90,7 +132,7 @@ export function importProjectDataOnly(data: ProjectExport): Project {
 function importStage(importedStage: StageExport, result: Stage): void {
   const settings = result.getSettings()
   if (importedStage.blueprintOverrideSettings != nil) {
-    setCurrentValuesOf<OverrideTable<OverrideableBlueprintSettings>>(
+    importOverrideValues(
       settings.blueprintOverrideSettings,
       importedStage.blueprintOverrideSettings,
       keys<OverrideableBlueprintSettings>(),

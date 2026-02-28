@@ -8,8 +8,9 @@ import expect from "tstl-expect"
 import { Entity } from "../../entity/Entity"
 import { newProjectContent } from "../../entity/ProjectContent"
 import { newProjectEntity } from "../../entity/ProjectEntity"
-import { exportProject, importProjectDataOnly, ProjectExport } from "../../import-export/project"
+import { exportProject, exportStage, importProjectDataOnly, ProjectExport } from "../../import-export/project"
 import { asMutable, deepCopy, Mutable } from "../../lib"
+import { getNilPlaceholder } from "../../utils/diff-value"
 import { getDefaultSurfaceSettings, NormalSurfaceSettings } from "../../project/surfaces"
 import { _deleteAllProjects, createProject } from "../../project/Project"
 import { simpleInsertPlan } from "../entity/entity-util"
@@ -186,6 +187,53 @@ test("exports and imports surface settings", () => {
 
   const imported = importProjectDataOnly(exported)
   expect(imported.settings.surfaceSettings).toEqual({ ...getDefaultSurfaceSettings(), ...settings })
+})
+
+test("exports NilPlaceholder override values as marker string", () => {
+  const project = createProject("test", 2, nil)
+  const stage = project.getStage(1)!
+  stage.getSettings().blueprintOverrideSettings.icon1.set(getNilPlaceholder() as any)
+  stage.getSettings().blueprintOverrideSettings.icon3.set({ type: "item", name: "iron-plate" })
+
+  const exported = exportStage(stage)
+  expect(exported.blueprintOverrideSettings!.icon1).toBe("__nil")
+  expect(exported.blueprintOverrideSettings!.icon3).toEqual({ type: "item", name: "iron-plate" })
+})
+
+test("round trips NilPlaceholder override values", () => {
+  const project = createProject("test", 2, nil)
+  const stage = project.getStage(1)!
+  stage.getSettings().blueprintOverrideSettings.icon1.set(getNilPlaceholder() as any)
+  stage.getSettings().blueprintOverrideSettings.icon2.set({ type: "item", name: "iron-plate" })
+
+  const exported = exportProject(project)
+  const imported = importProjectDataOnly(exported)
+
+  const importedOverrides = imported.getStage(1)!.getSettings().blueprintOverrideSettings
+  expect(importedOverrides.icon1.get()).toBe(getNilPlaceholder())
+  expect(importedOverrides.icon2.get()).toEqual({ type: "item", name: "iron-plate" })
+  expect(importedOverrides.icon3.get()).toBeNil()
+})
+
+test("imports legacy empty-table override values as NilPlaceholder", () => {
+  const exported: ProjectExport = {
+    name: "Test",
+    stages: [
+      {
+        name: "Stage 1",
+        blueprintOverrideSettings: {
+          icon1: {} as any,
+          icon2: {} as any,
+        },
+      },
+    ],
+    entities: [],
+  }
+
+  const imported = importProjectDataOnly(exported)
+  const overrides = imported.getStage(1)!.getSettings().blueprintOverrideSettings
+  expect(overrides.icon1.get()).toBe(getNilPlaceholder())
+  expect(overrides.icon2.get()).toBe(getNilPlaceholder())
 })
 
 test("imports project without surface settings (backward compatibility)", () => {
