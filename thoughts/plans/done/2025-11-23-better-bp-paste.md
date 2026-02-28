@@ -496,9 +496,9 @@ describe("applyDirectionTransformation()", () => {
 - [x] Linting passes: `npm run lint`
 
 #### Manual Verification:
-- [ ] Direction rounding works correctly for all 8 directions
-- [ ] Direction transformations match entity marker behavior
-- [ ] Tests cover all cardinal and diagonal directions
+- [x] Direction rounding works correctly for all 8 directions
+- [x] Direction transformations match entity marker behavior
+- [x] Tests cover all cardinal and diagonal directions
 
 **Implementation Note**: These utilities will be used in Phase 3 to correctly transform blueprint entity directions.
 
