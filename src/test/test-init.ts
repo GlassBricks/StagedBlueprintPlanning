@@ -136,7 +136,6 @@ if ("factorio-test" in script.active_mods) {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function setupManualTests(_project: Project) {
   // const player = game.players[1]
   // function createEntityWithChanges() {
