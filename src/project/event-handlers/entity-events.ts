@@ -32,8 +32,9 @@ Events.script_raised_destroy((e) => {
         x: entityPos.x - 0.5,
         y: entityPos.y - 0.5,
       }
-      handleTileMined(entity.surface_index, [{ position }])
-      if (entity.valid) entity.destroy()
+      if (handleTileMined(entity.surface_index, [{ position }])) {
+        if (entity.valid) entity.destroy()
+      }
     } else {
       luaEntityDeleted(entity)
     }

@@ -60,13 +60,14 @@ Events.on_space_platform_built_tile(onTileBuilt)
 export function handleTileMined(
   surface_index: SurfaceIndex,
   tiles: readonly { readonly position: MapPosition }[],
-): void {
+): boolean {
   const stage = getStageAtSurface(surface_index)
-  if (!stage || !stage.project.settings.stagedTilesEnabled.get()) return
+  if (!stage || !stage.project.settings.stagedTilesEnabled.get()) return false
   const { stageNumber, actions } = stage
   for (const posData of tiles) {
     actions.onTileMined(posData.position, stageNumber)
   }
+  return true
 }
 
 function onTileMined(e: OnPlayerMinedTileEvent | OnRobotMinedTileEvent | OnSpacePlatformMinedTileEvent): void {
