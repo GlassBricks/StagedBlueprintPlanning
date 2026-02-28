@@ -2,18 +2,18 @@ import { EventId, LuaEntity, MapPosition, OnPlayerMinedEntityEvent, PlayerIndex 
 import { oppositedirection } from "util"
 import { Prototypes } from "../../constants"
 import { LuaEntityInfo } from "../../entity/Entity"
-import { areUpgradeableTypes } from "../../entity/prototype-info"
 import { isWorldEntityProjectEntity } from "../../entity/ProjectEntity"
+import { areUpgradeableTypes } from "../../entity/prototype-info"
 import { ProtectedEvents } from "../../lib"
 import { Pos } from "../../lib/geometry"
-import { getStageAtSurface } from "../project-refs"
 import { Stage } from "../Project"
 import { onUndoReferenceBuilt, registerUndoActionLater } from "../actions/undo"
+import { getStageAtSurface } from "../project-refs"
 import {
   clearCurrentBlueprintPaste,
   clearToBeFastReplaced,
-  getToBeFastReplaced,
   clearToBeFastReplacedField,
+  getToBeFastReplaced,
   isInBlueprintPaste,
   isInBplibPaste,
   onEntityMarkerBuilt,

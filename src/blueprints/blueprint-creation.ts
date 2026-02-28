@@ -10,7 +10,7 @@ import { isEmpty, RegisterClass } from "../lib"
 import { BBox } from "../lib/geometry"
 import { EnumeratedItemsTask, runEntireTask, submitTask } from "../lib/task"
 import { L_GuiBlueprintBookTask, L_GuiProjectSettings } from "../locale"
-import { Stage, Project } from "../project/Project"
+import { Project, Stage } from "../project/Project"
 import { showBlueprintString } from "../ui/blueprint-string"
 import { getCurrentValues } from "../utils/properties-obj"
 import {

@@ -1,15 +1,15 @@
-import "./entity-events"
-import "./build-events"
 import "./blueprint-paste"
-import "./wire-events"
-import "./selection-tools"
+import "./build-events"
+import "./entity-events"
 import "./misc-events"
+import "./selection-tools"
+import "./wire-events"
 
-import { _assertInValidState as _assertSharedInValidState, _resetState as _resetSharedState } from "./shared-state"
 import { _assertBlueprintPasteInValidState, _resetBlueprintPasteState } from "./blueprint-paste"
+import { _assertInValidState as _assertSharedInValidState, _resetState as _resetSharedState } from "./shared-state"
 
-export { checkForEntityUpdates, checkForCircuitWireUpdates } from "./shared-state"
 export { getCurrentlyOpenedModdedGui } from "./misc-events"
+export { checkForCircuitWireUpdates, checkForEntityUpdates } from "./shared-state"
 
 export function _resetState(): void {
   _resetSharedState()

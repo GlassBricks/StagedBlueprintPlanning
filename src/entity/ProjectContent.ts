@@ -16,9 +16,9 @@ import {
   InserterProjectEntity,
   NameAndQuality,
   ProjectEntity,
-  StagePropertiesData,
   StageDiffs,
   StageNumber,
+  StagePropertiesData,
   UndergroundBeltProjectEntity,
 } from "./ProjectEntity"
 import {

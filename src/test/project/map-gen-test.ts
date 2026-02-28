@@ -6,9 +6,8 @@
 import { MapGenSettings } from "factorio:runtime"
 import expect from "tstl-expect"
 import { asMutable, deepCopy, Mutable } from "../../lib"
-import { Project } from "../../project/Project"
+import { createProject, Project } from "../../project/Project"
 import { NormalSurfaceSettings, syncMapGenSettings } from "../../project/surfaces"
-import { createProject } from "../../project/Project"
 import { setupTestSurfaces } from "./Project-mock"
 
 const surfaces = setupTestSurfaces(2)

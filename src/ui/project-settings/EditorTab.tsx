@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import { PlayerIndex, TilePrototypeFilter } from "factorio:runtime"
+import { Prototypes } from "../../constants"
 import { ibind, property, RegisterClass } from "../../lib"
 import { Component, Element, FactorioJsx, RenderContext } from "../../lib/factoriojsx"
 import { VerticalPusher } from "../../lib/factoriojsx/components"
@@ -15,7 +16,6 @@ import {
   setTilesAndWaterForStage,
   setTilesForStage,
 } from "../../tiles/set-tiles"
-import { Prototypes } from "../../constants"
 import { playerCurrentStage } from "../player-current-stage"
 import { LandfillButtonWidth, StageSettingsButtonWidth } from "./shared-constants"
 

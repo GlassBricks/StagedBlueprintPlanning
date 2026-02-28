@@ -20,10 +20,11 @@ declare module "__bplib__/types" {
 
 /** @noResolution */
 declare module "__bplib__/blueprint" {
+  import { Blueprintish } from "__bplib__/types"
   import {
     AnyBasic,
-    BoundingBox,
     BlueprintEntity,
+    BoundingBox,
     LuaEntity,
     LuaItemStack,
     LuaPlayer,
@@ -35,7 +36,6 @@ declare module "__bplib__/blueprint" {
     Tags,
     TilePosition,
   } from "factorio:runtime"
-  import { Blueprintish } from "__bplib__/types"
 
   export interface BlueprintBase {
     readonly record?: LuaRecord

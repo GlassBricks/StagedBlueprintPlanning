@@ -27,8 +27,7 @@ import {
 } from "../../entity/save-load"
 import { assert, crossProduct, Events } from "../../lib"
 import { Pos } from "../../lib/geometry"
-import { Project } from "../../project/Project"
-import { _deleteAllProjects, createProject } from "../../project/Project"
+import { _deleteAllProjects, createProject, Project } from "../../project/Project"
 import { createRollingStocks } from "./createRollingStock"
 import { moduleInsertPlan, simpleInsertPlan } from "./entity-util"
 

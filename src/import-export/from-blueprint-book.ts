@@ -7,8 +7,7 @@ import { updateBasicBlueprintSettings } from "../blueprints/edit-blueprint-setti
 import { Entity } from "../entity/Entity"
 import { newProjectContent } from "../entity/ProjectContent"
 import { newProjectEntity, ProjectEntity } from "../entity/ProjectEntity"
-import { Project } from "../project/Project"
-import { createProject } from "../project/Project"
+import { createProject, Project } from "../project/Project"
 
 export function convertBookToProjectDataOnly(stack: LuaItemStack): Project {
   if (!(stack.valid && stack.valid_for_read && stack.is_blueprint_book)) {

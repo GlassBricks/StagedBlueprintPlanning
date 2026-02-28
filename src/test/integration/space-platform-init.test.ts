@@ -7,9 +7,8 @@ import expect from "tstl-expect"
 import { ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { assert } from "../../lib"
 import { BBox } from "../../lib/geometry"
-import { Project } from "../../project/Project"
+import { _deleteAllProjects, createProject, Project } from "../../project/Project"
 import { SpacePlatformSettings } from "../../project/surfaces"
-import { _deleteAllProjects, createProject } from "../../project/Project"
 import { assertEntityCorrect } from "./integration-test-util"
 
 before_each(() => {

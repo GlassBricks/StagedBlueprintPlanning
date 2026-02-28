@@ -8,8 +8,8 @@ import expect from "tstl-expect"
 import { MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
 import { newProjectEntity, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { ProjectWireConnection, wireConnectionEquals } from "../../entity/wire-connection"
-import { WorldEntityLookup } from "../../project/WorldPresentation"
 import { shallowCompare } from "../../lib"
+import { WorldEntityLookup } from "../../project/WorldPresentation"
 
 let content: MutableProjectContent
 let surface: LuaSurface

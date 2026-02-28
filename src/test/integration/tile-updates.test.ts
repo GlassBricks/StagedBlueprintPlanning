@@ -6,8 +6,7 @@
 import { LuaPlayer } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Pos } from "../../lib/geometry"
-import { Project } from "../../project/Project"
-import { createProject } from "../../project/Project"
+import { createProject, Project } from "../../project/Project"
 
 describe("Tiles integration tests", () => {
   let project: Project

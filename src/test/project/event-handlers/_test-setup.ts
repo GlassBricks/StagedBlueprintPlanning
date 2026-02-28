@@ -1,14 +1,13 @@
 import { LuaPlayer, LuaSurface } from "factorio:runtime"
 import { mock } from "tstl-expect"
-import { _assertInValidState, _resetState } from "../../../project/event-handlers"
-import { Project } from "../../../project/Project"
+import { Pos } from "../../../lib/geometry"
 import { ProjectActions } from "../../../project/actions/ProjectActions"
 import { UndoHandler } from "../../../project/actions/undo"
-import { _deleteAllProjects, createProject } from "../../../project/Project"
+import { _assertInValidState, _resetState } from "../../../project/event-handlers"
+import { _deleteAllProjects, createProject, Project } from "../../../project/Project"
 import * as _createBpWithStageInfo from "../../../ui/create-blueprint-with-stage-info"
 import { fStubClass } from "../../f-mock"
 import { moduleMock } from "../../module-mock"
-import { Pos } from "../../../lib/geometry"
 
 export interface EventHandlerTestContext {
   getProject(): Project & { actions: mock.MockedObject<ProjectActions> }

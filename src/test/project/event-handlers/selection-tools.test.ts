@@ -3,8 +3,8 @@ import expect from "tstl-expect"
 import { CustomInputs, Prototypes } from "../../../constants"
 import { Events } from "../../../lib"
 import { BBox, Pos } from "../../../lib/geometry"
-import { getProjectPlayerData } from "../../../project/player-project-data"
 import { _simulateUndo } from "../../../project/actions/undo"
+import { getProjectPlayerData } from "../../../project/player-project-data"
 import { pos, setupEventHandlerTests } from "./_test-setup"
 
 const ctx = setupEventHandlerTests()

@@ -1,6 +1,6 @@
 import { remove_from_list } from "util"
 import { globalEvent } from "../lib"
-import { ProjectId, Stage, Project } from "./Project"
+import { Project, ProjectId, Stage } from "./Project"
 
 declare const storage: {
   projects: Project[]

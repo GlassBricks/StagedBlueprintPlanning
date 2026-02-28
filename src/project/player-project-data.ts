@@ -7,7 +7,7 @@ import { PlayerIndex } from "factorio:runtime"
 import { StageNumber } from "../entity/ProjectEntity"
 import { onPlayerInit } from "../lib"
 import { Position } from "../lib/geometry"
-import { ProjectId, Project } from "./Project"
+import { Project, ProjectId } from "./Project"
 import { projectDeleted } from "./ProjectList"
 
 export interface ProjectPlayerData {

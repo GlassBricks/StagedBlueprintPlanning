@@ -4,5 +4,5 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 export * from "./bounding-box"
-export * from "./position"
 export * from "./direction"
+export * from "./position"

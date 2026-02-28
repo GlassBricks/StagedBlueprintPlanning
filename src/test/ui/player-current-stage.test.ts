@@ -6,8 +6,7 @@
 import { LuaPlayer, PlayerIndex, SurfaceIndex } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Pos } from "../../lib/geometry"
-import { Project } from "../../project/Project"
-import { createProject, _deleteAllProjects } from "../../project/Project"
+import { _deleteAllProjects, createProject, Project } from "../../project/Project"
 import { exitProject, playerCurrentStage, teleportToProject, teleportToStage } from "../../ui/player-current-stage"
 
 before_each(() => {

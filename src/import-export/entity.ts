@@ -10,10 +10,10 @@ import {
   InternalProjectEntity,
   newProjectEntity,
   ProjectEntity,
-  StagePropertiesData,
   StageDiffs,
   StageNumber,
   StageProperties,
+  StagePropertiesData,
 } from "../entity/ProjectEntity"
 import { getDirectionalInfo } from "../entity/wire-connection"
 import { deepCopy, Events, Mutable, PRRecord } from "../lib"

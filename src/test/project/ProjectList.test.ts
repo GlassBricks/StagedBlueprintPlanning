@@ -1,5 +1,5 @@
 import expect, { mock, MockNoSelf } from "tstl-expect"
-import { Project } from "../../project/Project"
+import { _deleteAllProjects, createProject, Project } from "../../project/Project"
 import {
   getAllProjects,
   getProjectById,
@@ -10,7 +10,6 @@ import {
   projectDeleted,
   projectsReordered,
 } from "../../project/ProjectList"
-import { _deleteAllProjects, createProject } from "../../project/Project"
 
 after_each(() => {
   _deleteAllProjects()

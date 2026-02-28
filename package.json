@@ -28,6 +28,7 @@
     "lua-types": "^2.13.1",
     "nodemon": "^3.1.10",
     "prettier": "^3.6.2",
+    "prettier-plugin-organize-imports": "^4.3.0",
     "semver": "^7.7.2",
     "tstl-expect": "^0.4.6",
     "tsx": "^4.20.3",

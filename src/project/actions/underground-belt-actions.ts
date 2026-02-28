@@ -10,8 +10,8 @@ import {
 } from "../../entity/ProjectEntity"
 import { forceFlipUnderground } from "../../entity/save-load"
 import { findUndergroundPair, undergroundCanReach } from "../../entity/underground-belt"
-import { EntityUpdateResult } from "./undo-records"
 import { WorldPresenter } from "../WorldPresentation"
+import { EntityUpdateResult } from "./undo-records"
 
 interface UndergroundBeltContext {
   readonly content: MutableProjectContent

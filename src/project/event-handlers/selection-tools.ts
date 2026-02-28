@@ -9,10 +9,9 @@ import { ProtectedEvents } from "../../lib"
 import { addSelectionToolHandlers } from "../../lib/selection-tool"
 import { L_Interaction } from "../../locale"
 import { createBlueprintWithStageInfo } from "../../ui/create-blueprint-with-stage-info"
+import { registerGroupUndoAction, registerUndoAction, UndoAction } from "../actions/undo"
 import { getProjectPlayerData } from "../player-project-data"
 import { getStageAtSurface } from "../project-refs"
-import { UndoAction } from "../actions/undo"
-import { registerGroupUndoAction, registerUndoAction } from "../actions/undo"
 import { getStageAtEntityOrPreview, getState } from "./shared-state"
 
 const Events = ProtectedEvents

@@ -12,16 +12,10 @@ import { isPreviewEntity } from "../../entity/prototype-info"
 import { canBeAnyDirection, saveEntity } from "../../entity/save-load"
 import { assert } from "../../lib"
 import { Pos } from "../../lib/geometry"
-import { checkForEntityUpdates } from "../../project/event-handlers"
-import { Project } from "../../project/Project"
-import { _deleteAllProjects, createProject } from "../../project/Project"
 import { HighlightTypes } from "../../project/EntityHighlights"
+import { checkForEntityUpdates } from "../../project/event-handlers"
+import { _deleteAllProjects, createProject, Project } from "../../project/Project"
 import { WorldPresentation } from "../../project/WorldPresentation"
-
-function iterateTypeIsEmpty(wp: WorldPresentation, entity: ProjectEntity, type: keyof HighlightTypes): boolean {
-  for (const [,] of wp.entityStorage.iterateType(entity, type)) return false
-  return true
-}
 import {
   assertConfigChangedHighlightsCorrect,
   assertErrorHighlightsCorrect,
@@ -29,6 +23,11 @@ import {
   assertLastStageHighlightCorrect,
   assertNoHighlightsAfterLastStage,
 } from "../project/entity-highlight-test-util"
+
+function iterateTypeIsEmpty(wp: WorldPresentation, entity: ProjectEntity, type: keyof HighlightTypes): boolean {
+  for (const [,] of wp.entityStorage.iterateType(entity, type)) return false
+  return true
+}
 
 export function applyDiffViaWorld(
   wp: WorldPresentation,

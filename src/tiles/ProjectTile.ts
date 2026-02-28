@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+import { StageNumber } from "../entity/ProjectEntity"
 import { PRecord, RegisterClass, shiftNumberKeysDown, shiftNumberKeysUp } from "../lib"
 import { getNilPlaceholder, NilPlaceholder } from "../utils/diff-value"
-import { StageNumber } from "../entity/ProjectEntity"
 
 export interface ProjectTile {
   readonly values: PRecord<StageNumber, string | NilPlaceholder>

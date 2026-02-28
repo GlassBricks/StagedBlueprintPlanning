@@ -7,9 +7,8 @@ import { TileWrite } from "factorio:runtime"
 import expect from "tstl-expect"
 import { Mutable } from "../../lib"
 import { BBox, Position } from "../../lib/geometry"
-import { Project } from "../../project/Project"
+import { _deleteAllProjects, createProject, Project } from "../../project/Project"
 import { SpacePlatformSettings } from "../../project/surfaces"
-import { _deleteAllProjects, createProject } from "../../project/Project"
 import { resetSpacePlatformTiles } from "../../tiles/set-tiles"
 
 before_each(() => {

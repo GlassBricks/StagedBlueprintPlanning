@@ -1,12 +1,12 @@
 import { LuaEntity, LuaSurface, PlayerIndex, UnitNumber } from "factorio:runtime"
 import { Prototypes } from "../../constants"
-import { isPreviewEntity } from "../../entity/prototype-info"
 import { isWorldEntityProjectEntity } from "../../entity/ProjectEntity"
+import { isPreviewEntity } from "../../entity/prototype-info"
 import { getRegisteredProjectEntityFromUnitNumber, getStageFromUnitNumber } from "../../entity/registration"
 import { ProtectedEvents } from "../../lib"
-import { getStageAtSurface } from "../project-refs"
 import { Stage } from "../Project"
 import { UndoAction } from "../actions/undo"
+import { getStageAtSurface } from "../project-refs"
 
 const Events = ProtectedEvents
 

@@ -1,3 +1,4 @@
+import { BlueprintBuild } from "__bplib__/blueprint"
 import {
   BaseItemStack,
   BlueprintEntity,
@@ -14,7 +15,6 @@ import {
   UndergroundBeltBlueprintEntity,
 } from "factorio:runtime"
 import { oppositedirection } from "util"
-import { BlueprintBuild } from "__bplib__/blueprint"
 import { Prototypes, Settings } from "../../constants"
 import { LuaEntityInfo } from "../../entity/Entity"
 import {
@@ -28,9 +28,9 @@ import { StageInfoExport } from "../../import-export/entity"
 import { isEmpty, PRecord, ProtectedEvents } from "../../lib"
 import { DelayedEvent } from "../../lib/delayed-event"
 import { floorToCardinalDirection, Pos } from "../../lib/geometry"
+import { Migrations } from "../../lib/migration"
 import { L_Interaction } from "../../locale"
 import { Stage } from "../Project"
-import { Migrations } from "../../lib/migration"
 import { getState } from "./shared-state"
 
 const Events = ProtectedEvents

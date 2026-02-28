@@ -7,8 +7,7 @@ import expect from "tstl-expect"
 import { Settings } from "../../constants"
 import { Events } from "../../lib"
 import { BBox } from "../../lib/geometry"
-import { Stage, Project } from "../../project/Project"
-import { _deleteAllProjects, createProject } from "../../project/Project"
+import { _deleteAllProjects, createProject, Project, Stage } from "../../project/Project"
 import { simpleInsertPlan } from "../entity/entity-util"
 
 let project: Project

@@ -1,8 +1,8 @@
 import expect, { mock } from "tstl-expect"
-import { ContentObserver, MutableProjectContent, newProjectContent, _assertCorrect } from "../../entity/ProjectContent"
+import { UndergroundBeltEntity } from "../../entity/Entity"
+import { _assertCorrect, ContentObserver, MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
 import { newProjectEntity, ProjectEntity, StageNumber, UndergroundBeltProjectEntity } from "../../entity/ProjectEntity"
 import { ProjectWireConnection } from "../../entity/wire-connection"
-import { UndergroundBeltEntity } from "../../entity/Entity"
 
 function createMockObserver(): mock.MockedObject<ContentObserver> {
   return mock.all<ContentObserver>(

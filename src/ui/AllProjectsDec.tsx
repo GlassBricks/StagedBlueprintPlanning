@@ -1,6 +1,6 @@
 import { LuaPlayer } from "factorio:runtime"
-import { destroy } from "../lib/factoriojsx"
 import * as mod_gui from "mod-gui"
+import { destroy } from "../lib/factoriojsx"
 
 export const AllProjectsName = script.mod_name + ":all-projects"
 

@@ -1,7 +1,7 @@
 import { MutableProjectContent } from "../../entity/ProjectContent"
+import { StageNumber } from "../../entity/ProjectEntity"
 import { getPrototypeInfo } from "../../entity/prototype-info"
 import { Position } from "../../lib/geometry"
-import { StageNumber } from "../../entity/ProjectEntity"
 import { createProjectTile, ProjectTile } from "../../tiles/ProjectTile"
 import { SurfaceProvider } from "../EntityHighlights"
 import { ProjectSettings } from "../ProjectSettings"

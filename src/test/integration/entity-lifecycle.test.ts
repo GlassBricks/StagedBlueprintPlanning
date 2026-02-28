@@ -12,8 +12,8 @@ import { canBeAnyDirection, saveEntity } from "../../entity/save-load"
 import { Events } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { runEntireCurrentTask } from "../../lib/task"
-import { checkForEntityUpdates } from "../../project/event-handlers"
 import { _simulateUndo } from "../../project/actions"
+import { checkForEntityUpdates } from "../../project/event-handlers"
 import { setupEntityIntegrationTest } from "./integration-test-util"
 import direction = defines.direction
 

@@ -12,8 +12,8 @@ import {
   PrototypeWithQualityRead,
 } from "factorio:runtime"
 import { BBox } from "../lib/geometry"
-import { Stage, Project } from "./Project"
 import { withTileEventsDisabled } from "../tiles/tile-events"
+import { Project, Stage } from "./Project"
 
 export interface NormalSurfaceSettings {
   readonly type: "normal"

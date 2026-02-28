@@ -1,6 +1,6 @@
 import { ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
-import { UndoHandler } from "./undo"
 import type { ProjectActions } from "./ProjectActions"
+import { UndoHandler } from "./undo"
 
 export declare const enum EntityUpdateResult {
   Updated = "updated",

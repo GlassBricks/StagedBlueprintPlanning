@@ -14,8 +14,7 @@ import { createStageReference, getReferencedStage } from "../../blueprints/stage
 import { Pos } from "../../lib/geometry"
 import { cancelCurrentTask, isTaskRunning, runEntireCurrentTask } from "../../lib/task"
 import { checkForCircuitWireUpdates, checkForEntityUpdates } from "../../project/event-handlers"
-import { Stage, Project } from "../../project/Project"
-import { _deleteAllProjects, createProject } from "../../project/Project"
+import { _deleteAllProjects, createProject, Project, Stage } from "../../project/Project"
 import { simpleInsertPlan } from "../entity/entity-util"
 
 let project: Project

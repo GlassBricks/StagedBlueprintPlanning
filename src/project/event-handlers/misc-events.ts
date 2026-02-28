@@ -1,11 +1,11 @@
 import { LuaPlayer } from "factorio:runtime"
 import { BobInserterChangedPositionEvent } from "../../declarations/mods"
 import { ProjectEntity, isWorldEntityProjectEntity } from "../../entity/ProjectEntity"
+import { hasMayHaveModdedGui } from "../../entity/prototype-info"
 import { getRegisteredProjectEntity } from "../../entity/registration"
 import { ProtectedEvents } from "../../lib"
 import { withTileEventsDisabled } from "../../tiles/tile-events"
 import { getStageAtSurface } from "../project-refs"
-import { hasMayHaveModdedGui } from "../../entity/prototype-info"
 import { luaEntityPossiblyUpdated } from "./shared-state"
 
 const Events = ProtectedEvents

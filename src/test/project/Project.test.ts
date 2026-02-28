@@ -6,10 +6,9 @@
 import expect, { AnySelflessFun, mock, MockNoSelf } from "tstl-expect"
 import { getIconsFromSettings } from "../../blueprints/blueprint-settings"
 import { getReferencedStage } from "../../blueprints/stage-reference"
-import { Project } from "../../project/Project"
+import { _deleteAllProjects, createProject, Project } from "../../project/Project"
 import { getProjectById, getStageAtSurface } from "../../project/project-refs"
 import { projectCreated, projectDeleted } from "../../project/ProjectList"
-import { _deleteAllProjects, createProject } from "../../project/Project"
 import { getCurrentValues } from "../../utils/properties-obj"
 
 let createdListener: MockNoSelf<AnySelflessFun>

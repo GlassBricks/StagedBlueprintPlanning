@@ -4,16 +4,16 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import expect from "tstl-expect"
-import { newProjectEntity, ProjectEntity, StageDiffs } from "../../entity/ProjectEntity"
 import { newProjectContent } from "../../entity/ProjectContent"
+import { newProjectEntity, ProjectEntity, StageDiffs } from "../../entity/ProjectEntity"
 import {
+  deserializeEntity,
   EntityExport,
-  serializeAllEntities,
-  serializeEntity,
   ExportNilPlaceholder,
   fromExportStageDiffs,
-  deserializeEntity,
   isExportNilPlaceholder,
+  serializeAllEntities,
+  serializeEntity,
   StageDiffsExport,
   toExportStageDiffs,
 } from "../../import-export/entity"

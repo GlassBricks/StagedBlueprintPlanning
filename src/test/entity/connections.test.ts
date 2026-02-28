@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 import expect from "tstl-expect"
-import { MutableProjectContent, newProjectContent, _assertCorrect } from "../../entity/ProjectContent"
+import { _assertCorrect, MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
 import { newProjectEntity, ProjectEntity } from "../../entity/ProjectEntity"
 import { ProjectWireConnection } from "../../entity/wire-connection"
 

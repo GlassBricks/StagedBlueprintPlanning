@@ -10,9 +10,9 @@ import { newProjectContent } from "../../entity/ProjectContent"
 import { newProjectEntity } from "../../entity/ProjectEntity"
 import { exportProject, exportStage, importProjectDataOnly, ProjectExport } from "../../import-export/project"
 import { asMutable, deepCopy, Mutable } from "../../lib"
-import { getNilPlaceholder } from "../../utils/diff-value"
-import { getDefaultSurfaceSettings, NormalSurfaceSettings } from "../../project/surfaces"
 import { _deleteAllProjects, createProject } from "../../project/Project"
+import { getDefaultSurfaceSettings, NormalSurfaceSettings } from "../../project/surfaces"
+import { getNilPlaceholder } from "../../utils/diff-value"
 import { simpleInsertPlan } from "../entity/entity-util"
 
 after_each(() => {

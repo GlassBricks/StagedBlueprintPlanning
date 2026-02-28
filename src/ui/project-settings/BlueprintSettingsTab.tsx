@@ -16,7 +16,7 @@ import { bind, funcRef, ibind, multiMap, Property, RegisterClass, registerFuncti
 import { Component, Element, ElemProps, FactorioJsx, RenderContext } from "../../lib/factoriojsx"
 import { Fn, showDialog } from "../../lib/factoriojsx/components"
 import { L_GuiProjectSettings, L_Interaction } from "../../locale"
-import { Stage, Project } from "../../project/Project"
+import { Project, Stage } from "../../project/Project"
 import { highlightIfNotNil, highlightIfOverriden } from "../../utils/DiffedProperty"
 import { ManualRevertButton, MaybeRevertButton } from "../../utils/RevertButton"
 import { exportProjectToString } from "../blueprint-string"

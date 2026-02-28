@@ -170,7 +170,7 @@ function findMatchingWireConnection(
   }
 }
 
-export { updateWireConnectionsAtStage, saveWireConnections }
+export { saveWireConnections, updateWireConnectionsAtStage }
 
 // noinspection JSUnusedGlobalSymbols
 export const _mockable = true

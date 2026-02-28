@@ -7,7 +7,7 @@ import { DropDownGuiElement, ListBoxGuiElement, LocalisedString, PlayerIndex } f
 import { StageNumber } from "../entity/ProjectEntity"
 import { bind, ibind, MutableProperty, RegisterClass, Subscription } from "../lib"
 import { Component, Element, ElemProps, FactorioJsx, RenderContext } from "../lib/factoriojsx"
-import { Stage, Project } from "../project/Project"
+import { Project, Stage } from "../project/Project"
 import { playerCurrentStage, teleportToStage } from "./player-current-stage"
 
 export type StageSelectorProps<T extends "drop-down" | "list-box"> = {

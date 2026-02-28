@@ -18,11 +18,11 @@ import { Component, destroy, Element, FactorioJsx, renderOpened } from "../lib/f
 import { Confirmable, HorizontalPusher, SimpleTitleBar } from "../lib/factoriojsx/components"
 import { L_GuiProjectSelector } from "../locale"
 import { createProject } from "../project/Project"
+import { SpacePlatformSettings, SurfaceSettings } from "../project/surfaces"
+import { closeAllProjects } from "./AllProjectsDec"
 import { MapGenSettingsForm, PlanetSelect } from "./MapGenSettings"
 import { teleportToProject } from "./player-current-stage"
 import { bringSettingsWindowToFront } from "./project-settings"
-import { SpacePlatformSettings, SurfaceSettings } from "../project/surfaces"
-import { closeAllProjects } from "./AllProjectsDec"
 
 interface SpacePlatformSettingsProps {
   firstStarterPack: string

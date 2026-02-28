@@ -8,8 +8,8 @@ import { StageNumber } from "../entity/ProjectEntity"
 import { Events, globalEvent, MutableProperty, onPlayerInit, Property, property } from "../lib"
 import { Position } from "../lib/geometry"
 import { getProjectPlayerData } from "../project/player-project-data"
+import { Project, Stage } from "../project/Project"
 import { getStageAtSurface } from "../project/project-refs"
-import { Stage, Project } from "../project/Project"
 import { projectDeleted, stageDeleted } from "../project/ProjectList"
 
 declare global {
