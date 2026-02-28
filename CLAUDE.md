@@ -8,26 +8,14 @@ Staged Blueprint Planning is a Factorio mod for designing multi-stage blueprints
 pnpm run build:test        # Full build (run once initially, or after clean)
 pnpm run build:release     # Production build
 pnpm run test              # Run tests (incremental build)
-pnpm exec tstl && pnpm exec factorio-test run # decomposed pnpm run test
 pnpm run test:rebuild      # Clean, rebuild, and test
-
-
 pnpm exec factorio-test run "filter1" "foo%-test > block name" # Run specific test (Lua patterns: escape - as %-)
-
 pnpm run format:fix        # Prettier
 pnpm run lint              # ESLint
 pnpm run check             # Full validation (format, lint, test, git tree clean)
 ```
 
 Run format and lint after changes.
-
-### Build Scripts
-
-These are run as part of full rebuild.
-
-- `pnpm run build:locale` - Generates `src/locale/index.d.ts` from `src/locale`
-- `pnpm run build:gui-specs` - Generates GUI specs for factoriojsx framework
-- `pnpm run build:tstlPlugin` - Builds custom TSTL plugin for function storage
 
 ## Code Style
 
@@ -58,59 +46,18 @@ Since Typescript code compiles to Lua:
 
 ## Architecture
 
-- TypeScriptToLua (TSTL)
-- typed-factorio for Factorio API type definitions
-- factorio-test for testing
-- gb-tstl-utils for compiler utilities
-
-### Key Directories
-
 ```
 src/
 ├── project/            # Main backend: project state & logic
-├── entity/             # Entity handling
-│   ├── ProjectEntity.ts      # Individual entity data
-│   └── ProjectContent.ts     # Project's entities collection (observable)
+│   ├── event-handlers/ # Parses Factorio events → ProjectActions → ProjectContent → WorldPresentation
+│   └── actions/        # Player action handling
+├── entity/             # ProjectEntity (data) + ProjectContent (observable collection)
 ├── blueprints/         # Blueprint-specific logic
-├── import-export/      # Import/export to string
-├── tiles/              # Tile handling
-├── ui/                 # Frontend UI components
-│   └── project-settings/  # Project settings tabs
-├── lib/                # Core libraries
-│   ├── event/          # Custom event system (Event, Property, GlobalEvent)
-│   ├── factoriojsx/    # Custom JSX framework for Factorio GUI
-│   ├── geometry/       # Geometry utilities
-│   ├── references.ts   # Function storage system 
-│   └── migration.ts    # Migration framework
-├── utils/              # General utilities
-├── test/               # Tests (mirrors src/ structure)
-├── prototypes/         # Factorio data stage prototypes
+├── ui/                 # Frontend UI (factoriojsx framework)
+├── lib/                # event/, factoriojsx/, geometry/, references.ts, migration.ts
+├── test/               # Mirrors src/ structure
 └── control.ts          # Mod entry point
 ```
-
-- `src/entity/ProjectEntity.ts` - Individual entity data structure
-- `src/entity/ProjectContent.ts` - Project entities collection (observable via ContentObserver)
-- `src/project/Project.ts` - Main project interface and implementation
-- `src/project/actions/ProjectActions.ts` - All player action handling
-- `src/project/WorldPresentation.ts` - World state sync (implements ContentObserver)
-- `src/project/entity-highlights.ts` - Entity highlight visualization
-- `src/lib/references.ts` - Global function storage system
-
-#### Main Event Pipeline
-
-in `src/project/`:
-
-1. `event-handlers/` - Parses Factorio events, dispatches to actions
-2. `ProjectActions` - Handles player interactions and state changes
-3. `ProjectContent` (observable) - State changes notify observer
-4. `WorldPresentation` (ContentObserver) - Syncs world state with project
-5. `entity-highlights.ts` - Manages entity visual highlights
-
-### Custom Libraries
-
-**factoriojsx**: (`src/lib/factoriojsx/`): Provides JSX GUI creation for Factorio
-**Event System** (`src/lib/event/`): Custom reactive event/property system
-**References** (`src/lib/references.ts`): Allows registered functions to be stored in `storage`
 
 ### Migrations
 
@@ -118,25 +65,30 @@ in `src/project/`:
 See [docs/Migrations.md](docs/Migrations.md) for full reference and patterns.
 
 - Place project-related migrations in: `src/project/index.ts`
-- use `Migrations.to($CURRENT_VERSION, ...)` as a placeholder for current version. Global var will be substituted by a script later.
+- use the global var `$CURRENT_VERSION` (`Migrations.to($CURRENT_VERSION, ...)` as a placeholder. Global var will be substituted by a script later.
 
 ### Debugging
 
-- `print()`, `localised_print()` (Factorio builtins) or `debugPrint()` (custom lib) can be added to code; output shows up in test failure output. Use `--verbose` flag to see output on passing tests
-- `log()` will print to the Factorio log file and also will show up in test output.
+- `print()`, `localised_print()`, `debugPrint()` output shows in test failure output (use `--verbose` for passing tests)
+- `log()` prints to Factorio log file and test output
 
 ### Testing
 
-- Place in in `src/test/` or `src/lib/test/`
-- test file names mirror source: `src/foo/bar.ts` → `src/test/foo/bar.test.ts`. When renaming or moving source files, update the corresponding test file name too
+- Framework: factorio-test, assertions via tstl-expect (Jest-like)
+- Test files mirror source: `src/foo/bar.ts` → `src/test/foo/bar.test.ts`. Update test paths when renaming source files
 - High test coverage expected
-- Framework: factorio-test (Jest-like), assertions via tstl-expect
-- Lifecycle hooks: `before_each`, `after_each`, `before_all`, `after_all`
 
-**Test Structure:**
+## Research
 
-- Extract complex setup to helper functions or factory files
-- One logical assertion per test (multiple expects OK if testing same concept)
+When investigating something non-trivial (multi-file analysis, web research, evaluations), write findings to `_research/<descriptive-name>.md`. Include frontmatter:
+
+    ---
+    summary: "one-line description of what was investigated"
+    date: YYYY-MM-DD
+    tags: [relevant, tags]
+    ---
+
+Check `_research/` for existing findings before starting new investigations.
 
 ## Notes
 
