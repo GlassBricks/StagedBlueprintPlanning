@@ -94,4 +94,4 @@ Check `_research/` for existing findings before starting new investigations.
 
 - For Factorio API documentation, prefer inspecting `node_modules/typed-factorio/**/*.d.ts` instead of online documentation.
 - with `noEmitOnError`, TSTL warnings will cause no emit, possibly failing tests
-- For user-visible changes, also update src/changelog.txt
+- For user-visible changes, including bugfixes, also update src/changelog.txt
