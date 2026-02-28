@@ -342,7 +342,7 @@ Migrations.to("2.14.0", () => {
   }
 })
 
-Migrations.to($CURRENT_VERSION, () => {
+Migrations.to("2.14.4", () => {
   for (const project of getAllProjects()) {
     ;(project.actions as { projectId: ProjectId }).projectId = project.id
   }
