@@ -68,6 +68,7 @@ OnPrototypeInfoLoaded.addListener((info) => {
   nameToType = info.nameToType
 })
 
+// todo: remove hack
 let worldUpdatesBlocked = false
 
 export function _isWorldUpdatesBlocked(): boolean {
@@ -393,9 +394,13 @@ export class WorldPresentation implements WorldEntityLookup, WorldPresenter, Has
 
         const actualTile = surface.get_tile(position.x, position.y)
         const actualValue = actualTile?.name
-        if (stage != fromStage && actualValue != tileWrite.name) {
-          collision = { stage, actualValue }
-          return
+        if (actualValue != tileWrite.name) {
+          if (stage == fromStage) {
+            surface.set_tiles(tileWriteArr, true, false, true, false)
+          } else {
+            collision = { stage, actualValue }
+            return
+          }
         }
 
         surface.find_entity("tile-ghost", { x: position.x + 0.5, y: position.y + 0.5 })?.destroy()
