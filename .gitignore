@@ -124,7 +124,8 @@ dist
 
 .idea
 *.iml
-.vscode/
+.vscode/*
+!.vscode/launch.json
 
 **/*.lua
 !**/*.def.lua

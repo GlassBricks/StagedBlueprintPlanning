@@ -1,13 +1,11 @@
 {
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
     {
       "type": "factoriomod",
       "request": "launch",
       "name": "Test run",
+      "modsPath": "${workspaceRoot}/factorio-test-data-dir/mods",
       "adjustMods": {
         "bp100": true,
         "factorio-test": true,
@@ -22,131 +20,39 @@
       "factorioArgs": [
         "--load-scenario",
         "factorio-test/Test",
-        "--cache-sprite-atlas",
-        "true",
-        "--graphics-quality",
-        "low",
-        "-c",
-        "${workspaceRoot}/factorio-test-data-dir/config.ini",
-        "--disable-migration-window",
-        "--enable-lua-udp=14434"
-      ],
-      "modsPath": "${workspaceRoot}/factorio-test-data-dir/mods",
-      "hookControl": false,
-      "adjustModSettings": [
-        {
-          "scope": "startup",
-          "name": "factorio-test-auto-start",
-          "value": true
-        },
-        {
-          "scope": "runtime-global",
-          "name": "factorio-test-mod-to-test",
-          "value": "bp100"
-        }
-      ]
-    },
-    {
-      "type": "factoriomod",
-      "request": "launch",
-      "name": "Profile",
-      "adjustMods": {
-        "bp100": true,
-        "factorio-test": true,
-        "flib": true,
-        "bplib": true,
-        "EditorExtensions": true,
-        "quality": true,
-        "elevated-rails": true,
-        "space-age": true
-      },
-      "disableExtraMods": true,
-      "factorioArgs": [
-        "--load-scenario",
-        "factorio-test/Test",
-        "--cache-sprite-atlas",
-        "true",
-        "--graphics-quality",
-        "low",
-        "-c",
-        "${workspaceRoot}/factorio-test-data-dir/config.ini",
-        "--disable-migration-window"
-      ],
-      "modsPath": "${workspaceRoot}/factorio-test-data-dir/mods",
-      "adjustModSettings": [
-        {
-          "scope": "startup",
-          "name": "factorio-test-auto-start",
-          "value": true
-        },
-        {
-          "scope": "runtime-global",
-          "name": "factorio-test-mod-to-test",
-          "value": "bp100"
-        }
-      ],
-      "hookControl": true,
-      "hookMode": "profile"
-    },
-    {
-      "type": "factoriomod",
-      "request": "launch",
-      "name": "Test debug",
-      "adjustMods": {
-        "bp100": true,
-        "factorio-test": true,
-        "flib": true,
-        "bplib": true,
-        "EditorExtensions": true,
-        "quality": true,
-        "elevated-rails": true,
-        "space-age": true
-      },
-      "disableExtraMods": true,
-      "factorioArgs": [
-        "--load-scenario",
-        "factorio-test/Test",
-        "--cache-sprite-atlas",
-        "true",
-        "--graphics-quality",
-        "low",
-        "-c",
-        "${workspaceRoot}/factorio-test-data-dir/config.ini",
-        "--disable-migration-window",
-        "--enable-lua-udp=14434"
-      ],
-      "modsPath": "${workspaceRoot}/factorio-test-data-dir/mods",
-      "hookControl": true
-    },
-    {
-      "type": "factoriomod",
-      "request": "launch",
-      "name": "debug data",
-      "adjustMods": {
-        "bp100": true,
-        "factorio-test": true,
-        "flib": true,
-        "bplib": true,
-        "EditorExtensions": true
-      },
-      "disableExtraMods": true,
-      "factorioArgs": [
-        "--cache-sprite-atlas",
-        "true",
-        "--graphics-quality",
-        "low",
         "-c",
         "${workspaceRoot}/factorio-test-data-dir/config.ini"
       ],
-      "modsPath": "${workspaceRoot}/factorio-test-data-dir/mods",
-      "hookData": true,
       "hookControl": false
     },
     {
       "type": "factoriomod",
       "request": "launch",
-      "name": "debug only",
-      "factorioArgs": ["--cache-sprite-atlas", "true", "--graphics-quality", "low"],
+      "name": "Test debug",
+      "modsPath": "${workspaceRoot}/factorio-test-data-dir/mods",
+      "adjustMods": {
+        "bp100": true,
+        "factorio-test": true,
+        "flib": true,
+        "bplib": true,
+        "EditorExtensions": true,
+        "quality": true,
+        "elevated-rails": true,
+        "space-age": true
+      },
+      "disableExtraMods": true,
+      "factorioArgs": [
+        "--load-scenario",
+        "factorio-test/Test",
+        "-c",
+        "${workspaceRoot}/factorio-test-data-dir/config.ini"
+      ],
+      "hookControl": true
+    },
+    {
+      "type": "factoriomod",
+      "request": "launch",
+      "name": "Debug only",
       "hookControl": true
     }
   ]

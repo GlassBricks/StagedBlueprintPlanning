@@ -3,7 +3,6 @@
     "adapter": "factorio",
     "label": "Test run",
     "request": "launch",
-    "factorioPath": "/home/ben/opt/factorio/bin/x64/factorio",
     "modsPath": "$ZED_WORKTREE_ROOT/factorio-test-data-dir/mods",
     "adjustMods": {
       "bp100": true,
@@ -32,7 +31,6 @@
     "adapter": "factorio",
     "label": "Test debug",
     "request": "launch",
-    "factorioPath": "/home/ben/opt/factorio/bin/x64/factorio",
     "modsPath": "$ZED_WORKTREE_ROOT/factorio-test-data-dir/mods",
     "adjustMods": {
       "bp100": true,
@@ -57,7 +55,6 @@
     "adapter": "factorio",
     "label": "Debug only",
     "request": "launch",
-    "factorioPath": "/home/ben/opt/factorio/bin/x64/factorio",
     "hookControl": true,
   },
 ]
