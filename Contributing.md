@@ -41,6 +41,12 @@ You can also run `pnpm exec factorio-test run --graphics` to launch a graphical 
 
 Tests will rerun automatically when using `--watch`.
 
+### Worktrees
+
+If you use [Worktrunk](https://worktrunk.dev) to manage git worktrees, this repo includes `.config/wt.toml` that:
+- runs `pnpm install` 
+- reuses the primary worktree's `factorio-test-data-dir/config.ini` and `saves/` for new worktrees
+
 ## Testing
 
 Files that end in `.test.ts` are considered tests.

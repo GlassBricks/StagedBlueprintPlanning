@@ -1,0 +1,8 @@
+pre-merge = "pnpm run check"
+
+[pre-start]
+# Reuse Factorio test config from the primary worktree if present.
+config = "if [ -f '{{ primary_worktree_path }}/factorio-test-data-dir/config.ini' ]; then mkdir -p factorio-test-data-dir && cp '{{ primary_worktree_path }}/factorio-test-data-dir/config.ini' factorio-test-data-dir/; fi"
+# Share the saves directory across worktrees via symlink.
+saves = "if [ -d '{{ primary_worktree_path }}/factorio-test-data-dir/saves' ]; then mkdir -p factorio-test-data-dir && ln -snf '{{ primary_worktree_path }}/factorio-test-data-dir/saves' factorio-test-data-dir/saves; fi"
+install = "pnpm install"
