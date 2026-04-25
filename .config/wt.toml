@@ -6,3 +6,4 @@ config = "if [ -f '{{ primary_worktree_path }}/factorio-test-data-dir/config.ini
 # Share the saves directory across worktrees via symlink.
 saves = "if [ -d '{{ primary_worktree_path }}/factorio-test-data-dir/saves' ]; then mkdir -p factorio-test-data-dir && ln -snf '{{ primary_worktree_path }}/factorio-test-data-dir/saves' factorio-test-data-dir/saves; fi"
 install = "pnpm install"
+direnv = "direnv allow"
