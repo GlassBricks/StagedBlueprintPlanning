@@ -139,6 +139,8 @@ src/**/*.hide.*
 
 factorio-test-data-dir/
 
+.agents/skills/experiment/local-automation.md
+
 # license files are in root; copied to src for packaging only
 src/COPYING*
 src/*.zip

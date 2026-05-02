@@ -6,12 +6,12 @@
 import * as mod_gui from "mod-gui"
 import { Settings } from "../constants"
 import { Events } from "../lib"
-import { debugPrint, getLastDebugPrintCall } from "../lib/test/misc"
-import { UndoHandler } from "../project/actions"
+import { getLastDebugPrintCall } from "../lib/test/misc"
 import { createProject, Project } from "../project/Project"
 import { deleteAllFreeSurfaces } from "../project/surfaces"
-import { getProjectEntityOfEntity } from "../ui/entity-util"
 import { teleportToProject } from "../ui/player-current-stage"
+
+import "./debug-commands"
 
 // better source map traceback
 declare const ____lualib: {
@@ -50,7 +50,6 @@ Events.on_player_created((p) => {
 })
 
 if ("factorio-test" in script.active_mods) {
-  require("@NoResolution:test.in-world-test-util")
   function reinit() {
     for (const obj of rendering.get_all_objects(script.mod_name)) {
       obj.destroy()
@@ -156,38 +155,3 @@ function setupManualTests(_project: Project) {
   //
   // createEntityWithChanges()
 }
-
-const TestUndo = UndoHandler<string>("in-world-test", (player, data) => {
-  player.print(`Test undo: ${data}`)
-})
-
-commands.add_command("test-undo", "", (e) => {
-  const player = game.player!
-  const param = e.parameter ?? "no param"
-  TestUndo.register(player, param)
-  player.print(`Setup undo with: ${param}`)
-})
-
-commands.add_command("print-held-bp-entities", "", () => {
-  const player = game.player!
-  const stack = player.cursor_stack
-  if (!stack?.is_blueprint) return player.print("Not a blueprint")
-  const bp = stack.get_blueprint_entities()!
-  debugPrint(bp)
-})
-
-commands.add_command("print-hovered-entity-project", "", () => {
-  const player = game.player!
-  const entity = player.selected
-  if (!entity) {
-    player.print("No entity selected")
-    return
-  }
-
-  const [, projEntity] = getProjectEntityOfEntity(entity)
-  if (!projEntity) {
-    player.print("No project entity found")
-    return
-  }
-  debugPrint(projEntity)
-})
