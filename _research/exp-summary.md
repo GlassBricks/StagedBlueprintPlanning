@@ -1,16 +1,17 @@
 ---
-summary: "Cross-cutting summary of E1–E17 tag-based undo experiments. Mid-flow stack peek refuted; tag delivery via on_undo_applied confirmed; hidden disposable anchor redo broken; per-op verdicts and design implications."
+summary: "Cross-cutting summary of E1–E17 tag-based undo experiments + E2c/E3c/E3d/E15b follow-ups. Mid-flow stack peek refuted; tag delivery via on_undo_applied confirmed; hidden disposable anchor redo fixed by adding `minable`; per-op verdicts and design implications."
 date: 2026-05-02
 tags: [factorio, undo, experiments, summary, design]
 ---
 
 # Tag-based undo experiments — summary
 
-17 experiments across 6 groups, fully automated via kwin-mcp-cli + UDP.
-Per-group findings: `exp-foundations.md`, `exp-rotation.md`,
-`exp-settings-upgrade.md`, `exp-wires-tiles.md`, `exp-paste.md`,
-`exp-edges.md`. This file aggregates verdicts and lays out the
-design impact. **Does not edit `design.md` — separate task.**
+17 experiments across 6 groups + 4 follow-ups, fully automated via
+kwin-mcp + UDP. Per-group findings: `exp-foundations.md`,
+`exp-rotation.md`, `exp-settings-upgrade.md`, `exp-wires-tiles.md`,
+`exp-paste.md`, `exp-edges.md`, `exp-followup.md` (E2c/E3c/E15b),
+`exp-e3d.md` (E3 fix). This file aggregates verdicts and lays out
+the design impact.
 
 ## Verdict matrix
 
@@ -20,6 +21,8 @@ design impact. **Does not edit `design.md` — separate task.**
 | E2 | `set_redo_tag` from inside `on_undo_applied`; tag survives into `on_redo_applied`; action indices stable | **PASS** | G1 |
 | E3 | Disposable hidden anchor (`simple-entity-with-owner` + `hidden:true` + empty `collision_mask`) round-trip | **PARTIAL FAIL** — undo OK, **redo broken** (no redo entry created) | G1 |
 | E3b | Same flow with normal entity (iron-chest) — control | **PASS** — confirms E3 failure is prototype-specific | G1 |
+| E3c | E3 with 7 prototype variants (hidden flag, collision_mask, flag subsets) | **FAIL** all 5 working variants — failure intrinsic to SEW configuration | followup |
+| **E3d** | **E3 with `minable: { mining_time: 0.1 }` added** | **PASS** — all 3 variants round-trip. **Fix for `createHiddenEntity`** | e3d |
 | E4 (API) | `entity.rotate{by_player}` produces tagged `rotated-entity`; tag round-trips | **PASS** | G2 |
 | E4 (R key) | R keystroke equivalent | NEEDS-USER (kwin-mcp bare-letter limit) | G2 |
 | E4 (mid-flow) | `on_player_rotated_entity` during undo? | **FAIL/INSIGHT** — fires during undo; action NOT visible on stack mid-flow (cross-confirms E1) | G2 |
@@ -79,7 +82,7 @@ tag. After Factorio creates the redo entry on undo, its tags are
 nil. Handler must call `set_redo_tag` (and `set_undo_tag` on the
 redo→undo direction) explicitly.
 
-### Hidden disposable anchor prototype is broken on redo
+### Hidden disposable anchor prototype was broken on redo — fixed by `minable`
 
 E3 vs E3b: `simple-entity-with-owner` + `hidden:true` +
 `flags:["player-creation","placeable-off-grid"]` +
@@ -87,14 +90,18 @@ E3 vs E3b: `simple-entity-with-owner` + `hidden:true` +
 in `on_undo_applied`) but **no redo entry is created**. Factorio
 silently refuses to make the redo entry for this prototype.
 
-Same prototype config used by `createHiddenEntity` helper. Current
-`Prototypes.UndoReference` would have the same issue.
+E3c (followup) refuted hidden, collision_mask, and flag-subset
+hypotheses across 7 variants — all 5 working SEW configs failed redo.
 
-E3b confirms with iron-chest: same flow round-trips cleanly. So
-failure is prototype-specific, not flow-specific. Likely culprit:
-`hidden:true`. Other suspects: empty `collision_mask`,
-`simple-entity-with-owner` base. **Needs follow-up experiment varying
-one flag at a time.**
+**E3d (followup) resolved it**: adding `minable: { mining_time: 0.1 }`
+to the SEW prototype makes destroy/undo/redo round-trip cleanly. All
+3 minable variants (with and without `selectable_in_game`,
+`placeable-off-grid`) round-tripped. The current `createHiddenEntity`
+helper just needs `minable` added — no need to switch base type.
+
+E3b confirms with iron-chest: real entities round-trip because they
+default to mineable. Engine appears to require a non-nil `minable`
+spec to allow redo of a `script_raised_destroy{player}`.
 
 ### Mid-flow event flavour reflects the world op being applied, NOT the original op
 
@@ -178,7 +185,7 @@ Prefix scan via `pairs(tags)` distinguishes namespaces. No
 interference. Mid-flow / on-applied handler must filter on
 `bp100:` prefix only.
 
-## Implications for design.md (do NOT apply yet)
+## Implications for design.md
 
 ### `Mid-flow detection` section — REPLACE
 
@@ -209,6 +216,9 @@ is found; fall back to **(B)** otherwise.
 ### `Anchor strategy` section — NEEDS REVISION
 
 Current `Prototypes.UndoReference` (= `createHiddenEntity` helper)
+required `minable` to be added per E3d. With that fix the existing
+helper is usable; details below describe pre-E3d worst-case options.
+
 inherits the broken-redo issue from E3. Either:
 
 1. Find a prototype variant that round-trips. Suspects: drop
