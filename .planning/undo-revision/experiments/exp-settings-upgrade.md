@@ -13,7 +13,7 @@ tags: [factorio, undo, experiments, settings, upgrade]
 | E8a | `LuaEntity.order_upgrade{...,player=p}` produces tagged `upgraded-entity` undo action; tag survives undo            | PASS                                                                 |
 | E8b | `LuaEntity.cancel_upgrade(force, player)` produces its own undo action                                              | FAIL — does not push a new entry; mutates the matching prior order_upgrade entry into a no-op (target.name == original_name), preserving any tag we set |
 
-Findings path: `_research/exp-settings-upgrade.md`. Needs-user: E6B.
+Findings path: `experiments/exp-settings-upgrade.md`. Needs-user: E6B.
 
 ---
 

@@ -47,12 +47,22 @@ Redo via `set_redo_tag` written from inside the undo handler.
 Settings remnants go away: deletions store full `EntityExport` in
 the tag, undo deserializes and re-adds.
 
-See [[design.md]] for the tag protocol, anchor mapping, multi-entity
-grouping, blueprint-paste handling, removal of settings remnants,
-coverage expansion, decisions, and open questions.
+Phase-1 normal handlers re-derive from world state; phase-2 tag
+handler in `on_undo_applied` layers any project-state correction.
+Mid-flow stack inspection is impossible (action in flight); design
+relies on the trust-and-layer model instead.
+
+See [[design.md]] for the tag protocol, anchor strategy,
+trust-and-layer model, operation matrix, multi-entity grouping,
+blueprint-paste handling, removal of settings remnants, decisions,
+and open questions.
 
 ## References
 
+- [[experiments.md]] — experiment plan (E1-E17) for verifying
+  Factorio 2.0 tag-based undo behaviour.
+- [[experiments/exp-summary.md]] — aggregated findings, verdict
+  matrix, and design implications. Load-bearing for the design.
 - `src/project/actions/undo.ts`,
   `src/project/actions/undo-records.ts`,
   `src/project/actions/ProjectActions.ts` — current ghost-based

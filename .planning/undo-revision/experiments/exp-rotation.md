@@ -15,7 +15,7 @@ tags: [factorio, undo, experiments, rotation, underground-belt]
 | E5-drag | `LuaPlayer.build_from_cursor` with belt over an underground triggers drag-rotate / produces an undo action | FAIL — `build_from_cursor` returned nil (rejected as collision); no rotate, no undo entry |
 | E5-realdrag | Actual mouse-drag of belt over underground end produces what action? | NEEDS-USER (cannot script real drag; build_from_cursor is a single-tile click and does not engage drag-rotate path) |
 
-Findings path: `_research/exp-rotation.md`. Key implication: the design's
+Findings path: `experiments/exp-rotation.md`. Key implication: the design's
 "Mid-flow detection via undo-stack inspection" mechanism (design.md
 "Mid-flow detection" section) does NOT work for the rotation case; needs
 revision. See [Implications](#implications-for-design).

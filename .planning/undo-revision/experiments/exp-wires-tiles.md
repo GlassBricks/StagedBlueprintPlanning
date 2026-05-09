@@ -12,7 +12,7 @@ tags: [factorio, undo, experiments, wires, tiles]
 | E9  | Tile build via player + via `set_tiles` produces a tagged `built-tile` undo entry; tag round-trips                        | PASS — both paths register `built-tile`. `set_tiles` does NOT raise `on_player_built_tile`. Player `build_from_cursor` with a tile in cursor DOES raise `on_player_built_tile`.            |
 | —   | Mid-flow event ordering during Ctrl+Z (and Ctrl+Y) for tiles                                                              | NEW INSIGHT — see [Mid-flow detection caveat](#mid-flow-detection-caveat). Action moves to a **detached/in-flight** state during mid-flow events; both `undo[1]` and `redo[1]` show empty. |
 
-Findings path: `_research/exp-wires-tiles.md`. No NEEDS-USER. All
+Findings path: `experiments/exp-wires-tiles.md`. No NEEDS-USER. All
 probes scriptable end-to-end via `kwin-mcp-cli` + UDP.
 
 Test setup lives in `src/test/experiments/wires-tiles.ts` (deleted

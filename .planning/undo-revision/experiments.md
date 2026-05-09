@@ -7,7 +7,7 @@ tags: [factorio, undo, experiments, plan]
 # Experiment plan for tag-based undo redesign
 
 Each experiment verifies an open-question or load-bearing assumption in
-[design.md](./design.md). Findings get aggregated into `_research/`.
+[design.md](./design.md). Findings get aggregated into `experiments/`.
 
 ## Groups (parallel agents)
 

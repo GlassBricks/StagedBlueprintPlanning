@@ -14,7 +14,7 @@ tags: [factorio, undo, experiments, edges]
 | E16 | Best-effort lookup on destroyed neighbour                                                           | PASS (lookup pattern). `surface.find_entity(name, pos)` returns `nil` silently when entity gone — design's best-effort wire-restore skip is implementable. Wire-undo proper not testable scriptally (per G4: scripted wires don't push undo). |
 | E17 | Cross-mod tag namespace                                                                             | PASS. `bp100:` and `othermod:` tags coexist on same action; prefix-scan via `pairs(tags)` correctly distinguishes namespaces; `get_undo_tag` returns per-key value cleanly. |
 
-Findings path: `_research/exp-edges.md`. No NEEDS-USER for this group.
+Findings path: `experiments/exp-edges.md`. No NEEDS-USER for this group.
 
 ---
 
