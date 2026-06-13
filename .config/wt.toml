@@ -1,10 +1,21 @@
 pre-merge = "pnpm run check"
 
-[pre-start]
+# List form: each [[pre-start]] is a step, steps run in order. A step with
+# multiple entries runs them concurrently (once the table-form repurpose lands;
+# the current version still runs all pre-* hooks serially).
+
+# Step 1: mutually independent setup. config/saves/claude-local just copy or
+# symlink files; direnv allow only whitelists .envrc; install fetches deps.
+[[pre-start]]
 # Reuse Factorio test config from the primary worktree if present.
 config = "if [ -f '{{ primary_worktree_path }}/factorio-test-data-dir/config.ini' ]; then mkdir -p factorio-test-data-dir && cp '{{ primary_worktree_path }}/factorio-test-data-dir/config.ini' factorio-test-data-dir/; fi"
 # Share the saves directory across worktrees via symlink.
 saves = "if [ -d '{{ primary_worktree_path }}/factorio-test-data-dir/saves' ]; then mkdir -p factorio-test-data-dir && ln -snf '{{ primary_worktree_path }}/factorio-test-data-dir/saves' factorio-test-data-dir/saves; fi"
+# Share local, uncommitted Claude notes from the primary worktree via symlink.
+claude-local = "if [ -f '{{ primary_worktree_path }}/CLAUDE.local.md' ]; then ln -snf '{{ primary_worktree_path }}/CLAUDE.local.md' CLAUDE.local.md; fi"
 install = "pnpm install"
 direnv = "direnv allow"
+
+# Step 2: tsc needs node_modules, so it must follow install.
+[[pre-start]]
 build-tstl-plugin = "pnpm run build:tstlPlugin"
