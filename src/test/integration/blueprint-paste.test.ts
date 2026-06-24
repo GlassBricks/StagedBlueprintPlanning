@@ -117,7 +117,7 @@ describe("blueprinting", () => {
     })
   })
 
-  test.skip("can upgrade entity with wires via blueprint", () => {
+  test("can upgrade entity with wires via blueprint", () => {
     const entity1: BlueprintEntity = {
       entity_number: 1,
       name: "fast-inserter",
