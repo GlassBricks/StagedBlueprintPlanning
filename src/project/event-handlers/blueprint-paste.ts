@@ -34,7 +34,7 @@ declare const storage: {
 Migrations.since("2.14.0", () => {
   pasteState = storage.blueprintPasteState ??= {}
 })
-Migrations.to($CURRENT_VERSION, () => {
+Migrations.to("2.15.0", () => {
   // Native 2.1 paste events replaced the bplib/marker paste hacks; drop their now-unused
   // transient state (currentBlueprintPaste, pendingBplibPaste). toBeFastReplaced is also
   // transient (single-tick) and safe to clear at load time.

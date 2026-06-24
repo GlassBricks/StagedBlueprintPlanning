@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.15.0
-Date: ????
+Date: 2026-06-24
   Features:
     - Updated for Factorio 2.1! Includes support for: newly flippable entities (inserters, mining drills), rolling stock upgrades, new circuit wires, etc.
   Changes:
