@@ -149,7 +149,7 @@ export function handleUndergroundBeltUpdate(
 
   const newWorldEntity = ctx.worldPresenter.getWorldEntity(entity, stage)
   if (newWorldEntity) {
-    const worldPair = newWorldEntity.neighbours as LuaEntity | nil
+    const worldPair = newWorldEntity.underground_belt_neighbour
     if (worldPair && (!pair || ctx.worldPresenter.getWorldEntity(pair, stage) != worldPair)) {
       const worldPairEntity = ctx.content.findCompatibleWithLuaEntity(worldPair, nil, stage)
       if (worldPairEntity) ctx.worldPresenter.refreshEntity(worldPairEntity, stage)

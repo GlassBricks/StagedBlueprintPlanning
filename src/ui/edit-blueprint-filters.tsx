@@ -26,7 +26,6 @@ class EditBlueprintFilterGui extends Component<{
     this.filters = filters
     const elemFilters: EntityPrototypeFilter[] = [
       { filter: "blueprintable" },
-      { mode: "and", filter: "name", name: Prototypes.EntityMarker, invert: true },
       { mode: "and", filter: "name", name: Prototypes.UndoReference, invert: true },
     ]
     const currentValues = filters.get()

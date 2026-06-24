@@ -46,6 +46,8 @@ export function createStageReference(stack: LuaItemStack, stage: Stage): boolean
  */
 export function getReferencedStage(stack: LuaItemStack): Stage | nil {
   if (!stack.valid || !stack.valid_for_read || stack.name != Prototypes.StageReference) return nil
+  // Since 2.1, get_blueprint_entity_tags errors on an out-of-bounds index instead of returning nil.
+  if (stack.get_blueprint_entity_count() < 1) return nil
   const tags = stack.get_blueprint_entity_tags(1)
   if (
     !(tags && tags[StageReferenceTag] == true && typeof tags.projectId == "number" && typeof tags.stageId == "number")

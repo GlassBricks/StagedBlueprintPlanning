@@ -1,27 +1,18 @@
-import { BlueprintEntity } from "factorio:runtime"
+import { BlueprintEntity, LuaEntity } from "factorio:runtime"
 import expect from "tstl-expect"
-import { Prototypes, Settings } from "../../../constants"
-import { Events, Mutable } from "../../../lib"
+import { Mutable } from "../../../lib"
 import { Pos, Position, PositionClass } from "../../../lib/geometry"
 import { setupEventHandlerTests } from "./_test-setup"
 import direction = defines.direction
 
 const ctx = setupEventHandlerTests()
 
-describe.each<[boolean, string]>([
-  [false, "entity markers"],
-  [true, "bplib"],
-])("blueprint paste (using %s)", (useBplib) => {
+// Blueprint paste uses the native engine: new entities raise on_built_entity (-> onEntityCreated),
+// existing entities pasted over raise on_blueprint_settings_pasted (-> onEntityPossiblyUpdated, then
+// onWiresPossiblyUpdated). The mod no longer intercepts the paste itself.
+describe("blueprint paste", () => {
   const player = () => ctx.getPlayer()
   const surface = () => ctx.getSurface()
-
-  before_each(() => {
-    player().mod_settings[Settings.UseBplibForBlueprintPaste] = { value: useBplib }
-  })
-
-  after_each(() => {
-    player().mod_settings[Settings.UseBplibForBlueprintPaste] = { value: false }
-  })
 
   const bpPos: PositionClass = Pos(4.5, 0.5)
   const bpEntity: BlueprintEntity = {
@@ -38,35 +29,25 @@ describe.each<[boolean, string]>([
     cursor.set_blueprint_entities([bpEntity])
   }
   before_each(setBlueprint)
-  function assertCorrect(entity: import("factorio:runtime").LuaEntity, position: Position = bpPos): void {
+
+  // An entity pasted over an existing one (on_blueprint_settings_pasted): updated, then wires saved.
+  function assertUpdated(entity: LuaEntity, position: Position = bpPos): void {
     expect(entity).toBeAny()
     expect(entity.position).toEqual(position)
-
     expect(ctx.getProject().actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(entity, 1, expect._, 1, nil, nil)
+    expect(ctx.getProject().actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(entity, 1, 1)
   }
-
-  function waitForPaste(fn: () => void): void {
-    if (useBplib) {
-      after_ticks(1, fn)
-    } else {
-      fn()
-    }
+  // An entity newly created by the paste (on_built_entity).
+  function assertCreated(entity: LuaEntity, position: Position): void {
+    expect(entity).toBeAny()
+    expect(entity.position).toEqual(position)
+    expect(ctx.getProject().actions.onEntityCreated).toHaveBeenCalledWith(entity, 1, 1)
   }
 
   test("create entity", () => {
     player().build_from_cursor({ position: bpPos })
-    waitForPaste(() => {
-      const inserter = surface().find_entities_filtered({
-        name: "inserter",
-        limit: 1,
-      })[0]
-      expect(inserter).toBeAny()
-      assertCorrect(inserter)
-      if (useBplib) {
-        expect(ctx.getProject().actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(inserter, 1, 1)
-        ctx.setExpectedNumCalls(2)
-      }
-    })
+    const inserter = surface().find_entities_filtered({ name: "inserter", limit: 1 })[0]
+    assertCreated(inserter, bpPos)
   })
 
   test("update existing entity", () => {
@@ -78,15 +59,11 @@ describe.each<[boolean, string]>([
     })!
     assert(inserter)
     player().build_from_cursor({ position: bpPos })
-    waitForPaste(() => {
-      assertCorrect(inserter)
-      if (useBplib) {
-        expect(ctx.getProject().actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(inserter, 1, 1)
-        ctx.setExpectedNumCalls(2)
-      }
-    })
+    assertUpdated(inserter)
+    ctx.setExpectedNumCalls(2)
   })
-  test.each([true, false])("update existing entity with wires, already present %s", (alreadyPresent) => {
+
+  test("update existing entity, new entity with wires", () => {
     const entities = player().cursor_stack!.get_blueprint_entities()!
     const bpEntity1 = entities[0] as Mutable<BlueprintEntity>
     const bpEntity2: BlueprintEntity = {
@@ -107,31 +84,21 @@ describe.each<[boolean, string]>([
       direction: direction.west,
     })!
 
-    ctx.getProject().actions.onEntityPossiblyUpdated.returns(alreadyPresent ? ({} as any) : nil)
     player().build_from_cursor({ position: bpPos })
 
-    waitForPaste(() => {
-      const inserter2 = surface().find_entities_filtered({
-        name: "inserter",
-        direction: direction.east,
-        limit: 1,
-      })[0]
-      expect(inserter2).toBeAny()
+    const inserter2 = surface().find_entities_filtered({
+      name: "inserter",
+      direction: direction.east,
+      limit: 1,
+    })[0]
+    expect(inserter2).toBeAny()
 
-      assertCorrect(inserter1, nil)
-      assertCorrect(inserter2, bpPos.plus(Pos(1, 0)))
-      if (alreadyPresent || useBplib) {
-        expect(ctx.getProject().actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(inserter1, 1, 1)
-        expect(ctx.getProject().actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(inserter2, 1, 1)
-        ctx.setExpectedNumCalls(4)
-      } else {
-        expect(ctx.getProject().actions.onWiresPossiblyUpdated).not.toHaveBeenCalled()
-        ctx.setExpectedNumCalls(2)
-      }
-    })
+    assertUpdated(inserter1)
+    assertCreated(inserter2, bpPos.plus(Pos(1, 0)))
+    ctx.setExpectedNumCalls(3)
   })
 
-  test.each([true, false])("new entity with cable, with already present %s", (alreadyPresent) => {
+  test("existing and new pole with cable", () => {
     const entity1: BlueprintEntity = {
       entity_number: 1,
       name: "small-electric-pole",
@@ -152,124 +119,32 @@ describe.each<[boolean, string]>([
       force: "player",
     })!
 
-    ctx.getProject().actions.onEntityPossiblyUpdated.returns(alreadyPresent ? ({} as any) : nil)
     player().build_from_cursor({ position: bpPos })
 
-    waitForPaste(() => {
-      const pole2 = surface().find_entity("small-electric-pole", bpPos.plus(Pos(1, 0)))!
-      expect(pole2).toBeAny()
+    const pole2 = surface().find_entity("small-electric-pole", bpPos.plus(Pos(1, 0)))!
+    expect(pole2).toBeAny()
 
-      assertCorrect(pole1, nil)
-      assertCorrect(pole2, bpPos.plus(Pos(1, 0)))
-      if (alreadyPresent || useBplib) {
-        expect(ctx.getProject().actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(pole1, 1, 1)
-        expect(ctx.getProject().actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(pole2, 1, 1)
-        ctx.setExpectedNumCalls(4)
-      } else {
-        expect(ctx.getProject().actions.onWiresPossiblyUpdated).not.toHaveBeenCalled()
-        ctx.setExpectedNumCalls(2)
-      }
-    })
+    assertUpdated(pole1)
+    assertCreated(pole2, bpPos.plus(Pos(1, 0)))
+    ctx.setExpectedNumCalls(3)
   })
 
-  test("tank has correct direction when not flipped ", () => {
-    const entity: BlueprintEntity = {
-      entity_number: 1,
-      name: "storage-tank",
-      position: Pos(0.5, 0.5),
-    }
-    player().cursor_stack!.set_blueprint_entities([entity])
+  test("tank has correct direction when not flipped", () => {
+    player().cursor_stack!.set_blueprint_entities([{ entity_number: 1, name: "storage-tank", position: Pos(0.5, 0.5) }])
 
     const tank = surface().create_entity({
       name: "storage-tank",
       position: Pos(0.5, 0.5),
       force: "player",
       direction: 0,
-    })
+    })!
     expect(tank).toBeAny()
 
     player().build_from_cursor({ position: Pos(0.5, 0.5) })
 
-    waitForPaste(() => {
-      expect(ctx.getProject().actions.onEntityCreated).not.toHaveBeenCalled()
-      expect(ctx.getProject().actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(
-        tank,
-        1,
-        nil,
-        player().index,
-        nil,
-        nil,
-      )
-      if (useBplib) {
-        expect(ctx.getProject().actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(tank, 1, 1)
-        ctx.setExpectedNumCalls(2)
-      }
-    })
-  })
-
-  function fakeFlippedPaste(pastePos: Position) {
-    Events.raiseFakeEventNamed("on_pre_build", {
-      player_index: player().index,
-      position: pastePos,
-      direction: 0,
-      created_by_moving: false,
-      flip_vertical: false,
-      flip_horizontal: true,
-      mirror: false,
-      build_mode: defines.build_mode.normal,
-    })
-
-    expect(player().cursor_stack!.cost_to_build).toContainEqual(
-      expect.tableContaining({ name: Prototypes.EntityMarker }),
-    )
-
-    const marker = player()
-      .cursor_stack!.get_blueprint_entities()!
-      .find((e) => e.name == Prototypes.EntityMarker)!
-
-    Events.raiseFakeEventNamed("on_built_entity", {
-      player_index: player().index,
-      entity: surface().create_entity({
-        name: marker.name,
-        position: pastePos,
-        direction: marker.direction,
-      })!,
-      tags: marker.tags,
-      consumed_items: nil!,
-    })
-  }
-
-  test("tank has correct direction when flipped ", () => {
-    if (useBplib) {
-      ctx.setExpectedNumCalls(0)
-      return
-    }
-    const entity: BlueprintEntity = {
-      entity_number: 1,
-      name: "storage-tank",
-      position: Pos(0.5, 0.5),
-    }
-    player().cursor_stack!.set_blueprint_entities([entity])
-
-    const tank = surface().create_entity({
-      name: "storage-tank",
-      position: Pos(0.5, 0.5),
-      force: "player",
-      direction: 4,
-    })
-    expect(tank).toBeAny()
-
-    fakeFlippedPaste(Pos(0.5, 0.5))
-
     expect(ctx.getProject().actions.onEntityCreated).not.toHaveBeenCalled()
-    expect(ctx.getProject().actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(
-      tank,
-      1,
-      nil,
-      player().index,
-      nil,
-      nil,
-    )
+    assertUpdated(tank, Pos(0.5, 0.5))
+    ctx.setExpectedNumCalls(2)
   })
 
   test("doesn't break when creating ghost entity", () => {
@@ -281,9 +156,7 @@ describe.each<[boolean, string]>([
     setBlueprint()
     player().build_from_cursor({ position: bpPos, build_mode: defines.build_mode.forced })
     player().clear_cursor()
-    waitForPaste(() => {
-      ctx.setExpectedNumCalls(0)
-    })
+    ctx.setExpectedNumCalls(0)
   })
 })
 
@@ -314,9 +187,11 @@ test("splitter has correct values when not flipped", () => {
   expect(ctx.getProject().actions.onEntityPossiblyUpdated).toHaveBeenCalledWith(
     splitter,
     1,
-    nil,
+    expect._,
     player.index,
     nil,
     nil,
   )
+  expect(ctx.getProject().actions.onWiresPossiblyUpdated).toHaveBeenCalledWith(splitter, 1, player.index)
+  ctx.setExpectedNumCalls(2)
 })

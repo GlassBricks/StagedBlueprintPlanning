@@ -357,7 +357,7 @@ test("can upgrade an entity", () => {
     position: { x: 12.5, y: 12.5 },
     force: "player",
   })!
-  entity.minable = false
+  entity.minable_flag = false
   entity.destructible = false
   const newEntity = updateEntity(entity, { name: "steel-chest" } as Entity, nil, defines.direction.north)[0]!
   expect(newEntity.name).toBe("steel-chest")
@@ -614,7 +614,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
     })
     assert(eastUnderground)
 
-    expect(westUnderground.neighbours).toEqual(eastUnderground)
+    expect(westUnderground.underground_belt_neighbour).toEqual(eastUnderground)
 
     const updated = updateEntity(
       westUnderground,
@@ -708,7 +708,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       type: otherType,
     })
     assert(rightUnderground)
-    expect(leftUnderground.neighbours).toEqual(rightUnderground)
+    expect(leftUnderground.underground_belt_neighbour).toEqual(rightUnderground)
     const rightEntity = newProjectEntity(
       {
         name: "underground-belt",
@@ -1150,9 +1150,8 @@ test("canBeAnyDirection", () => {
   expect(canBeAnyDirection(entity2)).toBe(false)
 })
 
-describe("EditorExtensions support", () => {
-  assert("EditorExtensions" in script.active_mods)
-
+const describeIfEE = "EditorExtensions" in script.active_mods ? describe : describe.skip
+describeIfEE("EditorExtensions support", () => {
   test("can create and update infinity loader", () => {
     const loader = createEntity(
       surface,

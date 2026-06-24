@@ -338,7 +338,7 @@ function upgradeEntity(oldEntity: LuaEntity, value: NameAndQuality): LuaEntity {
     upgradeEntityParams.direction = oldEntity.direction
     upgradeEntityParams.type = oldEntity.type == "underground-belt" ? oldEntity.belt_to_ground_type : nil
   }
-  oldEntity.minable = true
+  oldEntity.minable_flag = true
   const newEntity = oldEntity.surface.create_entity(upgradeEntityParams)
   if (!newEntity) return oldEntity
   if (oldEntity.valid) oldEntity.destroy()
@@ -428,7 +428,7 @@ function updateUndergroundRotation(
   }
   const mode = value.type ?? "input"
   if (luaEntity.belt_to_ground_type != mode) {
-    const neighbor = luaEntity.neighbours as LuaEntity | nil
+    const neighbor = luaEntity.underground_belt_neighbour
     const [neighborProjEntity, flippable] = checkUndergroundPairFlippable(neighbor)
     if (!flippable) {
       return $multi(luaEntity)
@@ -574,7 +574,7 @@ export function updateEntity(
 function makePreviewIndestructible(entity: LuaEntity | nil): void {
   if (!entity) return
   entity.destructible = false
-  entity.minable = false
+  entity.minable_flag = false
   entity.rotatable = false
   if (entity.type == "rail-remnants") {
     entity.corpse_expires = false
@@ -608,6 +608,6 @@ export function canBeAnyDirection(luaEntity: LuaEntity): boolean {
   return (
     luaEntity.type == "assembling-machine" &&
     getPrototypeRotationType(luaEntity.name) == RotationType.AnyDirection &&
-    luaEntity.fluidbox.length == 0
+    luaEntity.fluids_count == 0
   )
 }

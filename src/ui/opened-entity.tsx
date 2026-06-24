@@ -506,7 +506,7 @@ const entityTypeToGuiType: Record<
   "linked-belt": relative_gui_type.additional_entity_info_gui,
   "logistic-container": relative_gui_type.container_gui,
   "mining-drill": relative_gui_type.mining_drill_gui,
-  "storage-tank": relative_gui_type.storage_tank_gui,
+  "storage-tank": relative_gui_type.additional_entity_info_gui,
   "straight-rail": relative_gui_type.additional_entity_info_gui,
   beacon: relative_gui_type.beacon_gui,
   lab: relative_gui_type.lab_gui,

@@ -62,11 +62,12 @@ describe("in-item blueprint settings", () => {
     expect(stack.valid_for_read && stack.is_blueprint).toBe(true)
     const entities = stack.get_blueprint_entities()!
     expect(entities).toHaveLength(2)
-    expect(entities[1]).toMatchTable({
+    // 2.1 orders blueprint entities by ascending position: entity1 (x=0.5) before entity2 (x=1.5).
+    expect(entities[0]).toMatchTable({
       name: entity1.name,
       position: entity1.position,
     })
-    expect(entities[0]).toMatchTable({
+    expect(entities[1]).toMatchTable({
       name: entity2.name,
       position: entity2.position,
     })

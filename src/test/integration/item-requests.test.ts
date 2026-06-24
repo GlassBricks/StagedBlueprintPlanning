@@ -5,13 +5,12 @@
 
 import { BlueprintInsertPlan, MapPositionArray } from "factorio:runtime"
 import expect from "tstl-expect"
-import { Settings } from "../../constants"
 import { ProjectEntity } from "../../entity/ProjectEntity"
 import { updateEntity } from "../../entity/save-load"
 import { assert } from "../../lib"
 import { checkForEntityUpdates } from "../../project/event-handlers"
 import { simpleInsertPlan } from "../entity/entity-util"
-import { setupEntityIntegrationTest, waitForPaste } from "./integration-test-util"
+import { setupEntityIntegrationTest } from "./integration-test-util"
 
 const ctx = setupEntityIntegrationTest()
 
@@ -80,15 +79,24 @@ describe("item-requests", () => {
     ctx.assertEntityCorrect(projectChest, false)
   })
 
-  describe.each([false, true])("blueprint paste with item requests (using bplib %s)", (useBplib) => {
-    before_each(() => {
-      ctx.player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: useBplib }
-    })
+  test("paste restores the blueprint unchanged after recovering item requests via tags", () => {
+    const pos: MapPositionArray = [0.5, 0.5]
+    const stack = ctx.player.cursor_stack!
+    stack.set_stack("blueprint")
+    stack.set_blueprint_entities([
+      { entity_number: 1, name: "iron-chest", position: pos, items: [chestPlateInsertPlan] },
+    ])
+    ctx.player.teleport([0, 0], ctx.surfaces[0])
+    ctx.player.build_from_cursor({ position: pos })
 
-    after_each(() => {
-      ctx.player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: false }
+    after_ticks(2, () => {
+      const entity = stack.get_blueprint_entities()![0]
+      expect(entity.tags).toBeNil()
+      expect(entity.items).toEqual([chestPlateInsertPlan])
     })
+  })
 
+  describe("blueprint paste with item requests", () => {
     test("paste a chest with item request, saved as unstaged value", () => {
       const pos: MapPositionArray = [0.5, 0.5]
       const stack = ctx.player.cursor_stack!
@@ -104,17 +112,15 @@ describe("item-requests", () => {
       ctx.player.teleport([0, 0], ctx.surfaces[0])
       ctx.player.build_from_cursor({ position: pos })
 
-      waitForPaste(useBplib, () => {
-        const chest = ctx.surfaces[0].find_entity("iron-chest", pos)!
-        expect(chest).not.toBeNil()
-        expect(chest.item_request_proxy?.insert_plan).toEqual([chestPlateInsertPlan])
+      const chest = ctx.surfaces[0].find_entity("iron-chest", pos)!
+      expect(chest).not.toBeNil()
+      expect(chest.item_request_proxy?.insert_plan).toEqual([chestPlateInsertPlan])
 
-        const projectChest = ctx.project.content.findCompatibleWithLuaEntity(chest, nil, 1)!
-        expect(projectChest).not.toBeNil()
-        expect(projectChest.getUnstagedValue(1)).toEqual({ items: [chestPlateInsertPlan] })
+      const projectChest = ctx.project.content.findCompatibleWithLuaEntity(chest, nil, 1)!
+      expect(projectChest).not.toBeNil()
+      expect(projectChest.getUnstagedValue(1)).toEqual({ items: [chestPlateInsertPlan] })
 
-        ctx.assertEntityCorrect(projectChest, false)
-      })
+      ctx.assertEntityCorrect(projectChest, false)
     })
 
     test("paste assembling-machine-2 with prod module item requests, saved as value", () => {
@@ -138,18 +144,16 @@ describe("item-requests", () => {
       ctx.player.teleport([0, 0], ctx.surfaces[0])
       ctx.player.build_from_cursor({ position: pos })
 
-      waitForPaste(useBplib, () => {
-        const assembler = ctx.surfaces[0].find_entity("assembling-machine-2", pos)!
-        expect(assembler).not.toBeNil()
-        expect(assembler.item_request_proxy?.insert_plan).toBeNil()
+      const assembler = ctx.surfaces[0].find_entity("assembling-machine-2", pos)!
+      expect(assembler).not.toBeNil()
+      expect(assembler.item_request_proxy?.insert_plan).toBeNil()
 
-        const projectAssembler = ctx.project.content.findCompatibleWithLuaEntity(assembler, nil, 1)!
-        expect(projectAssembler).not.toBeNil()
-        expect(projectAssembler.getUnstagedValue(1)).toBe(nil)
-        expect(projectAssembler.getValueAtStage(1)!.items).toEqual([moduleInsertPlan])
+      const projectAssembler = ctx.project.content.findCompatibleWithLuaEntity(assembler, nil, 1)!
+      expect(projectAssembler).not.toBeNil()
+      expect(projectAssembler.getUnstagedValue(1)).toBe(nil)
+      expect(projectAssembler.getValueAtStage(1)!.items).toEqual([moduleInsertPlan])
 
-        ctx.assertEntityCorrect(projectAssembler, false)
-      })
+      ctx.assertEntityCorrect(projectAssembler, false)
     })
     test("pasting identical item requests onto a furnace", () => {
       const [projectEntity, insertPlan] = buildFurnaceWithBlueprintEntity()
@@ -171,16 +175,14 @@ describe("item-requests", () => {
       ctx.player.teleport([5, 5], ctx.surfaces[0])
       ctx.player.build_from_cursor({ position: [0.5, 0.5], build_mode: defines.build_mode.forced })
 
-      waitForPaste(useBplib, () => {
-        checkForEntityUpdates(worldEntity, nil)
+      checkForEntityUpdates(worldEntity, nil)
 
-        expect(projectEntity.getUnstagedValue(1)).toEqual({
-          items: [insertPlan],
-        })
-        expect(worldEntity.item_request_proxy?.insert_plan).toEqual([insertPlan])
-
-        ctx.assertEntityCorrect(projectEntity, false)
+      expect(projectEntity.getUnstagedValue(1)).toEqual({
+        items: [insertPlan],
       })
+      expect(worldEntity.item_request_proxy?.insert_plan).toEqual([insertPlan])
+
+      ctx.assertEntityCorrect(projectEntity, false)
     })
   })
 

@@ -424,7 +424,7 @@ export class ProjectActions {
     if (projectEntity.isUndergroundBelt()) {
       const freshWorldEntity = this.worldPresenter.getWorldEntity(projectEntity, stage)
       if (!freshWorldEntity) return
-      const worldPair = freshWorldEntity.neighbours as LuaEntity | nil
+      const worldPair = freshWorldEntity.underground_belt_neighbour
       if (!worldPair) return
       const pairEntity = this.getCompatibleAtCurrentStageOrAdd(worldPair, stage, nil, byPlayer)
       if (!pairEntity) return

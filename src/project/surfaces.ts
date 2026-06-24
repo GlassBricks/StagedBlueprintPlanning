@@ -204,7 +204,7 @@ function createSpacePlatform(
   }
   if (hub) {
     hub.destructible = false
-    hub.minable = false
+    hub.minable_flag = false
   }
   updateStageSurfaceName(surface, projectName, stageName)
   return [surface, nil]

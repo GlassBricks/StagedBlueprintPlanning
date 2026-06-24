@@ -444,7 +444,7 @@ describe("underground pair", () => {
     wp().updateWorldEntities(rightUg, 1)
 
     expect(wp().getWorldEntity(rightUg, 1)).toMatchTable({
-      neighbours: middleWorldEntity,
+      underground_belt_neighbour: middleWorldEntity,
     })
   })
   test("deleteWorldEntities on underground belt calls update highlights on all pairs", () => {
@@ -464,7 +464,7 @@ describe("underground pair", () => {
   test("bug: deleteWorldEntities on underground belt does not crash if is preview", () => {
     project.content.deleteEntity(middleUg)
     expect(wp().getWorldEntity(rightUg, 1)).toMatchTable({
-      neighbours: leftWorldEntity,
+      underground_belt_neighbour: leftWorldEntity,
     })
     expect(wp().hasErrorAt(rightUg, 1)).toBe(true)
   })
@@ -593,7 +593,7 @@ describe("circuit wires", () => {
   function assertSingleWire({ luaEntity1, luaEntity2 }: { luaEntity1: LuaEntity; luaEntity2: LuaEntity }): void {
     expect(
       luaEntity1
-        .get_wire_connector(defines.wire_connector_id.combinator_input_red, false)
+        .get_wire_connector(defines.wire_connector_id.combinator_input_red, false)!
         .connections.map((c) => [c.target.owner, c.target.wire_connector_id]),
     ).toEqual([[luaEntity2, defines.wire_connector_id.combinator_output_red]])
   }

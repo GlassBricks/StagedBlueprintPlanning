@@ -5,7 +5,7 @@
   "description": "The ultimate mod for designing staged blueprints.",
   "homepage": "https://github.com/GlassBricks/StagedBlueprintPlanning/",
   "author": "GlassBricks",
-  "factorio_version": "2.0",
+  "factorio_version": "2.1",
   "package": {
     "readme": "mod-portal/readme.md",
     "gallery": [
@@ -36,8 +36,7 @@
     "sync_portal_details": true
   },
   "dependencies": [
-    "base >= 2.0.64",
-    "bplib >= 1.1.0",
+    "base >= 2.1.0",
     "? bobinserters >= 1.0.0",
     "? boblogistics >= 1.0.0",
     "? EditorExtensions >= 2.0.0"

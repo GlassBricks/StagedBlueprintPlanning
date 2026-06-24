@@ -56,8 +56,8 @@ test("rebuildStage", () => {
   }
 })
 
-test("can update an infinity accumulator", () => {
-  assert("EditorExtensions" in script.active_mods)
+const testIfEE = "EditorExtensions" in script.active_mods ? test : test.skip
+testIfEE("can update an infinity accumulator", () => {
   const entity = ctx.buildEntity(1, { name: "ee-infinity-accumulator-primary-input", position: pos })
   expect(ctx.wp.getWorldOrPreviewEntity(entity, 2)?.name).toEqual("ee-infinity-accumulator-primary-input")
 

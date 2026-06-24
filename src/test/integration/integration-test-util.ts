@@ -267,11 +267,3 @@ export function setupEntityIntegrationTest(numStages = 6): EntityTestContext {
 
   return ctx
 }
-
-export function waitForPaste(useBplib: boolean, fn: () => void): void {
-  if (useBplib) {
-    after_ticks(1, fn)
-  } else {
-    fn()
-  }
-}

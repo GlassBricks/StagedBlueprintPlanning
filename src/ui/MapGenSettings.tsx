@@ -97,7 +97,7 @@ interface MapGenSettingsForForm {
 
 function fromSurfaceSettings(settings: NormalSurfaceSettings): PropertiesTable<MapGenSettingsForForm> {
   const planetPrototype = settings.planet ? prototypes.space_location[settings.planet] : nil
-  const mapGenSeed = settings.map_gen_settings.seed
+  const mapGenSeed = settings.map_gen_settings.seed ?? 0
   const seed = planetPrototype ? (mapGenSeed - (planetPrototype.map_seed_offset ?? 0) + 2 ** 32) % 2 ** 32 : mapGenSeed
 
   return createPropertiesTable(keys<MapGenSettingsForForm>(), {
