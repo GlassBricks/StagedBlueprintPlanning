@@ -143,3 +143,6 @@ factorio-test-data-dir/
 src/COPYING*
 src/*.zip
 docs/research
+
+# Local, uncommitted Claude notes (symlinked into worktrees by .config/wt.toml)
+CLAUDE.local.md
