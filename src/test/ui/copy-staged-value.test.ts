@@ -20,7 +20,7 @@ before_each(() => {
   player = game.players[1]
   stage = project.getStage(1)!
   surface = stage.getSurface()
-  player.mod_settings[Settings.CopyItemRequests] = { value: true } as any
+  player.mod_settings[Settings.CopyItemRequests] = { value: true }
 })
 
 after_each(() => {

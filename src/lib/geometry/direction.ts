@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 export function floorToCardinalDirection(direction: defines.direction): defines.direction {
-  return (math.floor(direction / 4) * 4) as defines.direction
+  return math.floor(direction / 4) * 4
 }
 
 export function applyDirectionTransformation(
@@ -13,14 +13,14 @@ export function applyDirectionTransformation(
   flipVertical: boolean,
   rotation: defines.direction,
 ): defines.direction {
-  let dir = ((direction + rotation) % 16) as defines.direction
+  let dir = (direction + rotation) % 16
 
   if (flipHorizontal && flipVertical) {
-    dir = ((dir + 8) % 16) as defines.direction
+    dir = (dir + 8) % 16
   } else if (flipHorizontal) {
-    dir = ((16 - dir) % 16) as defines.direction
+    dir = (16 - dir) % 16
   } else if (flipVertical) {
-    dir = ((8 - dir + 16) % 16) as defines.direction
+    dir = (8 - dir + 16) % 16
   }
 
   return dir

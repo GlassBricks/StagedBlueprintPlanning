@@ -10,12 +10,9 @@ export const enum Settings {
   UnhideInfinityItems = "bp100_unhide-infinity-items",
   DeleteAtNextStage = "bp100_delete-at-next-stage",
   CopyItemRequests = "bp100_copy-item-requests",
-  UseBplibForBlueprintPaste = "bp100_use-bplib-for-blueprint-paste",
 }
 
 export const enum Prototypes {
-  // used to handle blueprints
-  EntityMarker = "bp100_entity-marker",
   PreviewEntityPrefix = "bp100_preview-entity-",
   UndoReference = "bp100_undo-reference",
 

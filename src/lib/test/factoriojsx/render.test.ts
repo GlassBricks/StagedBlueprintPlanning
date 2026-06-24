@@ -6,7 +6,6 @@
 import {
   BaseGuiElement,
   LocalisedString,
-  LuaGuiElement,
   OnGuiClickEvent,
   OnGuiOpenedEvent,
   OnGuiTextChangedEvent,
@@ -281,7 +280,7 @@ test("events", () => {
   expect(func).not.toHaveBeenCalled()
 
   const fakeClickEvent: OnGuiClickEvent = {
-    element: element as LuaGuiElement,
+    element: element,
     name: defines.events.on_gui_click,
     player_index: element.player_index,
     tick: game.tick,
@@ -295,7 +294,7 @@ test("events", () => {
   expect(func).toHaveBeenCalledWith(fakeClickEvent)
 
   const fakeOpenEvent: OnGuiOpenedEvent = {
-    element: element as LuaGuiElement,
+    element: element,
     name: defines.events.on_gui_opened,
     player_index: element.player_index,
     tick: game.tick,
@@ -305,7 +304,7 @@ test("events", () => {
   expect(func).toHaveBeenCalledWith(fakeOpenEvent)
 
   const fakeTextChangeEvent: OnGuiTextChangedEvent = {
-    element: element as LuaGuiElement,
+    element: element,
     name: defines.events.on_gui_text_changed,
     player_index: element.player_index,
     tick: game.tick,
@@ -328,7 +327,7 @@ test("observable value", () => {
 
   element.text = "two"
   const fakeEvent: OnGuiTextChangedEvent = {
-    element: element as LuaGuiElement,
+    element: element,
     name: defines.events.on_gui_text_changed,
     player_index: element.player_index,
     tick: game.tick,

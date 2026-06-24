@@ -3,14 +3,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import {
-  LuaEntity,
-  LuaSurface,
-  MapGenSettings,
-  MapGenSettingsWrite,
-  nil,
-  PrototypeWithQualityRead,
-} from "factorio:runtime"
+import { LuaEntity, LuaSurface, MapGenSettings, nil, PrototypeWithQualityRead } from "factorio:runtime"
 import { BBox } from "../lib/geometry"
 import { withTileEventsDisabled } from "../tiles/tile-events"
 import { Project, Stage } from "./Project"
@@ -171,7 +164,7 @@ function createNewStageSurface(
   const surface = game.create_surface("bp100-stage-temp", {
     width: size,
     height: size,
-  } as MapGenSettingsWrite)
+  })
   prepareSurface(surface, area, settings, projectName, stageName)
   return surface
 }
@@ -204,7 +197,7 @@ function createSpacePlatform(
   }
   if (hub) {
     hub.destructible = false
-    hub.minable = false
+    hub.minable_flag = false
   }
   updateStageSurfaceName(surface, projectName, stageName)
   return [surface, nil]

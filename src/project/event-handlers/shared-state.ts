@@ -1,5 +1,4 @@
 import { LuaEntity, LuaSurface, PlayerIndex, UnitNumber } from "factorio:runtime"
-import { Prototypes } from "../../constants"
 import { isWorldEntityProjectEntity } from "../../entity/ProjectEntity"
 import { isPreviewEntity } from "../../entity/prototype-info"
 import { getRegisteredProjectEntityFromUnitNumber, getStageFromUnitNumber } from "../../entity/registration"
@@ -66,10 +65,6 @@ export function getInnerName(entity: LuaEntity): string {
 
 export function luaEntityCreated(entity: LuaEntity, player: PlayerIndex | nil): void {
   if (!entity.valid) return
-  if (getInnerName(entity) == (Prototypes.EntityMarker as string)) {
-    entity.destroy()
-    return
-  }
   const stage = getStageAtSurface(entity.surface_index)
   if (!stage) return
   if (isWorldEntityProjectEntity(entity)) {
@@ -112,6 +107,15 @@ export function luaEntityRotated(
   if (isPreviewEntity(entity)) {
     entity.direction = previousDirection
     return
+  }
+  // An entity-ghost underground belt can pair with a real (mod-tracked) underground belt. Rotating
+  // the ghost also flips the real pair in the world, but the engine raises the rotate event only for
+  // the ghost. Re-sync the real pair so the mod records the flip.
+  if (entity.type == "entity-ghost" && entity.ghost_type == "underground-belt") {
+    const pair = entity.underground_belt_neighbour
+    if (pair && isWorldEntityProjectEntity(pair)) {
+      stage.actions.onEntityRotated(pair, stage.stageNumber, pair.direction, player)
+    }
   }
 }
 

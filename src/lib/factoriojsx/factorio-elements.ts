@@ -68,6 +68,7 @@ import {
   TextBoxGuiElement,
   TextFieldGuiElement,
   double,
+  int16,
   int32,
   nil,
   uint32,
@@ -211,6 +212,9 @@ export interface ScrollPaneElement extends BaseElement {
   type: "scroll-pane"
   horizontal_scroll_policy?: MaybeProperty<ScrollPolicy>
   vertical_scroll_policy?: MaybeProperty<ScrollPolicy>
+  selectable?: MaybeProperty<boolean>
+  word_wrap?: MaybeProperty<boolean>
+  read_only?: MaybeProperty<boolean>
   onCreate?: OnCreateHandler<ScrollPaneGuiElement>
   styleMod?: ScrollPaneStyleMod
 }
@@ -379,20 +383,21 @@ export type FactorioElement =
   | SwitchElement
 
 export interface BaseStyleMod {
+  name?: MaybeProperty<string>
   minimal_width?: MaybeProperty<int32>
   maximal_width?: MaybeProperty<int32>
   minimal_height?: MaybeProperty<int32>
   maximal_height?: MaybeProperty<int32>
   natural_width?: MaybeProperty<int32>
   natural_height?: MaybeProperty<int32>
-  top_padding?: MaybeProperty<int32>
-  right_padding?: MaybeProperty<int32>
-  bottom_padding?: MaybeProperty<int32>
-  left_padding?: MaybeProperty<int32>
-  top_margin?: MaybeProperty<int32>
-  right_margin?: MaybeProperty<int32>
-  bottom_margin?: MaybeProperty<int32>
-  left_margin?: MaybeProperty<int32>
+  top_padding?: MaybeProperty<int16>
+  right_padding?: MaybeProperty<int16>
+  bottom_padding?: MaybeProperty<int16>
+  left_padding?: MaybeProperty<int16>
+  top_margin?: MaybeProperty<int16>
+  right_margin?: MaybeProperty<int16>
+  bottom_margin?: MaybeProperty<int16>
+  left_margin?: MaybeProperty<int16>
   horizontal_align?: MaybeProperty<"left" | "center" | "right">
   vertical_align?: MaybeProperty<"top" | "center" | "bottom">
   font_color?: MaybeProperty<Color | ColorArray>
@@ -413,7 +418,7 @@ export interface ButtonStyleMod extends BaseStyleMod {
   clicked_font_color?: MaybeProperty<Color | ColorArray>
   disabled_font_color?: MaybeProperty<Color | ColorArray>
   pie_progress_color?: MaybeProperty<Color | ColorArray>
-  clicked_vertical_offset?: MaybeProperty<int32>
+  clicked_vertical_offset?: MaybeProperty<uint32>
   selected_font_color?: MaybeProperty<Color | ColorArray>
   selected_hovered_font_color?: MaybeProperty<Color | ColorArray>
   selected_clicked_font_color?: MaybeProperty<Color | ColorArray>
@@ -444,13 +449,13 @@ export interface ProgressBarStyleMod extends BaseStyleMod {
 }
 
 export interface TableStyleMod extends BaseStyleMod {
-  top_cell_padding?: MaybeProperty<int32>
-  right_cell_padding?: MaybeProperty<int32>
-  bottom_cell_padding?: MaybeProperty<int32>
-  left_cell_padding?: MaybeProperty<int32>
+  top_cell_padding?: MaybeProperty<int16>
+  right_cell_padding?: MaybeProperty<int16>
+  bottom_cell_padding?: MaybeProperty<int16>
+  left_cell_padding?: MaybeProperty<int16>
   horizontal_spacing?: MaybeProperty<int32>
   vertical_spacing?: MaybeProperty<int32>
-  cell_padding?: MaybeProperty<int32>
+  cell_padding?: MaybeProperty<int16>
 }
 
 export interface SpriteStyleMod extends BaseStyleMod {

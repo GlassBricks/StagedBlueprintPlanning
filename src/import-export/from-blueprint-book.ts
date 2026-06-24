@@ -102,7 +102,7 @@ function makeCleanEntity(entity: BaseBlueprintEntity): Entity {
   const result: Record<string, unknown> = {}
   for (const [key, value] of pairs(entity)) {
     if (!excludedKeys.has(key)) {
-      result[key] = value as never
+      result[key] = value
     }
   }
   return result as unknown as Entity

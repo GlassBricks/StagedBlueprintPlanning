@@ -3,6 +3,7 @@
   "compilerOptions": {
     "target": "esnext",
     "moduleResolution": "node",
+    "ignoreDeprecations": "6.0",
     "module": "CommonJS",
     "types": [
       "typed-factorio/runtime", "factorio-test", "gb-tstl-utils"

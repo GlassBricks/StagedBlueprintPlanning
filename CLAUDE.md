@@ -78,6 +78,10 @@ See [docs/Migrations.md](docs/Migrations.md) for full reference and patterns.
 - Test files mirror source: `src/foo/bar.ts` → `src/test/foo/bar.test.ts`. Update test paths when renaming source files
 - High test coverage expected
 
+## Caveats
+
+- The test player runs in the **editor** controller, which by default does _instant construction_; some build/upgrade behave differently: e.g. `order_upgrade` to a different quality (same name) instantly replaces and raises `on_built_entity` instead of `on_marked_for_upgrade`. For a faithful repro, switch out of editor first (`player.set_controller({ type: defines.controllers.god })`, restore in `after_test`).
+
 ## Research
 
 When investigating something non-trivial (multi-file analysis, web research, evaluations), write findings to `_research/<descriptive-name>.md`. Include frontmatter:

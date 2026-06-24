@@ -128,7 +128,8 @@ const stageMoveTool: SelectionToolPrototype = {
   order: "z[bp100]-a[a-tools]-b[stage-move-tool]",
 
   select: {
-    mode: ["deconstruct"],
+    mode: ["deconstruct", "any-entity"],
+    ignore_cannot_select_tiles: true,
     border_color: stageMoveToolColor,
     cursor_box_type: "copy",
   },
@@ -177,15 +178,14 @@ const filteredStagedMoveTool: DeconstructionItemPrototype = {
   flags: ["spawnable", "not-stackable"],
   stack_size: 1,
 
-  entity_filter_count: 50,
-
   draw_label_for_cursor_render: true,
 
   subgroup: "tool",
   order: "z[bp100]-a[a-tools]-c[filtered-stage-move-tool]",
 
   select: {
-    mode: ["deconstruct"],
+    mode: ["deconstruct", "any-entity"],
+    ignore_cannot_select_tiles: true,
     border_color: stageMoveToolColor,
     cursor_box_type: "copy",
   },
@@ -223,17 +223,20 @@ const stagedDeconstructTool: SelectionToolPrototype = {
   order: "z[bp100]-a[a-tools]-e[stage-deconstruct-tool]",
 
   select: {
-    mode: ["blueprint"],
+    mode: ["blueprint", "any-entity"],
+    ignore_cannot_select_tiles: true,
     border_color: deconstructionPlanner.select.border_color,
     cursor_box_type: "not-allowed",
   },
   alt_select: {
-    mode: ["blueprint"],
+    mode: ["blueprint", "any-entity"],
+    ignore_cannot_select_tiles: true,
     border_color: deconstructionPlanner.alt_select.border_color,
     cursor_box_type: "not-allowed",
   },
   reverse_select: {
-    mode: ["blueprint"],
+    mode: ["blueprint", "any-entity"],
+    ignore_cannot_select_tiles: true,
     border_color: deconstructionPlanner.select.border_color,
     cursor_box_type: "not-allowed",
   },
@@ -266,12 +269,14 @@ const stageCopyTool: SelectionToolPrototype = {
   stack_size: 1,
 
   select: {
-    mode: ["blueprint"],
+    mode: ["blueprint", "any-entity"],
+    ignore_cannot_select_tiles: true,
     border_color: copyTool.select.border_color,
     cursor_box_type: "copy",
   },
   alt_select: {
-    mode: ["blueprint"],
+    mode: ["blueprint", "any-entity"],
+    ignore_cannot_select_tiles: true,
     border_color: copyTool.alt_select.border_color,
     cursor_box_type: "copy",
   },
@@ -318,7 +323,8 @@ const forceDeleteTool: SelectionToolPrototype = {
   order: "z[bp100]-b[b-tools]-c[force-delete-tool]",
 
   select: {
-    mode: ["blueprint"],
+    mode: ["blueprint", "any-entity"],
+    ignore_cannot_select_tiles: true,
     border_color: deconstructionPlanner.select.border_color,
     cursor_box_type: "not-allowed",
   },

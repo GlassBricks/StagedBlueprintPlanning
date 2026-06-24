@@ -371,6 +371,5 @@ export function getItemRequestSampleItemName(
 ): string | nil {
   if (!insertPlans) return
   const fuelInventory = worldEntity?.get_fuel_inventory()?.index
-  return insertPlans.find((p) => p.items.in_inventory?.some((i) => i.inventory != fuelInventory))?.id
-    .name as unknown as string | nil
+  return insertPlans.find((p) => p.items.in_inventory?.some((i) => i.inventory != fuelInventory))?.id.name
 }

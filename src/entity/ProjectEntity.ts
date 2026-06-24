@@ -339,7 +339,7 @@ class ProjectEntityImpl<T extends Entity = Entity>
 
   _applyDiffAtStage(stage: StageNumber, _diff: StageDiffInternal<T>): void {
     assert(this.isInStage(stage))
-    const diff = _diff as StageDiff<T>
+    const diff = _diff
     let { stageDiffs } = this
     const { firstStage } = this
     assert(stage >= firstStage, "stage must be >= first stage")
@@ -350,7 +350,7 @@ class ProjectEntityImpl<T extends Entity = Entity>
     const existingDiff = stageDiffs && stageDiffs[stage]
     if (existingDiff) {
       for (const [key, value] of pairs(diff)) {
-        existingDiff[key] = value as any
+        existingDiff[key] = value
       }
     } else {
       stageDiffs ??= this.stageDiffs = {}

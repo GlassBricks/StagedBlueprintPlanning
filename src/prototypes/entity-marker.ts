@@ -70,7 +70,6 @@ data.extend([
   } satisfies ItemPrototype,
 ])
 
-data.extend(createHiddenEntity(Prototypes.EntityMarker))
 data.extend(createHiddenEntity(Prototypes.UndoReference))
 
 const stageReference = table.deepcopy(data.raw.blueprint.blueprint!)

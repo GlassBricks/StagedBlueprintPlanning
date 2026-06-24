@@ -152,6 +152,8 @@ const stateProps = {} as Record<GuiElementType | "base", Record<string, string>>
       if (!match) return
       let matchName = match[1] || match[2]
       if (matchName === "HorizontalFlow" || matchName === "VerticalFlow") return
+      // "inventory" GUI element type added in Factorio 2.1; not implemented by this factoriojsx framework
+      if (matchName === "Inventory") return
       if (matchName === "Image") matchName = "Sprite"
       const elemType = normalizedTypeNames[normalizeTypeName(matchName)]
       let elemTypes: (GuiElementType | "base")[]

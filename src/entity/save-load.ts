@@ -100,7 +100,7 @@ function blueprintEntity(entity: LuaEntity): Mutable<BlueprintEntity> | nil {
     })
     const matchingIndex = findEntityIndex(indexMapping, entity)
     if (matchingIndex) {
-      return bpStack.get_blueprint_entities()![matchingIndex - 1] as Mutable<BlueprintEntity>
+      return bpStack.get_blueprint_entities()![matchingIndex - 1]
     }
   }
 }
@@ -338,7 +338,7 @@ function upgradeEntity(oldEntity: LuaEntity, value: NameAndQuality): LuaEntity {
     upgradeEntityParams.direction = oldEntity.direction
     upgradeEntityParams.type = oldEntity.type == "underground-belt" ? oldEntity.belt_to_ground_type : nil
   }
-  oldEntity.minable = true
+  oldEntity.minable_flag = true
   const newEntity = oldEntity.surface.create_entity(upgradeEntityParams)
   if (!newEntity) return oldEntity
   if (oldEntity.valid) oldEntity.destroy()
@@ -389,11 +389,7 @@ function removeItemsMatchingItemRequests(luaEntity: LuaEntity, requests: Bluepri
       const luaStack = luaInventory[stack]
       if (!luaStack.valid_for_read) continue
       const actualCount = count ?? 1
-      if (
-        luaStack.count == actualCount &&
-        luaStack.name == (name as unknown as string) &&
-        luaStack.quality.name == actualQuality
-      ) {
+      if (luaStack.count == actualCount && luaStack.name == name && luaStack.quality.name == actualQuality) {
         luaStack.clear()
       }
     }
@@ -428,7 +424,7 @@ function updateUndergroundRotation(
   }
   const mode = value.type ?? "input"
   if (luaEntity.belt_to_ground_type != mode) {
-    const neighbor = luaEntity.neighbours as LuaEntity | nil
+    const neighbor = luaEntity.underground_belt_neighbour
     const [neighborProjEntity, flippable] = checkUndergroundPairFlippable(neighbor)
     if (!flippable) {
       return $multi(luaEntity)
@@ -528,6 +524,15 @@ export function updateEntity(
   const type = luaEntity.type
   if (movableTypes.has(type)) {
     assume<CarBlueprintEntity>(value)
+    // 2.1 allows upgrading rolling stock (name/quality). Movable entities can't be pasted in place,
+    // so rebuild via createEntity, which preserves orientation. Equipment-only changes update in place.
+    if (luaEntity.name != value.name || luaEntity.quality.name != (value.quality ?? "normal")) {
+      const surface = luaEntity.surface
+      const position = luaEntity.position
+      raise_script_destroy({ entity: luaEntity })
+      luaEntity.destroy()
+      return $multi(createEntity(surface, position, direction, value, unstagedValue, changed))
+    }
     insertEquipment(luaEntity, value.grid)
     return $multi(luaEntity)
   }
@@ -574,7 +579,7 @@ export function updateEntity(
 function makePreviewIndestructible(entity: LuaEntity | nil): void {
   if (!entity) return
   entity.destructible = false
-  entity.minable = false
+  entity.minable_flag = false
   entity.rotatable = false
   if (entity.type == "rail-remnants") {
     entity.corpse_expires = false
@@ -608,6 +613,6 @@ export function canBeAnyDirection(luaEntity: LuaEntity): boolean {
   return (
     luaEntity.type == "assembling-machine" &&
     getPrototypeRotationType(luaEntity.name) == RotationType.AnyDirection &&
-    luaEntity.fluidbox.length == 0
+    luaEntity.fluids_count == 0
   )
 }

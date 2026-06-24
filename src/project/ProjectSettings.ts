@@ -68,7 +68,7 @@ export class ProjectSettings {
     return createdDiffedPropertyTableView(
       this.defaultBlueprintSettings,
       this.getStageSettings(stage).blueprintOverrideSettings,
-    ) as BlueprintSettingsTable
+    )
   }
 
   isSpacePlatform(): boolean {

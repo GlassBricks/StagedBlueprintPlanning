@@ -254,9 +254,9 @@ export class WorldPresentation implements WorldEntityLookup, WorldPresenter, Has
     for (const entity of this.content.allEntities()) {
       const type = nameToType.get(entity.firstValue.name) ?? ""
       if (type in elevatedRailTypes) {
-        elevatedRails.push(entity as MovableProjectEntity)
+        elevatedRails.push(entity)
       } else if (type in movableTypes || type in trainSignalTypes) {
-        finalEntities.push(entity as MovableProjectEntity)
+        finalEntities.push(entity)
       } else {
         this.refreshWorldEntityAtStage(entity, stage)
       }
@@ -316,7 +316,7 @@ export class WorldPresentation implements WorldEntityLookup, WorldPresenter, Has
     if (!surface) return
     const arr = surface.find_entities()
     for (const i of $range(1, arr.length)) {
-      arr[i - 1].active = false
+      arr[i - 1].disabled_by_script = true
     }
   }
 
@@ -325,7 +325,7 @@ export class WorldPresentation implements WorldEntityLookup, WorldPresenter, Has
     if (!surface) return
     const arr = surface.find_entities()
     for (const i of $range(1, arr.length)) {
-      arr[i - 1].active = true
+      arr[i - 1].disabled_by_script = false
     }
   }
 
@@ -433,7 +433,7 @@ export class WorldPresentation implements WorldEntityLookup, WorldPresenter, Has
   }
 
   private static setEntityUpdateable(entity: LuaEntity, updateable: boolean) {
-    entity.minable = updateable
+    entity.minable_flag = updateable
     entity.rotatable = updateable
     entity.destructible = false
   }
@@ -577,7 +577,7 @@ export class WorldPresentation implements WorldEntityLookup, WorldPresenter, Has
     for (const stage of $range(entity.firstStage, entity.lastStageWith(this.settings))) {
       const worldEntity = this.getWorldEntity(entity, stage)
       if (!worldEntity) continue
-      const pair = worldEntity.neighbours as LuaEntity | nil
+      const pair = worldEntity.underground_belt_neighbour
       if (!pair) continue
       const pairProjectEntity = this.content.findCompatibleWithLuaEntity(pair, nil, stage)
       if (pairProjectEntity) pairsToUpdate.add(pairProjectEntity as UndergroundBeltProjectEntity)

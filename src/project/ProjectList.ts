@@ -45,14 +45,14 @@ function swapProjects(index1: number, index2: number): void {
 }
 
 export function moveProjectUp(project: Project): boolean {
-  const index = storage.projects.indexOf(project as any)
+  const index = storage.projects.indexOf(project)
   if (index <= 0) return false
   swapProjects(index - 1, index)
   return true
 }
 
 export function moveProjectDown(project: Project): boolean {
-  const index = storage.projects.indexOf(project as any)
+  const index = storage.projects.indexOf(project)
   if (index < 0 || index >= storage.projects.length - 1) return false
   swapProjects(index, index + 1)
   return true

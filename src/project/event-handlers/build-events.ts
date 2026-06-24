@@ -1,53 +1,71 @@
-import { EventId, LuaEntity, MapPosition, OnPlayerMinedEntityEvent, PlayerIndex } from "factorio:runtime"
+import { BlueprintInsertPlan, LuaEntity, MapPosition, OnPlayerMinedEntityEvent, PlayerIndex } from "factorio:runtime"
 import { oppositedirection } from "util"
 import { Prototypes } from "../../constants"
 import { LuaEntityInfo } from "../../entity/Entity"
 import { isWorldEntityProjectEntity } from "../../entity/ProjectEntity"
 import { areUpgradeableTypes } from "../../entity/prototype-info"
+import { StageInfoExport } from "../../import-export/entity"
 import { ProtectedEvents } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { Stage } from "../Project"
 import { onUndoReferenceBuilt, registerUndoActionLater } from "../actions/undo"
 import { getStageAtSurface } from "../project-refs"
 import {
-  clearCurrentBlueprintPaste,
   clearToBeFastReplaced,
   clearToBeFastReplacedField,
+  getPasteItemRequests,
   getToBeFastReplaced,
-  isInBlueprintPaste,
-  isInBplibPaste,
-  onEntityMarkerBuilt,
-  onPreBlueprintPasted,
+  onPreBlueprintPasteNative,
   setToBeFastReplaced,
 } from "./blueprint-paste"
-import { getInnerName, getState, luaEntityPossiblyUpdated } from "./shared-state"
+import { getInnerName, getState } from "./shared-state"
 
 const Events = ProtectedEvents
 
-interface FutureBlueprintSettingsPastedEvent {
-  entity: LuaEntity
-  tags?: import("factorio:runtime").Tags
-  player_index?: PlayerIndex
+// Applies a blueprint-pasted entity to the project: updates/adds it, then saves any wire
+// connections the paste made.
+function applyPastedEntity(
+  stage: Stage,
+  entity: LuaEntity,
+  previousDirection: defines.direction | nil,
+  player: PlayerIndex | nil,
+  stagedInfo: StageInfoExport | nil,
+  items: BlueprintInsertPlan[] | nil,
+): void {
+  const projectEntity = stage.actions.onEntityPossiblyUpdated(
+    entity,
+    stage.stageNumber,
+    previousDirection,
+    player,
+    stagedInfo,
+    items,
+  )
+  let worldEntity: LuaEntity | nil = entity
+  if (!entity.valid && projectEntity) {
+    worldEntity = stage.project.worldPresentation.getWorldEntity(projectEntity, stage.stageNumber)
+  }
+  if (worldEntity?.valid) {
+    stage.actions.onWiresPossiblyUpdated(worldEntity, stage.stageNumber, player)
+  }
 }
 
-const blueprint_settings_pasted_event_id = (defines.events as any).on_blueprint_settings_pasted as
-  | EventId<FutureBlueprintSettingsPastedEvent>
-  | undefined
-
-if (blueprint_settings_pasted_event_id) {
-  script.on_event(blueprint_settings_pasted_event_id, (event) => {
-    luaEntityPossiblyUpdated(event.entity, event.player_index)
-  })
-}
+Events.on_blueprint_settings_pasted((event) => {
+  const entity = event.entity
+  if (!entity.valid || !isWorldEntityProjectEntity(entity)) return
+  const stage = getStageAtSurface(entity.surface_index)
+  if (!stage) return
+  const stagedInfo = event.tags?.bp100 as StageInfoExport | nil
+  const items = getPasteItemRequests(event.tags)
+  applyPastedEntity(stage, entity, event.previous_direction, event.player_index, stagedInfo, items)
+})
 
 Events.on_pre_build((e) => {
   const player = game.get_player(e.player_index)!
-  clearCurrentBlueprintPaste()
 
   const surface = player.surface
   if (player.is_cursor_blueprint()) {
     const stage = getStageAtSurface(surface.index)
-    onPreBlueprintPasted(player, stage, e, !!blueprint_settings_pasted_event_id)
+    onPreBlueprintPasteNative(player, stage)
     return
   }
 
@@ -123,7 +141,7 @@ function isFastReplaceMine(mineEvent: OnPlayerMinedEntityEvent): boolean | nil {
     return true
   }
   if (entity.type == "underground-belt") {
-    const pair = entity.neighbours as LuaEntity | nil
+    const pair = entity.underground_belt_neighbour
     if (pair && isFastReplaceCompatible(position, pair.position, item, pair.name, event.direction, pair.direction)) {
       return true
     }
@@ -131,7 +149,6 @@ function isFastReplaceMine(mineEvent: OnPlayerMinedEntityEvent): boolean | nil {
 }
 
 Events.on_player_mined_entity((e) => {
-  if (isInBlueprintPaste()) return
   const { entity } = e
 
   const preMinedItemCalled = getState().preMinedItemCalled
@@ -156,18 +173,6 @@ Events.on_built_entity((e) => {
     return onUndoReferenceBuilt(e.player_index, entity)
   }
 
-  if (isInBlueprintPaste()) {
-    if (innerName == Prototypes.EntityMarker) onEntityMarkerBuilt(e, entity)
-    return
-  }
-  if (isInBplibPaste()) {
-    return
-  }
-  if (innerName == Prototypes.EntityMarker) {
-    entity.destroy()
-    return
-  }
-
   const lastPreBuild = getState().lastPreBuild
   getState().lastPreBuild = nil
 
@@ -177,6 +182,15 @@ Events.on_built_entity((e) => {
   const playerIndex = e.player_index
 
   if (!isWorldEntityProjectEntity(entity)) {
+    return
+  }
+
+  // A blueprint paste that creates a new entity raises on_built_entity (not on_blueprint_settings_pasted).
+  // Stage info (bp100) and item requests ride along in the blueprint entity tags.
+  const stagedInfo = e.tags?.bp100 as StageInfoExport | nil
+  const pasteItems = getPasteItemRequests(e.tags)
+  if (stagedInfo != nil || pasteItems != nil) {
+    applyPastedEntity(stage, entity, nil, playerIndex, stagedInfo, pasteItems)
     return
   }
 

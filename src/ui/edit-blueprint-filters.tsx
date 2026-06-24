@@ -26,7 +26,6 @@ class EditBlueprintFilterGui extends Component<{
     this.filters = filters
     const elemFilters: EntityPrototypeFilter[] = [
       { filter: "blueprintable" },
-      { mode: "and", filter: "name", name: Prototypes.EntityMarker, invert: true },
       { mode: "and", filter: "name", name: Prototypes.UndoReference, invert: true },
     ]
     const currentValues = filters.get()
@@ -69,8 +68,9 @@ class EditBlueprintFilterGui extends Component<{
   onClose() {
     const newValue = new LuaSet<string>()
     for (const slot of this.slots) {
-      if (slot.elem_value) {
-        newValue.add(slot.elem_value)
+      const value = slot.elem_value
+      if (typeof value == "string") {
+        newValue.add(value)
       }
     }
     this.filters.set(newValue.isEmpty() ? nil : newValue)

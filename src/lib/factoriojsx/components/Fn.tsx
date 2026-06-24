@@ -3,19 +3,28 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { GuiElementType, LuaGuiElement } from "factorio:runtime"
+import { LuaGuiElement } from "factorio:runtime"
 import { Property } from "../../event"
 import { Func, ibind, RegisterClass } from "../../index"
-import { Component, destroyChildren, Element, ElemProps, FactorioJsx, RenderContext, renderMultiple } from "../index"
+import {
+  Component,
+  destroyChildren,
+  Element,
+  ElemProps,
+  FactorioJsx,
+  FactorioJsxElementType,
+  RenderContext,
+  renderMultiple,
+} from "../index"
 
-export type FuncProps<T, U extends GuiElementType> = {
+export type FuncProps<T, U extends FactorioJsxElementType> = {
   uses: U
   from: Property<T>
   map: Func<(value: T) => Element | false | nil>
 } & ElemProps<U>
 
 @RegisterClass("gui:Fn")
-export class Fn<T, U extends GuiElementType> extends Component<FuncProps<T, U>> {
+export class Fn<T, U extends FactorioJsxElementType> extends Component<FuncProps<T, U>> {
   map!: Func<(value: T) => Element | false | nil>
 
   element!: LuaGuiElement

@@ -33,13 +33,6 @@ data.extend<StringSettingDefinition | BoolSettingDefinition>([
     order: "e",
   },
   {
-    name: Settings.UseBplibForBlueprintPaste,
-    type: "bool-setting",
-    setting_type: "runtime-per-user",
-    default_value: false,
-    order: "f",
-  },
-  {
     name: Settings.UnhideInfinityItems,
     type: "bool-setting",
     setting_type: "startup",

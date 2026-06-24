@@ -48,7 +48,7 @@ export class PlanetSelect extends Component<PlanetSelectProps> {
       (planet): LocalisedString => ["", `[planet=${planet.name}]`, planet.localised_name],
     )
     const planetNames: LocalisedString[] = allowNone
-      ? (["<None>" as LocalisedString] as LocalisedString[]).concat(basePlanetNames)
+      ? (["<None>"] as LocalisedString[]).concat(basePlanetNames)
       : basePlanetNames
 
     let initialPlanetLuaIndex = this.planets.findIndex((p) => p.name == initialPlanet) + 1
@@ -97,7 +97,7 @@ interface MapGenSettingsForForm {
 
 function fromSurfaceSettings(settings: NormalSurfaceSettings): PropertiesTable<MapGenSettingsForForm> {
   const planetPrototype = settings.planet ? prototypes.space_location[settings.planet] : nil
-  const mapGenSeed = settings.map_gen_settings.seed
+  const mapGenSeed = settings.map_gen_settings.seed ?? 0
   const seed = planetPrototype ? (mapGenSeed - (planetPrototype.map_seed_offset ?? 0) + 2 ** 32) % 2 ** 32 : mapGenSeed
 
   return createPropertiesTable(keys<MapGenSettingsForForm>(), {

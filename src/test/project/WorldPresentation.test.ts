@@ -7,7 +7,7 @@ import { BlueprintInsertPlan, EventData, LuaEntity, LuaSurface } from "factorio:
 import expect from "tstl-expect"
 import { Prototypes } from "../../constants"
 import { Entity, UndergroundBeltEntity } from "../../entity/Entity"
-import { newProjectEntity, ProjectEntity, StageNumber, UndergroundBeltProjectEntity } from "../../entity/ProjectEntity"
+import { newProjectEntity, ProjectEntity, StageNumber } from "../../entity/ProjectEntity"
 import { createEntity, createPreviewEntity, saveEntity } from "../../entity/save-load"
 import { Events } from "../../lib"
 import { BBox, Pos } from "../../lib/geometry"
@@ -423,28 +423,18 @@ describe("underground pair", () => {
       force: "player",
     })!
     assert(leftWorldEntity)
-    middleUg = newProjectEntity(
-      { name: "underground-belt", type: "input" },
-      Pos(0.5, 0.5),
-      defines.direction.east,
-      1,
-    ) as UndergroundBeltProjectEntity
+    middleUg = newProjectEntity({ name: "underground-belt", type: "input" }, Pos(0.5, 0.5), defines.direction.east, 1)
     project.content.addEntity(middleUg)
     wp().updateWorldEntities(middleUg, 1)
     const middleWorldEntity = wp().getWorldEntity(middleUg, 1)!
     assert(middleWorldEntity)
 
-    rightUg = newProjectEntity(
-      { name: "underground-belt", type: "output" },
-      Pos(1.5, 0.5),
-      defines.direction.east,
-      1,
-    ) as UndergroundBeltProjectEntity
+    rightUg = newProjectEntity({ name: "underground-belt", type: "output" }, Pos(1.5, 0.5), defines.direction.east, 1)
     project.content.addEntity(rightUg)
     wp().updateWorldEntities(rightUg, 1)
 
     expect(wp().getWorldEntity(rightUg, 1)).toMatchTable({
-      neighbours: middleWorldEntity,
+      underground_belt_neighbour: middleWorldEntity,
     })
   })
   test("deleteWorldEntities on underground belt calls update highlights on all pairs", () => {
@@ -464,7 +454,7 @@ describe("underground pair", () => {
   test("bug: deleteWorldEntities on underground belt does not crash if is preview", () => {
     project.content.deleteEntity(middleUg)
     expect(wp().getWorldEntity(rightUg, 1)).toMatchTable({
-      neighbours: leftWorldEntity,
+      underground_belt_neighbour: leftWorldEntity,
     })
     expect(wp().hasErrorAt(rightUg, 1)).toBe(true)
   })
@@ -593,7 +583,7 @@ describe("circuit wires", () => {
   function assertSingleWire({ luaEntity1, luaEntity2 }: { luaEntity1: LuaEntity; luaEntity2: LuaEntity }): void {
     expect(
       luaEntity1
-        .get_wire_connector(defines.wire_connector_id.combinator_input_red, false)
+        .get_wire_connector(defines.wire_connector_id.combinator_input_red, false)!
         .connections.map((c) => [c.target.owner, c.target.wire_connector_id]),
     ).toEqual([[luaEntity2, defines.wire_connector_id.combinator_output_red]])
   }

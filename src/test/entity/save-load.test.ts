@@ -357,9 +357,9 @@ test("can upgrade an entity", () => {
     position: { x: 12.5, y: 12.5 },
     force: "player",
   })!
-  entity.minable = false
+  entity.minable_flag = false
   entity.destructible = false
-  const newEntity = updateEntity(entity, { name: "steel-chest" } as Entity, nil, defines.direction.north)[0]!
+  const newEntity = updateEntity(entity, { name: "steel-chest" }, nil, defines.direction.north)[0]!
   expect(newEntity.name).toBe("steel-chest")
   expect(entity.valid).toBe(false)
 })
@@ -384,7 +384,7 @@ test("can rotate entity", () => {
     force: "player",
     direction: defines.direction.east,
   })!
-  const newEntity = updateEntity(entity, { name: "inserter" } as Entity, nil, defines.direction.south)[0]
+  const newEntity = updateEntity(entity, { name: "inserter" }, nil, defines.direction.south)[0]
   expect(entity).toBe(newEntity)
   expect(entity.direction).toBe(defines.direction.south)
 })
@@ -424,7 +424,7 @@ test("updating entity with default control behavior overwrites existing control 
 
   expect((defaultCbValue as InserterBlueprintEntity).control_behavior).toBeAny()
 
-  const [updated] = updateEntity(inserter, defaultCbValue! as Entity, nil, defines.direction.north)
+  const [updated] = updateEntity(inserter, defaultCbValue!, nil, defines.direction.north)
 
   const updatedCb = updated!.get_or_create_control_behavior() as LuaInserterControlBehavior
   expect(updatedCb.circuit_set_stack_size).toBe(false)
@@ -450,7 +450,7 @@ test("updating entity with nil control behavior overwrites existing control beha
   cb.circuit_set_stack_size = true
   cb.circuit_stack_control_signal = { type: "virtual", name: "signal-S" }
 
-  const [updated] = updateEntity(inserter, { name: "inserter" } as Entity, nil, defines.direction.north)
+  const [updated] = updateEntity(inserter, { name: "inserter" }, nil, defines.direction.north)
 
   const updatedCb = updated!.get_or_create_control_behavior() as LuaInserterControlBehavior
   expect(updatedCb.circuit_set_stack_size).toBe(false)
@@ -614,7 +614,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
     })
     assert(eastUnderground)
 
-    expect(westUnderground.neighbours).toEqual(eastUnderground)
+    expect(westUnderground.underground_belt_neighbour).toEqual(eastUnderground)
 
     const updated = updateEntity(
       westUnderground,
@@ -708,7 +708,7 @@ describe.each([false, true])("undergrounds, flipped: %s", (flipped) => {
       type: otherType,
     })
     assert(rightUnderground)
-    expect(leftUnderground.neighbours).toEqual(rightUnderground)
+    expect(leftUnderground.underground_belt_neighbour).toEqual(rightUnderground)
     const rightEntity = newProjectEntity(
       {
         name: "underground-belt",
@@ -946,7 +946,7 @@ describe("item-requests", () => {
       defines.direction.north,
       {
         name: "iron-chest",
-      } as Entity,
+      },
       { items: itemInsertPlans[0] },
     )!
 
@@ -994,7 +994,7 @@ describe("item-requests", () => {
         {
           name: "assembling-machine-3",
           items: newModules ? moduleInsertPlans[newModules] : nil,
-        } as Entity,
+        },
         newItemRequests ? { items: itemInsertPlans[newItemRequests] } : nil,
         defines.direction.north,
       )[0]!
@@ -1017,12 +1017,7 @@ describe("item-requests", () => {
     chest.get_inventory(defines.inventory.chest)![slot + 1].set_stack({ name: "copper-plate", count: itemCount })
     const insertPlan = simpleInsertPlan(defines.inventory.chest, "iron-plate", slot, itemCount)
 
-    const newEntity = updateEntity(
-      chest,
-      { name: "iron-chest" } as Entity,
-      { items: [insertPlan] },
-      defines.direction.north,
-    )[0]!
+    const newEntity = updateEntity(chest, { name: "iron-chest" }, { items: [insertPlan] }, defines.direction.north)[0]!
 
     expect(newEntity).toBe(chest)
     expect(chest.get_inventory(defines.inventory.chest)!.get_item_count("iron-plate")).toBe(0)
@@ -1150,9 +1145,8 @@ test("canBeAnyDirection", () => {
   expect(canBeAnyDirection(entity2)).toBe(false)
 })
 
-describe("EditorExtensions support", () => {
-  assert("EditorExtensions" in script.active_mods)
-
+const describeIfEE = "EditorExtensions" in script.active_mods ? describe : describe.skip
+describeIfEE("EditorExtensions support", () => {
   test("can create and update infinity loader", () => {
     const loader = createEntity(
       surface,

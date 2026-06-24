@@ -37,7 +37,7 @@ export function createWhiteSprite(rawBBox: BoundingBox, color: Color | nil): Spr
 
   let size = bbox.size()
   let scale = ceil(max(size.x, size.y))
-  if (scale == 0) return empty_sprite() as Sprite
+  if (scale == 0) return empty_sprite()
 
   if (scale > 32) {
     // scale dimensions so it fits in 32x32
@@ -178,7 +178,7 @@ for (const type of types.sort()) {
       open_sound: prototype.open_sound,
       close_sound: prototype.close_sound,
 
-      picture: createWhiteSprite(selectionBox, color) as Sprite,
+      picture: createWhiteSprite(selectionBox, color),
 
       // other
       flags,

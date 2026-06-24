@@ -32,9 +32,9 @@ export class IconsEdit extends Component<IconsEditProps> {
               return (
                 <choose-elem-button
                   style={
-                    (iconValue instanceof DiffedProperty
+                    iconValue instanceof DiffedProperty
                       ? iconValue.isOverridden().select("slot_sized_button_green", "slot_button")
-                      : "slot_button") as any
+                      : "slot_button"
                   }
                   elem_type="signal"
                   elem_value={iconValue}

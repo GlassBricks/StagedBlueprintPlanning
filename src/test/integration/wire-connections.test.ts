@@ -5,7 +5,6 @@
 
 import { BlueprintEntity, InserterBlueprintEntity, LuaEntity, SurfaceCreateEntity } from "factorio:runtime"
 import expect from "tstl-expect"
-import { Settings } from "../../constants"
 import { StageNumber } from "../../entity/ProjectEntity"
 import { saveEntity } from "../../entity/save-load"
 import { ProjectWireConnection, wireConnectionEquals } from "../../entity/wire-connection"
@@ -13,7 +12,7 @@ import { Mutable } from "../../lib"
 import { Pos } from "../../lib/geometry"
 import { debugPrint } from "../../lib/test/misc"
 import { checkForCircuitWireUpdates } from "../../project/event-handlers"
-import { setupEntityIntegrationTest, waitForPaste } from "./integration-test-util"
+import { setupEntityIntegrationTest } from "./integration-test-util"
 
 const ctx = setupEntityIntegrationTest()
 const pos = Pos(10.5, 10.5)
@@ -48,8 +47,8 @@ describe("poles and wire connections", () => {
 
   function disconnectPole(pole1: LuaEntity, pole2: LuaEntity) {
     pole1
-      .get_wire_connector(defines.wire_connector_id.pole_copper, false)
-      .disconnect_from(pole2.get_wire_connector(defines.wire_connector_id.pole_copper, false))
+      .get_wire_connector(defines.wire_connector_id.pole_copper, false)!
+      .disconnect_from(pole2.get_wire_connector(defines.wire_connector_id.pole_copper, false)!)
   }
   function connectPole(pole1: LuaEntity, pole2: LuaEntity) {
     pole1
@@ -119,64 +118,86 @@ describe("poles and wire connections", () => {
 })
 
 describe("circuit connections", () => {
-  describe.each([false, true])("paste a chain of circuit wires (using bplib %s)", (useBplib) => {
-    before_each(() => {
-      ctx.player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: useBplib }
-    })
+  test.each([1, 2])("paste a chain of circuit wires over existing power poles, stage %s", (stage) => {
+    const pole1 = ctx.buildEntity(stage, { name: "small-electric-pole", position: pos })
+    const pole2 = ctx.buildEntity(stage, { name: "small-electric-pole", position: pos.plus(Pos(4, 0)) })
+    const pole3 = ctx.buildEntity(stage, { name: "small-electric-pole", position: pos.plus(Pos(8, 0)) })
 
-    after_each(() => {
-      ctx.player.mod_settings[Settings.UseBplibForBlueprintPaste] = { value: false }
-    })
+    const bpEntities: BlueprintEntity[] = [
+      {
+        entity_number: 1,
+        name: "small-electric-pole",
+        position: pos,
+        wires: [[1, defines.wire_connector_id.circuit_red, 2, defines.wire_connector_id.circuit_red]],
+      },
+      {
+        entity_number: 2,
+        name: "small-electric-pole",
+        position: pos.plus(Pos(4, 0)),
+        wires: [
+          [1, defines.wire_connector_id.circuit_red, 1, defines.wire_connector_id.circuit_red],
+          [1, defines.wire_connector_id.circuit_red, 3, defines.wire_connector_id.circuit_red],
+        ],
+      },
+      {
+        entity_number: 3,
+        name: "small-electric-pole",
+        position: pos.plus(Pos(8, 0)),
+        wires: [[1, defines.wire_connector_id.circuit_red, 2, defines.wire_connector_id.circuit_red]],
+      },
+    ]
+    const stack = ctx.player.cursor_stack!
+    stack.set_stack("blueprint")
+    stack.set_blueprint_entities(bpEntities)
 
-    test.each([1, 2])("paste a chain of circuit wires over existing power poles, stage %s", (stage) => {
-      const pole1 = ctx.buildEntity(stage, { name: "small-electric-pole", position: pos })
-      const pole2 = ctx.buildEntity(stage, { name: "small-electric-pole", position: pos.plus(Pos(4, 0)) })
-      const pole3 = ctx.buildEntity(stage, { name: "small-electric-pole", position: pos.plus(Pos(8, 0)) })
+    ctx.player.teleport([0, 0], ctx.surfaces[stage - 1])
+    ctx.player.build_from_cursor({ position: pos.plus(Pos(4, 0)) })
 
-      const bpEntities: BlueprintEntity[] = [
-        {
-          entity_number: 1,
-          name: "small-electric-pole",
-          position: pos,
-          wires: [[1, defines.wire_connector_id.circuit_red, 2, defines.wire_connector_id.circuit_red]],
-        },
-        {
-          entity_number: 2,
-          name: "small-electric-pole",
-          position: pos.plus(Pos(4, 0)),
-          wires: [
-            [1, defines.wire_connector_id.circuit_red, 1, defines.wire_connector_id.circuit_red],
-            [1, defines.wire_connector_id.circuit_red, 3, defines.wire_connector_id.circuit_red],
-          ],
-        },
-        {
-          entity_number: 3,
-          name: "small-electric-pole",
-          position: pos.plus(Pos(8, 0)),
-          wires: [[1, defines.wire_connector_id.circuit_red, 2, defines.wire_connector_id.circuit_red]],
-        },
-      ]
-      const stack = ctx.player.cursor_stack!
-      stack.set_stack("blueprint")
-      stack.set_blueprint_entities(bpEntities)
+    const connection1 = pole1.wireConnections?.get(pole2)
+    expect(connection1).not.toBeNil()
+    const connection21 = pole2.wireConnections?.get(pole1)
+    expect(connection21).not.toBeNil()
+    const connection23 = pole2.wireConnections?.get(pole3)
+    expect(connection23).not.toBeNil()
+    const connection3 = pole3.wireConnections?.get(pole2)
+    expect(connection3).not.toBeNil()
 
-      ctx.player.teleport([0, 0], ctx.surfaces[stage - 1])
-      ctx.player.build_from_cursor({ position: pos.plus(Pos(4, 0)) })
+    ctx.assertEntityCorrect(pole1, false)
+    ctx.assertEntityCorrect(pole2, false)
+    ctx.assertEntityCorrect(pole3, false)
+  })
 
-      waitForPaste(useBplib, () => {
-        const connection1 = pole1.wireConnections?.get(pole2)
-        expect(connection1).not.toBeNil()
-        const connection21 = pole2.wireConnections?.get(pole1)
-        expect(connection21).not.toBeNil()
-        const connection23 = pole2.wireConnections?.get(pole3)
-        expect(connection23).not.toBeNil()
-        const connection3 = pole3.wireConnections?.get(pole2)
-        expect(connection3).not.toBeNil()
+  test("paste new poles with wires creates wire connections", () => {
+    const bpEntities: BlueprintEntity[] = [
+      {
+        entity_number: 1,
+        name: "small-electric-pole",
+        position: pos,
+        wires: [[1, defines.wire_connector_id.circuit_red, 2, defines.wire_connector_id.circuit_red]],
+      },
+      {
+        entity_number: 2,
+        name: "small-electric-pole",
+        position: pos.plus(Pos(4, 0)),
+        wires: [[2, defines.wire_connector_id.circuit_red, 1, defines.wire_connector_id.circuit_red]],
+      },
+    ]
+    const stack = ctx.player.cursor_stack!
+    stack.set_stack("blueprint")
+    stack.set_blueprint_entities(bpEntities)
 
-        ctx.assertEntityCorrect(pole1, false)
-        ctx.assertEntityCorrect(pole2, false)
-        ctx.assertEntityCorrect(pole3, false)
-      })
-    })
+    ctx.player.teleport([0, 0], ctx.surfaces[0])
+    ctx.player.build_from_cursor({ position: pos.plus(Pos(2, 0)) })
+
+    const lua1 = ctx.surfaces[0].find_entity("small-electric-pole", pos)!
+    const lua2 = ctx.surfaces[0].find_entity("small-electric-pole", pos.plus(Pos(4, 0)))!
+    expect(lua1).not.toBeNil()
+    expect(lua2).not.toBeNil()
+    const proj1 = ctx.project.content.findCompatibleWithLuaEntity(lua1, nil, 1)!
+    const proj2 = ctx.project.content.findCompatibleWithLuaEntity(lua2, nil, 1)!
+    expect(proj1).not.toBeNil()
+    expect(proj2).not.toBeNil()
+    expect(proj1.wireConnections?.get(proj2)).not.toBeNil()
+    expect(proj2.wireConnections?.get(proj1)).not.toBeNil()
   })
 })

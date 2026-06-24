@@ -1,5 +1,4 @@
 import expect, { mock } from "tstl-expect"
-import { UndergroundBeltEntity } from "../../entity/Entity"
 import { _assertCorrect, ContentObserver, MutableProjectContent, newProjectContent } from "../../entity/ProjectContent"
 import { newProjectEntity, ProjectEntity, StageNumber, UndergroundBeltProjectEntity } from "../../entity/ProjectEntity"
 import { ProjectWireConnection } from "../../entity/wire-connection"
@@ -377,7 +376,7 @@ describe("MutableProjectContent mutations", () => {
   describe("setUndergroundBeltType()", () => {
     test("fires onEntityChanged", () => {
       const entity: UndergroundBeltProjectEntity = newProjectEntity(
-        { name: "underground-belt", type: "input" } as UndergroundBeltEntity,
+        { name: "underground-belt", type: "input" },
         { x: 0, y: 0 },
         0,
         1,
@@ -473,7 +472,7 @@ describe("MutableProjectContent mutations", () => {
 
     test("direction and type change via batch fires single notification", () => {
       const entity: UndergroundBeltProjectEntity = newProjectEntity(
-        { name: "underground-belt", type: "input" } as UndergroundBeltEntity,
+        { name: "underground-belt", type: "input" },
         { x: 0, y: 0 },
         0,
         1,

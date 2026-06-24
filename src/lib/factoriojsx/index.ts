@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { GuiElementType } from "factorio:runtime"
 import _createElement from "./createElement"
 import {
   ButtonElement,
@@ -92,4 +91,8 @@ export namespace FactorioJsx {
   }
 }
 
-export type ElemProps<T extends GuiElementType> = FactorioJsx.JSX.IntrinsicElements[T]
+// typed-factorio's GuiElementType includes element types this framework does not implement
+// (e.g. "inventory", added in Factorio 2.1). The supported types are exactly IntrinsicElements' keys.
+export type FactorioJsxElementType = Exclude<keyof FactorioJsx.JSX.IntrinsicElements, "fragment">
+
+export type ElemProps<T extends FactorioJsxElementType> = FactorioJsx.JSX.IntrinsicElements[T]

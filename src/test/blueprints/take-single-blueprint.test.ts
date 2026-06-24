@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-import { LuaPlayer, LuaSurface, SignalID, UnitNumber } from "factorio:runtime"
+import { LuaPlayer, LuaSurface, UnitNumber } from "factorio:runtime"
 import expect from "tstl-expect"
 import { BlueprintTakeSettings, getDefaultBlueprintSettings } from "../../blueprints/blueprint-settings"
 import { FirstEntityOriginalPositionTag, takeSingleBlueprint } from "../../blueprints/take-single-blueprint"
@@ -74,7 +74,7 @@ test("can take blueprint, and settings are applied", () => {
     },
     {
       index: 4,
-      signal: { type: "virtual", name: "signal-1" } as SignalID,
+      signal: { type: "virtual", name: "signal-1" },
     },
   ])
   expect(stack.blueprint_snap_to_grid).toEqual(settings.snapToGrid)
@@ -82,20 +82,21 @@ test("can take blueprint, and settings are applied", () => {
   expect(stack.blueprint_position_relative_to_grid).toEqual(settings.positionRelativeToGrid)
   const entities = stack.get_blueprint_entities()!
   expect(entities.length).toBe(2)
+  // 2.1 orders blueprint entities by ascending position, so the chest (lower position) is first.
   expect(entities[0]).toMatchTable({
-    name: belt.name,
-    tags: { [FirstEntityOriginalPositionTag]: belt.position },
+    name: chest.name,
+    tags: { [FirstEntityOriginalPositionTag]: chest.position },
   })
   expect(entities[1]).toMatchTable({
-    name: chest.name,
+    name: belt.name,
   })
 
   delete (entities[0] as any).tags
   expect(ret?.entities).toEqual(entities)
 
   expect(ret?.bpMapping).toEqual({
-    1: belt,
-    2: chest,
+    1: chest,
+    2: belt,
   })
 
   const tiles = stack.get_blueprint_tiles()!

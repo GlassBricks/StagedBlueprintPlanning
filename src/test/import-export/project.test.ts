@@ -112,7 +112,7 @@ test("exports project correctly", () => {
         entityNumber: 2,
         firstValue: {
           name: "baz",
-        } as Entity,
+        },
         position: { x: 5, y: 6 },
         firstStage: 1,
         lastStage: nil,
@@ -192,7 +192,7 @@ test("exports and imports surface settings", () => {
 test("exports NilPlaceholder override values as marker string", () => {
   const project = createProject("test", 2, nil)
   const stage = project.getStage(1)!
-  stage.getSettings().blueprintOverrideSettings.icon1.set(getNilPlaceholder() as any)
+  stage.getSettings().blueprintOverrideSettings.icon1.set(getNilPlaceholder())
   stage.getSettings().blueprintOverrideSettings.icon3.set({ type: "item", name: "iron-plate" })
 
   const exported = exportStage(stage)
@@ -203,7 +203,7 @@ test("exports NilPlaceholder override values as marker string", () => {
 test("round trips NilPlaceholder override values", () => {
   const project = createProject("test", 2, nil)
   const stage = project.getStage(1)!
-  stage.getSettings().blueprintOverrideSettings.icon1.set(getNilPlaceholder() as any)
+  stage.getSettings().blueprintOverrideSettings.icon1.set(getNilPlaceholder())
   stage.getSettings().blueprintOverrideSettings.icon2.set({ type: "item", name: "iron-plate" })
 
   const exported = exportProject(project)
@@ -222,8 +222,8 @@ test("imports legacy empty-table override values as NilPlaceholder", () => {
       {
         name: "Stage 1",
         blueprintOverrideSettings: {
-          icon1: {} as any,
-          icon2: {} as any,
+          icon1: {},
+          icon2: {},
         },
       },
     ],
