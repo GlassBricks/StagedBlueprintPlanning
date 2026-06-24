@@ -9,17 +9,9 @@
  * You should have received a copy of the GNU Lesser General Public License along with Staged Blueprint Planning. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import * as path from "path"
 import * as ts from "typescript"
 import * as tstl from "typescript-to-lua"
-import {
-  getEmitOutDir,
-  isCallExpression,
-  isTableIndexExpression,
-  Plugin,
-  TransformationContext,
-  Visitors,
-} from "typescript-to-lua"
+import { isCallExpression, isTableIndexExpression, Plugin, TransformationContext, Visitors } from "typescript-to-lua"
 import { createSerialDiagnosticFactory } from "typescript-to-lua/dist/utils"
 
 const invalidAccessSplitCall = createSerialDiagnosticFactory((node: ts.Node) => ({
@@ -77,15 +69,7 @@ export default function plugin(): Plugin {
     for (const file of files) {
       if (file.outputPath.endsWith("lualib_bundle.lua")) {
         file.code = "local coroutine = {} -- temp workaround for tstl bug\n" + file.code
-        continue
       }
-      const outPath = file.outputPath
-      if (!outPath.endsWith(".lua")) continue
-      const fileName = path.basename(outPath, ".lua")
-      // replace . with - in file name
-      const newFileName = fileName.replace(/\./g, "-")
-      if (fileName === newFileName) continue
-      file.outputPath = path.join(path.dirname(outPath), newFileName + ".lua")
     }
   }
 

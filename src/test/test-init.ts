@@ -13,33 +13,6 @@ import { deleteAllFreeSurfaces } from "../project/surfaces"
 import { getProjectEntityOfEntity } from "../ui/entity-util"
 import { teleportToProject } from "../ui/player-current-stage"
 
-// better source map traceback
-declare const ____lualib: {
-  __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap: SourceMap): void
-}
-interface SourceMap {
-  [line: number]:
-    | number
-    | {
-        line: number
-        file: string
-      }
-}
-{
-  const oldSourceMapTraceBack = ____lualib.__TS__SourceMapTraceBack
-  ____lualib.__TS__SourceMapTraceBack = function (fileName: string, sourceMap: SourceMap) {
-    if (fileName.endsWith("-test.lua")) {
-      const newFileName = fileName.slice(0, -9) + ".test.ts"
-      for (const [k, v] of pairs(sourceMap)) {
-        if (typeof v == "number") {
-          sourceMap[k] = { file: newFileName, line: v }
-        }
-      }
-    }
-    oldSourceMapTraceBack(fileName, sourceMap)
-  }
-}
-
 declare const storage: {
   printEvents?: boolean
 }
@@ -83,8 +56,7 @@ if ("factorio-test" in script.active_mods) {
   const tagBlacklist: string[] = []
 
   const testFiles = getProjectFilesMatchingRegex("\\.test\\.tsx?$")
-  const testNames = testFiles.map((x) => string.gsub(x, "%.", "-")[0])
-  testNames.push("test.misc-test")
+  const testNames = testFiles.map((x) => string.gsub(x, "%.", "_")[0])
   require("__factorio-test__/init")(testNames, {
     tag_blacklist: tagBlacklist,
     // test_pattern: "test/project/event%-handlers",
