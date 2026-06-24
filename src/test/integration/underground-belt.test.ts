@@ -539,3 +539,65 @@ describe("underground belt inconsistencies", () => {
     })
   })
 })
+
+// A real (tracked) underground belt and an entity-ghost underground belt can pair with each other
+// in the world. The ghost is not tracked by the mod (excludedTypes). These tests cover what happens
+// when either member of such a mixed pair is flipped (rotated).
+describe("flipping an underground paired with a ghost", () => {
+  const east = defines.direction.east
+  const west = defines.direction.west
+  // real output(east) at pos, ghost input(east) one tile west -> they pair (tunnel runs east).
+  const ghostPos = pos.add(-1, 0)
+  let realEntity: UndergroundBeltProjectEntity
+  let ghost: LuaEntity
+  before_each(() => {
+    realEntity = ctx.buildEntity(1, {
+      name: "underground-belt",
+      type: "output",
+      direction: east,
+      position: pos,
+    }) as UndergroundBeltProjectEntity
+    ghost = ctx.surfaces[0].create_entity({
+      name: "entity-ghost",
+      inner_name: "underground-belt",
+      type: "input",
+      direction: east,
+      position: ghostPos,
+      force: "player",
+    })!
+    expect(ghost).toBeAny()
+    expect(ghost.type).toBe("entity-ghost")
+    // they pair in the world, both ways
+    const realWorld = ctx.wp.getWorldEntity(realEntity, 1)!
+    expect(realWorld.underground_belt_neighbour).toEqual(ghost)
+    expect(ghost.underground_belt_neighbour).toEqual(realWorld)
+  })
+
+  test("flipping the ghost also flips the real pair, and the mod registers it", () => {
+    ghost.rotate({ by_player: ctx.player })
+
+    const realWorld = ctx.wp.getWorldEntity(realEntity, 1)!
+    // the game flipped the real underground along with the ghost
+    expect(realWorld).toMatchTable({
+      belt_to_ground_type: "input",
+      direction: west,
+    })
+    // the mod must record the flip on the real underground's project entity
+    expect(realEntity).toMatchTable({
+      firstValue: { type: "input" },
+      direction: west,
+    })
+    ctx.assertEntityCorrect(realEntity, false)
+  })
+
+  test("flipping the real underground leaves the ghost a ghost", () => {
+    ctx.wp.getWorldEntity(realEntity, 1)!.rotate({ by_player: ctx.player })
+
+    // the ghost must remain a ghost, not be revived/registered as a project entity
+    const stillGhost = ctx.surfaces[0].find_entity("entity-ghost", ghostPos)
+    expect(stillGhost).toBeAny()
+    expect(ctx.project.content.findCompatibleEntity("underground-belt", ghostPos, nil, 1)).toBeNil()
+
+    ctx.assertEntityCorrect(realEntity, false)
+  })
+})

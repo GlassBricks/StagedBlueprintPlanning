@@ -425,7 +425,9 @@ export class ProjectActions {
       const freshWorldEntity = this.worldPresenter.getWorldEntity(projectEntity, stage)
       if (!freshWorldEntity) return
       const worldPair = freshWorldEntity.underground_belt_neighbour
-      if (!worldPair) return
+      // A ghost pair is not a mod-tracked entity; never adopt/revive it (would turn the player's
+      // ghost into a real entity).
+      if (!worldPair || worldPair.type == "entity-ghost") return
       const pairEntity = this.getCompatibleAtCurrentStageOrAdd(worldPair, stage, nil, byPlayer)
       if (!pairEntity) return
       const expectedPair = findUndergroundPair(this.content, projectEntity, stage)

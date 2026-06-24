@@ -55,6 +55,30 @@ describe("train entities", () => {
     expect(entity.lastStage).toBe(2)
     assertTrainEntityCorrect(entity, 2)
   })
+  // 2.1 newly allows upgrading rolling stock quality via the upgrade planner. order_upgrade only
+  // raises on_marked_for_upgrade outside the editor controller (in editor it instantly replaces the
+  // entity), so switch to god mode for a faithful repro.
+  test("can upgrade a cargo wagon (quality) via upgrade planner", () => {
+    const prevController = ctx.player.controller_type
+    ctx.player.set_controller({ type: defines.controllers.god })
+    after_test(() => ctx.player.set_controller({ type: prevController }))
+
+    const wagon = createRollingStock(ctx.surfaces[3 - 1], "cargo-wagon")
+    const entity = ctx.project.actions.addNewEntity(wagon, 3)!
+    expect(entity).toBeAny()
+
+    const worldEntity = ctx.wp.getWorldEntity(entity, 3)!
+    worldEntity.order_upgrade({
+      force: worldEntity.force,
+      target: { name: "cargo-wagon", quality: "uncommon" },
+      player: ctx.player,
+    })
+
+    expect(entity.firstValue.quality).toBe("uncommon")
+    expect(ctx.wp.getWorldEntity(entity, 3)!.quality.name).toBe("uncommon")
+    assertTrainEntityCorrect(entity, false)
+  })
+
   test("resetVehicleLocation preserves preview entities at earlier stages", () => {
     const trainLuaEntity = createRollingStock(ctx.surfaces[3 - 1])
     const entity = ctx.project.actions.addNewEntity(trainLuaEntity, 3)!

@@ -528,6 +528,15 @@ export function updateEntity(
   const type = luaEntity.type
   if (movableTypes.has(type)) {
     assume<CarBlueprintEntity>(value)
+    // 2.1 allows upgrading rolling stock (name/quality). Movable entities can't be pasted in place,
+    // so rebuild via createEntity, which preserves orientation. Equipment-only changes update in place.
+    if (luaEntity.name != value.name || luaEntity.quality.name != (value.quality ?? "normal")) {
+      const surface = luaEntity.surface
+      const position = luaEntity.position
+      raise_script_destroy({ entity: luaEntity })
+      luaEntity.destroy()
+      return $multi(createEntity(surface, position, direction, value, unstagedValue, changed))
+    }
     insertEquipment(luaEntity, value.grid)
     return $multi(luaEntity)
   }

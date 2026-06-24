@@ -108,6 +108,15 @@ export function luaEntityRotated(
     entity.direction = previousDirection
     return
   }
+  // An entity-ghost underground belt can pair with a real (mod-tracked) underground belt. Rotating
+  // the ghost also flips the real pair in the world, but the engine raises the rotate event only for
+  // the ghost. Re-sync the real pair so the mod records the flip.
+  if (entity.type == "entity-ghost" && entity.ghost_type == "underground-belt") {
+    const pair = entity.underground_belt_neighbour
+    if (pair && isWorldEntityProjectEntity(pair)) {
+      stage.actions.onEntityRotated(pair, stage.stageNumber, pair.direction, player)
+    }
+  }
 }
 
 export const checkForEntityUpdates = luaEntityPossiblyUpdated
