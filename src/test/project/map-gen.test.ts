@@ -8,68 +8,31 @@ import expect from "tstl-expect"
 import { asMutable, deepCopy, Mutable } from "../../lib"
 import { createProject, Project } from "../../project/Project"
 import { NormalSurfaceSettings, syncMapGenSettings } from "../../project/surfaces"
-import { setupTestSurfaces } from "./Project-mock"
 
-const surfaces = setupTestSurfaces(2)
+// NOTE: do NOT call setupTestSurfaces here, or clear() any shared/pooled surface in a hook around
+// these tests. syncMapGenSettings regenerates real terrain; clearing a pooled/reused surface that
+// carries that generation state hits an unbounded loop in Factorio's map generation and spins the
+// game forever (engine bug in applyRequestsAsLabTiles). Each test owns its project and cleans up with
+// project.delete() only. See _research/map-gen-test-hang.md.
+
 let project: Project
-before_each(() => {
-  project = createProject("test", 3)
-})
 after_each(() => {
   project.delete()
-  surfaces.forEach((s) => {
-    s.generate_with_lab_tiles = true
-    s.clear()
-  })
 })
 
-// TODO: broken - asserts on standalone setupTestSurfaces surfaces that syncMapGenSettings never
-// touches (it only reads/writes the project's own stage surfaces). Fix to use project stage surfaces.
-test.skip("sync map gen settings", () => {
-  const surface1 = surfaces[0]
-  surface1.map_gen_settings = {
-    ...surface1.map_gen_settings,
-    seed: 100,
-  }
-  surface1.create_global_electric_network()
-  surface1.generate_with_lab_tiles = false
-  const surface2 = surfaces[1]
-  surface2.map_gen_settings = {
-    ...surface2.map_gen_settings,
-    seed: 200,
-  }
-  surface2.generate_with_lab_tiles = true
+function realMapGenSettings(seed: number): Mutable<MapGenSettings> {
+  const settings = asMutable(deepCopy(game.default_map_gen_settings))
+  settings.seed = seed
+  return settings
+}
+
+test("reads map gen settings from a stage and applies to all stages", () => {
+  project = createProject("test", 3)
+  const stage1Surface = project.getStage(1)!.getSurface()
+  stage1Surface.generate_with_lab_tiles = false
+  stage1Surface.map_gen_settings = realMapGenSettings(54321)
 
   syncMapGenSettings(project.getStage(1)!)
-
-  expect(surface1).toMatchTable({
-    map_gen_settings: { seed: 100 },
-    generate_with_lab_tiles: false,
-    has_global_electric_network: true,
-  })
-  expect(surface2).toMatchTable({
-    map_gen_settings: { seed: 100 },
-    generate_with_lab_tiles: false,
-    has_global_electric_network: true,
-  })
-
-  after_ticks(20, () => {
-    // wait for surface to reset
-  })
-})
-
-// TODO: skipped - passes in isolation, but its real-terrain generation (generate_with_lab_tiles =
-// false + clear) leaves Factorio busy and hangs the next test file in the full suite.
-test.skip("syncMapGenSettings reads from stage and applies to all", () => {
-  const project = createProject("Test", 3)
-  const stage1 = project.getStage(1)!
-
-  stage1.getSurface().generate_with_lab_tiles = false
-  const mapGenSettings: Mutable<MapGenSettings> = asMutable(deepCopy(game.default_map_gen_settings))
-  mapGenSettings.seed = 54321
-  stage1.getSurface().map_gen_settings = mapGenSettings
-
-  syncMapGenSettings(stage1)
 
   const projectSettings = project.settings.surfaceSettings as NormalSurfaceSettings
   expect(projectSettings).toMatchTable({
@@ -78,8 +41,27 @@ test.skip("syncMapGenSettings reads from stage and applies to all", () => {
     map_gen_settings: { seed: 54321 },
   })
 
-  expect(project.getStage(2)!.getSurface().map_gen_settings.seed).toBe(54321)
-  expect(project.getStage(3)!.getSurface().map_gen_settings.seed).toBe(54321)
+  for (const stage of project.getAllStages()) {
+    expect(stage.getSurface()).toMatchTable({
+      generate_with_lab_tiles: false,
+      map_gen_settings: { seed: 54321 },
+    })
+  }
+})
 
-  project.delete()
+test("syncs has_global_electric_network across all stages", () => {
+  project = createProject("test", 3)
+  const stage1Surface = project.getStage(1)!.getSurface()
+  stage1Surface.generate_with_lab_tiles = false
+  stage1Surface.map_gen_settings = realMapGenSettings(100)
+  stage1Surface.create_global_electric_network()
+
+  syncMapGenSettings(project.getStage(1)!)
+
+  const projectSettings = project.settings.surfaceSettings as NormalSurfaceSettings
+  expect(projectSettings.has_global_electric_network).toBe(true)
+
+  for (const stage of project.getAllStages()) {
+    expect(stage.getSurface().has_global_electric_network).toBe(true)
+  }
 })
