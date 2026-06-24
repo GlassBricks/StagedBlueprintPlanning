@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
-Version: 2.14.5
+Version: 2.15.0
 Date: ????
+  Features:
+    - Updated for Factorio 2.1! Includes support for: newly flippable entities (inserters, mining drills), rolling stock upgrades, new circuit wires, etc.
   Changes:
     - Improved blueprint paste handling now using Factorio 2.1's native blueprint paste events. This is more reliable, supports pasting wires from cut entities, and pasting from the blueprint library. Removed the now redundant experimental blueprint paste setting.
   Bugfixes:
