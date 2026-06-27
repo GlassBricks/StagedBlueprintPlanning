@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.15.1
-Date: ????
+Date: 2026-06-26
   Bugfixes:
     - Fixed a multi-second freeze when inserting a stage in a project that has a blueprint book template.
     - Fixed that the stage-info entity UI was missing from some entities with updated 2.1 UIs (storage tanks, heat pipes, land mines).
