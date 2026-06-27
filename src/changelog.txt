@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.15.1
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fixed a multi-second freeze when inserting a stage in a project that has a blueprint book template.
 ---------------------------------------------------------------------------------------------------
 Version: 2.15.0
 Date: 2026-06-24

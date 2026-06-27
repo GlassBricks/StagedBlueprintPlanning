@@ -94,11 +94,14 @@ export class BlueprintBookTemplate {
     while (nextFreeSlot < inventory.length && inventory[nextFreeSlot].valid_for_read) nextFreeSlot++
     const needsExpansion = nextFreeSlot == inventory.length
     if (needsExpansion) {
-      const freeSlots = inventory.get_insertable_count(Prototypes.StageReference)
-      inventory.insert({
-        name: Prototypes.StageReference,
-        count: freeSlots + 1,
-      })
+      // The book inventory only grows once it is full: an insert fills internal gaps before
+      // appending. So insert exactly enough to fill any gaps plus one new trailing slot.
+      // (get_insertable_count returns the full 65535-slot capacity, which is catastrophically slow.)
+      let emptySlots = 0
+      for (const i of $range(1, inventory.length)) {
+        if (!inventory[i - 1].valid_for_read) emptySlots++
+      }
+      inventory.insert({ name: Prototypes.StageReference, count: emptySlots + 1 })
     }
     for (let i = nextFreeSlot - 1; i >= index; i--) {
       assert(inventory[i].swap_stack(inventory[i + 1]))

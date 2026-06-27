@@ -9,7 +9,7 @@ pnpm run build:test        # Full build (run once initially, or after clean)
 pnpm run build:release     # Production build
 pnpm run test              # Run tests (incremental build)
 pnpm run test:rebuild      # Clean, rebuild, and test
-pnpm exec factorio-test run "filter1" "foo%-test > block name" # Run specific test (Lua patterns: escape - as %-)
+pnpm exec factorio-test run "filter1" "foo%-test > block name" # Run specific test(s) (Lua patterns: escape - as %-)
 pnpm run format:fix        # Prettier
 pnpm run lint              # ESLint
 pnpm run check             # Full validation (format, lint, test, git tree clean)
@@ -81,18 +81,6 @@ See [docs/Migrations.md](docs/Migrations.md) for full reference and patterns.
 ## Caveats
 
 - The test player runs in the **editor** controller, which by default does _instant construction_; some build/upgrade behave differently: e.g. `order_upgrade` to a different quality (same name) instantly replaces and raises `on_built_entity` instead of `on_marked_for_upgrade`. For a faithful repro, switch out of editor first (`player.set_controller({ type: defines.controllers.god })`, restore in `after_test`).
-
-## Research
-
-When investigating something non-trivial (multi-file analysis, web research, evaluations), write findings to `_research/<descriptive-name>.md`. Include frontmatter:
-
-    ---
-    summary: "one-line description of what was investigated"
-    date: YYYY-MM-DD
-    tags: [relevant, tags]
-    ---
-
-Check `_research/` for existing findings before starting new investigations.
 
 ## Notes
 
