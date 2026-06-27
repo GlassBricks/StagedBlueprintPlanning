@@ -487,7 +487,7 @@ const entityTypeToGuiType: Record<
   generator: relative_gui_type.additional_entity_info_gui,
   inserter: relative_gui_type.inserter_gui,
   pipe: relative_gui_type.pipe_gui,
-  radar: relative_gui_type.entity_with_energy_source_gui,
+  radar: relative_gui_type.radar_gui,
   splitter: relative_gui_type.splitter_gui,
   "lane-splitter": relative_gui_type.splitter_gui,
   "artillery-turret": relative_gui_type.container_gui,
