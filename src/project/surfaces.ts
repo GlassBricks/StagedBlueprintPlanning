@@ -216,7 +216,7 @@ function createNewSurface(
 }
 
 export function prepareArea(surface: LuaSurface, area: BBox): void {
-  const {  request_to_generate_chunks } = surface
+  const { request_to_generate_chunks } = surface
   const pos = { x: 0, y: 0 }
   const chunkArea = BBox.scale(area, 1 / 32).roundTile()
 
