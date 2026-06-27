@@ -7,9 +7,7 @@
     "adjustMods": {
       "bp100": true,
       "factorio-test": true,
-      "flib": true,
-      "bplib": true,
-      "EditorExtensions": true,
+      "recycler": true,
       "quality": true,
       "elevated-rails": true,
       "space-age": true,
@@ -35,9 +33,7 @@
     "adjustMods": {
       "bp100": true,
       "factorio-test": true,
-      "flib": true,
-      "bplib": true,
-      "EditorExtensions": true,
+      "recycler": true,
       "quality": true,
       "elevated-rails": true,
       "space-age": true,
