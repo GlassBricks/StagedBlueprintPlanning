@@ -5,7 +5,6 @@
 
 import { LuaEntity, LuaSurface, MapGenSettings, nil, PrototypeWithQualityRead } from "factorio:runtime"
 import { BBox } from "../lib/geometry"
-import { withTileEventsDisabled } from "../tiles/tile-events"
 import { Project, Stage } from "./Project"
 
 export interface NormalSurfaceSettings {
@@ -217,26 +216,17 @@ function createNewSurface(
 }
 
 export function prepareArea(surface: LuaSurface, area: BBox): void {
-  const { is_chunk_generated, set_chunk_generated_status, request_to_generate_chunks } = surface
-  const status = defines.chunk_generated_status.entities
+  const {  request_to_generate_chunks } = surface
   const pos = { x: 0, y: 0 }
   const chunkArea = BBox.scale(area, 1 / 32).roundTile()
+
+  for (const [x, y] of chunkArea.iterateTiles()) {
+    pos.x = x * 32
+    pos.y = y * 32
+    request_to_generate_chunks(pos)
+  }
   if (surface.generate_with_lab_tiles) {
-    for (const [x, y] of chunkArea.iterateTiles()) {
-      pos.x = x
-      pos.y = y
-      if (!is_chunk_generated(pos)) {
-        set_chunk_generated_status(pos, status)
-      }
-    }
-    const actualArea = chunkArea.scale(32)
-    withTileEventsDisabled(surface.build_checkerboard, actualArea)
-  } else {
-    for (const [x, y] of chunkArea.iterateTiles()) {
-      pos.x = x * 32
-      pos.y = y * 32
-      request_to_generate_chunks(pos)
-    }
+    surface.force_generate_chunk_requests()
   }
 }
 
