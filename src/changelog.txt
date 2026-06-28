@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.15.3
 Date: ????
-  Changes:
+  Bugfixes:
+    - Fixed that the direction of a recipe-less assembling machine using "set recipe from signal" was lost when the entity was created or rebuilt.
 ---------------------------------------------------------------------------------------------------
 Version: 2.15.2
 Date: 2026-06-27

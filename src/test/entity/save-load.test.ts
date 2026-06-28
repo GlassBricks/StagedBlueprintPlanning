@@ -7,6 +7,7 @@ import {
   BlueprintEntityWrite,
   CarBlueprintEntity,
   InserterBlueprintEntity,
+  LuaAssemblingMachineControlBehavior,
   LuaEntity,
   LuaInserterControlBehavior,
   LuaSurface,
@@ -387,6 +388,105 @@ test("can rotate entity", () => {
   const newEntity = updateEntity(entity, { name: "inserter" }, nil, defines.direction.south)[0]
   expect(entity).toBe(newEntity)
   expect(entity.direction).toBe(defines.direction.south)
+})
+
+test("a recipe-less square assembling machine cannot be created facing a non-north direction", () => {
+  // A square assembling machine with no fluid recipe is rotationally symmetric, so the game
+  // ignores the requested direction and places it facing north.
+  const recipeless = surface.create_entity({
+    name: "assembling-machine-2",
+    position: { x: 12.5, y: 12.5 },
+    force: "player",
+    direction: defines.direction.east,
+  })!
+  expect(recipeless.fluids_count).toBe(0)
+  expect(recipeless.direction).toBe(defines.direction.north)
+
+  // With a fluid recipe it has a fluid box, so the direction is kept.
+  const withRecipe = surface.create_entity({
+    name: "assembling-machine-2",
+    position: { x: 16.5, y: 12.5 },
+    force: "player",
+    direction: defines.direction.east,
+    recipe: "rocket-fuel",
+  })!
+  expect(withRecipe.direction).toBe(defines.direction.east)
+
+  // Clearing the recipe of an existing entity preserves its current direction...
+  withRecipe.set_recipe(nil)
+  expect(withRecipe.fluids_count).toBe(0)
+  expect(withRecipe.direction).toBe(defines.direction.east)
+
+  // ...but the direction of a recipe-less assembler cannot be set afterward either: it is a no-op.
+  recipeless.direction = defines.direction.east
+  expect(recipeless.direction).toBe(defines.direction.north)
+
+  // A recipe with no fluids behaves like no recipe at all: still rotationally symmetric,
+  // so direction is ignored on creation and cannot be set afterward.
+  const noFluidRecipe = surface.create_entity({
+    name: "assembling-machine-2",
+    position: { x: 24.5, y: 12.5 },
+    force: "player",
+    direction: defines.direction.east,
+    recipe: "electronic-circuit",
+  })!
+  expect(noFluidRecipe.fluids_count).toBe(0)
+  expect(noFluidRecipe.direction).toBe(defines.direction.north)
+  noFluidRecipe.direction = defines.direction.east
+  expect(noFluidRecipe.direction).toBe(defines.direction.north)
+
+  // BUT: a recipe-less assembler with "set recipe from signal" enabled AND connected to a
+  // circuit network is no longer symmetric, so Factorio respects its direction.
+  const cbAssembler = surface.create_entity({
+    name: "assembling-machine-2",
+    position: { x: 28.5, y: 12.5 },
+    force: "player",
+  })!
+  const cb = cbAssembler.get_or_create_control_behavior() as LuaAssemblingMachineControlBehavior
+  cb.circuit_set_recipe = true
+  // with the control behavior alone (no wire) it is still symmetric: direction is a no-op
+  cbAssembler.direction = defines.direction.east
+  expect(cbAssembler.direction).toBe(defines.direction.north)
+
+  // once wired to a circuit network, the direction can be set
+  const combinator = surface.create_entity({
+    name: "constant-combinator",
+    position: { x: 30.5, y: 12.5 },
+    force: "player",
+  })!
+  cbAssembler
+    .get_wire_connector(defines.wire_connector_id.circuit_green, true)
+    .connect_to(combinator.get_wire_connector(defines.wire_connector_id.circuit_green, true))
+  cbAssembler.direction = defines.direction.east
+  expect(cbAssembler.direction).toBe(defines.direction.east)
+})
+
+test("BUG createEntity loses direction of a circuit-controlled recipe-less assembler", () => {
+  // an east-facing assembler, recipe-less, with "set recipe from signal" + a circuit connection
+  const source = surface.create_entity({
+    name: "assembling-machine-2",
+    position: { x: 12.5, y: 12.5 },
+    force: "player",
+  })!
+  const cb = source.get_or_create_control_behavior() as LuaAssemblingMachineControlBehavior
+  cb.circuit_set_recipe = true
+  const combinator = surface.create_entity({
+    name: "constant-combinator",
+    position: { x: 14.5, y: 12.5 },
+    force: "player",
+  })!
+  source
+    .get_wire_connector(defines.wire_connector_id.circuit_green, true)
+    .connect_to(combinator.get_wire_connector(defines.wire_connector_id.circuit_green, true))
+  source.direction = defines.direction.east
+  expect(source.direction).toBe(defines.direction.east)
+
+  const [value, unstagedValue] = saveEntity(source)
+
+  const created = createEntity(surface, Pos(20.5, 12.5), defines.direction.east, value!, unstagedValue)!
+  expect(created.direction).toBe(defines.direction.east)
+  const createdCb = created.get_control_behavior() as LuaAssemblingMachineControlBehavior | nil
+  expect(createdCb?.circuit_set_recipe).toBe(true)
 })
 
 test("updating entity with default control behavior overwrites existing control behavior", () => {

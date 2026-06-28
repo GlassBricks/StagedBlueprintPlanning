@@ -148,6 +148,23 @@ function setBlueprintEntity(
   value.items = oldItems
 }
 
+// An assembling machine can have no recipe, but "set recipe from signal"; in this case it only respects direction while connected to a circuit network.
+// Temporarily connect a real pole so the direction can be applied.
+function forceAssemblerDirection(target: LuaEntity, direction: defines.direction, mirroring: boolean): void {
+  const pole = target.surface.create_entity({
+    name: Prototypes.PastePole,
+    position: Pos.plus(target.position, Pos(1, 0)),
+    force: target.force,
+  })
+  if (!pole) return
+  target
+    .get_wire_connector(defines.wire_connector_id.circuit_red, true)
+    .connect_to(pole.get_wire_connector(defines.wire_connector_id.circuit_red, true))
+  target.direction = direction
+  target.mirroring = mirroring
+  pole.destroy()
+}
+
 const buildModeForced = defines.build_mode.forced
 let entityVersion = 1
 
@@ -180,9 +197,11 @@ function pasteEntity(
   if (target?.type == "assembling-machine") {
     assume<AssemblingMachineBlueprintEntity>(value)
     pcall(target.set_recipe as any, value.recipe, value.recipe_quality)
+    const mirroring = !!value.mirror
     target.direction = direction
-    if (value.mirror) {
-      target.mirroring = true
+    target.mirroring = mirroring
+    if ((target.direction != direction || target.mirroring != mirroring) && value.control_behavior?.set_recipe) {
+      forceAssemblerDirection(target, direction, mirroring)
     }
   }
   return ghosts[0]
